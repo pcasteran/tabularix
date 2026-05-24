@@ -1,0 +1,9 @@
+[settings]
+experimental = true
+lockfile = true
+
+[tools]
+just = "latest"
+node = "latest"
+prek = "latest"
+usage = "latest"

@@ -1,0 +1,47 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+  "name": "Tabularum",
+
+  "build": {
+    "dockerfile": "./Dockerfile",
+    "context": "..",
+  },
+
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-containers",
+        "nefrob.vscode-just-syntax",
+        "tobiashochguertel.just-formatter",
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml",
+        "gruntfuggly.todo-tree",
+        "buenon.scratchpads",
+      ],
+    },
+  },
+
+  // Features to add to the dev container. More info: https://containers.dev/features.
+  "features": {},
+
+  "mounts": [
+    // Use some volumes to persist tools configuration upon container restart.
+    {
+      "type": "volume",
+      "source": "${localWorkspaceFolderBasename}-prek-cache",
+      "target": "/home/vscode/.cache/prek",
+    },
+    {
+      "type": "volume",
+      "source": "${localWorkspaceFolderBasename}-gemini-cache",
+      "target": "/home/vscode/.gemini",
+    },
+  ],
+
+  "containerEnv": {
+    // Trust the mise config in the repository root.
+    "MISE_TRUSTED_CONFIG_PATHS": "/workspaces",
+  },
+}
