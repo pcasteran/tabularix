@@ -4,10 +4,10 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
 
 ## Step 1: Scaffolding & CI Pipeline
 
-- [ ] **Task 1.1: Initialize Maturin and PyO3 Project**
-    - **Acceptance:** `mise.toml` is updated with `rust`, `python`, and `maturin` toolchains. Rust and Python are linked via a `maturin` project. A dummy `hello_world` function can be called from Python.
-    - **Verify:** Run `mise install`, then `maturin develop` and verify in a Python REPL that `import tabularix` and `tabularix.hello_world()` work.
-    - **Files:** `mise.toml`, `Cargo.toml`, `pyproject.toml`, `src/lib.rs`, `python/tabularix/__init__.py`.
+- [x] **Task 1.1: Initialize Maturin and PyO3 Project**
+  - **Acceptance:** `mise.toml` is updated with `rust`, `python`, and `maturin` toolchains. Rust and Python are linked via a `maturin` project. A dummy `hello_world` function can be called from Python.
+  - **Verify:** Run `mise install`, then `maturin develop` and verify in a Python REPL that `import tabularix` and `tabularix.hello_world()` work.
+  - **Files:** `mise.toml`, `Cargo.toml`, `pyproject.toml`, `src/lib.rs`, `python/tabularix/__init__.py`.
 
 - [ ] **Task 1.2: Configure Task Runner and Linting**
     - **Acceptance:** `justfile` has recipes for building, testing, linting, and formatting. Rust `clippy` is configured with strict rules. The `prek` pre-commit setup is integrated.
@@ -20,9 +20,9 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Files:** `justfile`, `tests/hello.robot`, `tests/requirements.txt` (or similar for Python deps).
 
 - [ ] **Task 1.4: Initialize Project Documentation**
-    - **Acceptance:** Choose a documentation framework (e.g., MkDocs with `mkdocs-material`) and initialize the documentation site structure. Add `just` recipes to serve and build the docs.
-    - **Verify:** Run `just docs-serve` to see the local documentation site running.
-    - **Files:** `justfile`, `mkdocs.yml` (if MkDocs is chosen), `docs/index.md`.
+  - **Acceptance:** Use Zensical to initialize the documentation site structure. Add `just` recipes to serve and build the docs.
+  - **Verify:** Run `just docs-serve` to see the local documentation site running.
+  - **Files:** `justfile`, `zensical` config files, `docs/index.md`.
 
 ## Step 2: Excel Parsing & Sheet Core
 

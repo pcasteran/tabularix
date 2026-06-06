@@ -1,0 +1,11 @@
+[package]
+name = "tabularix"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "_tabularix"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.23.4", features = ["extension-module", "abi3-py312"] }
