@@ -2,7 +2,16 @@
 
 In most organizations, mission-critical data exists in a state of high entropy, trapped in fragmented Excel files. This "hidden data" is the primary barrier to meaningful AI adoption for all companies.
 
-There is a need for a solution designed to identify, extract, and organize this hidden data, transforming it into a clean, structured format ready for AI and advanced analytics.
+The fundamental challenge is that spreadsheets lack a predefined relational schema; they are raw, non-relational visual grids. In the real world, this results in extreme layout variability and chaos, including:
+- Inconsistent or shifting table boundaries, requiring identification via visual anchors rather than static cell coordinates.
+- Variable header structures (e.g., simple headers, multi-row spanning headers, or no headers at all).
+- Merged cells that obscure underlying data columns.
+- Extraneous visual elements like intermediate subtotals, complex footers, or scattered metadata blocks that disrupt table continuity.
+- Multiple independent sub-tables scattered across the same sheet that logically need to be unioned.
+
+Furthermore, these files frequently contain private, strategic, or sensitive company data. This creates a strict security constraint: raw Excel contents cannot simply be sent to external AI models or third-party extraction APIs without compromising data privacy.
+
+There is a critical need for a robust, privacy-first solution designed to navigate this layout chaos. Organizations require a framework capable of flexibly identifying, extracting, and organizing this hidden data—transforming it into a clean, structured format ready for data engineering pipelines, AI, and advanced analytics.
 
 ## Our mission
 
