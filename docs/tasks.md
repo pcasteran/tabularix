@@ -9,7 +9,7 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Verify:** Run `mise install`, then `maturin develop` and verify in a Python REPL that `import tabularix` and `tabularix.hello_world()` work.
     - **Files:** `mise.toml`, `Cargo.toml`, `pyproject.toml`, `src/lib.rs`, `python/tabularix/__init__.py`.
 
-- [ ] **Task 1.2: Configure Task Runner and Linting**
+- [x] **Task 1.2: Configure Task Runner and Linting**
     - **Acceptance:** `justfile` has recipes for building, testing, linting, and formatting. Rust `clippy` is configured with strict rules. The `prek` pre-commit setup is integrated.
     - **Verify:** Run `just build`, `just prek` (which runs pre-commit hooks), and `just test`. They should all pass cleanly.
     - **Files:** `justfile`, `Cargo.toml`, `.pre-commit-config.yaml`.

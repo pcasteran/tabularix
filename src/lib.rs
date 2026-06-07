@@ -1,8 +1,8 @@
 use pyo3::prelude::*;
 
 #[pyfunction]
-fn hello_world() -> PyResult<String> {
-    Ok("Hello from Tabularix Rust Core!".to_string())
+fn hello_world() -> String {
+    "Hello from Tabularix Rust Core!".to_string()
 }
 
 #[pymodule]

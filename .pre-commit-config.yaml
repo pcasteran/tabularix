@@ -46,6 +46,32 @@ repos:
         exclude: ^\.agents/skills
         types_or: [markdown, json, yaml, toml]
 
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt
+        language: system
+        types: [rust]
+        pass_filenames: false
+        args: ["--", "--check"]
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: cargo clippy
+        language: system
+        types: [rust]
+        pass_filenames: false
+        args:
+          [
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings",
+            "-W",
+            "clippy::pedantic",
+          ]
+
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.12
     hooks:
