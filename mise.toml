@@ -6,5 +6,6 @@ lockfile = true
 actionlint = "latest"
 just = "latest"
 node = "latest"
+pinact = "latest"
 prek = "latest"
 usage = "latest"

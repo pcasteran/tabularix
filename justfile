@@ -42,3 +42,13 @@ upgrade-toolchain:
 # Upgrade all project dependencies
 [group("dev")]
 upgrade-all: upgrade-toolchain prek-hooks-update
+
+# Pin the GitHub Actions hash
+[group("dev")]
+gha_pin:
+    pinact run
+
+# Update the GitHub Actions
+[group("dev")]
+gha_update:
+    pinact run -update

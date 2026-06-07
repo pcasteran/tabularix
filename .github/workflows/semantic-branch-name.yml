@@ -10,6 +10,8 @@ on:
     branches:
       - "main"
 
+permissions: {}
+
 jobs:
   check-branch-name:
     name: Validate branch name
