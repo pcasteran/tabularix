@@ -1,0 +1,57 @@
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://gitlab.com/vojko.pribudic.foss/pre-commit-update
+    rev: v0.9.0
+    hooks:
+      - id: pre-commit-update
+        args:
+          - --dry-run
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^\.agents/skills
+      - id: end-of-file-fixer
+        exclude: ^\.agents/skills
+      - id: check-toml
+      - id: check-yaml
+      - id: check-json
+        exclude: ^(.devcontainer/devcontainer.json|.vscode/launch.json|.vscode/settings.json)
+      - id: check-added-large-files
+        args: ["--maxkb=2500"]
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+        exclude: ^\.agents/skills
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-ast
+      - id: mixed-line-ending
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.2
+    hooks:
+      - id: codespell
+        exclude: ^\.agents/skills
+
+  - repo: https://github.com/instrumentl/pre-commit-just
+    rev: v0.1
+    hooks:
+      - id: format-justfile
+
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.8.3
+    hooks:
+      - id: prettier
+        exclude: ^\.agents/skills
+        types_or: [markdown, json, yaml, toml]
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint-system
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.25.2
+    hooks:
+      - id: zizmor
