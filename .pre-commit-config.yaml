@@ -11,9 +11,9 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: ^(_bmad|\.gemini/skills/bmad-)
+        exclude: ^(\.gemini/skills/)
       - id: end-of-file-fixer
-        exclude: ^(_bmad|\.gemini/skills/bmad-)
+        exclude: ^(\.gemini/skills/)
       - id: check-toml
       - id: check-yaml
       - id: check-json
@@ -31,7 +31,7 @@ repos:
     rev: v2.4.2
     hooks:
       - id: codespell
-        exclude: ^(_bmad|\.gemini/skills/bmad-)
+        exclude: ^(\.gemini/skills/)
 
   - repo: https://github.com/instrumentl/pre-commit-just
     rev: v0.1
@@ -42,5 +42,15 @@ repos:
     rev: v3.8.3
     hooks:
       - id: prettier
-        exclude: ^(_bmad|\.gemini/skills/bmad-)
+        exclude: ^(\.gemini/skills/)
         types_or: [markdown, json, yaml, toml]
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint-system
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.25.2
+    hooks:
+      - id: zizmor
