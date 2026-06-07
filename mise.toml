@@ -3,6 +3,7 @@ experimental = true
 lockfile = true
 
 [tools]
+actionlint = "latest"
 just = "latest"
 node = "latest"
 prek = "latest"

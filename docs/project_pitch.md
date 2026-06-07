@@ -3,6 +3,7 @@
 In most organizations, mission-critical data exists in a state of high entropy, trapped in fragmented Excel files. This "hidden data" is the primary barrier to meaningful AI adoption for all companies.
 
 The fundamental challenge is that spreadsheets lack a predefined relational schema; they are raw, non-relational visual grids. In the real world, this results in extreme layout variability and chaos, including:
+
 - Inconsistent or shifting table boundaries, requiring identification via visual anchors rather than static cell coordinates.
 - Variable header structures (e.g., simple headers, multi-row spanning headers, or no headers at all).
 - Merged cells that obscure underlying data columns.
@@ -23,7 +24,6 @@ The framework will operate in two distinct stages:
 
 1.  **Smart Configuration Phase**: A collaborative, human-in-the-loop process where an **Extraction Configuration** is defined using sample documents representative of a **Document Kind**.
 2.  **Automated Run Phase**: A high-performance execution stage where the **Extraction Configuration** is applied to extract data from new documents of the same **Document Kind**.
-
 
 ## Proposed Solution
 
@@ -70,5 +70,3 @@ Using Python to script these extraction rules offers several key advantages:
 - **Configuration as Code**: The extraction "recipe" is written in a general-purpose programming language widely adopted across the data ecosystem, fully supported by existing toolchains (IDEs, linters, CI/CD, version control, etc.).
 - **Portability**: The scripts can run in any environment and easily integrate into standard data pipelines.
 - **Local Development**: The extraction logic can be run, tested, and debugged easily on a local machine.
-
-

@@ -11,9 +11,9 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: ^(\.gemini/skills/)
+        exclude: ^\.agents/skills
       - id: end-of-file-fixer
-        exclude: ^(\.gemini/skills/)
+        exclude: ^\.agents/skills
       - id: check-toml
       - id: check-yaml
       - id: check-json
@@ -22,6 +22,7 @@ repos:
         args: ["--maxkb=2500"]
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
+        exclude: ^\.agents/skills
       - id: check-merge-conflict
       - id: check-case-conflict
       - id: check-ast
@@ -31,7 +32,7 @@ repos:
     rev: v2.4.2
     hooks:
       - id: codespell
-        exclude: ^(\.gemini/skills/)
+        exclude: ^\.agents/skills
 
   - repo: https://github.com/instrumentl/pre-commit-just
     rev: v0.1
@@ -42,7 +43,7 @@ repos:
     rev: v3.8.3
     hooks:
       - id: prettier
-        exclude: ^(\.gemini/skills/)
+        exclude: ^\.agents/skills
         types_or: [markdown, json, yaml, toml]
 
   - repo: https://github.com/rhysd/actionlint

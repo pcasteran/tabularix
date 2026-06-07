@@ -5,7 +5,7 @@
 
   "build": {
     "dockerfile": "./Dockerfile",
-    "context": "..",
+    "context": ".."
   },
 
   "customizations": {
@@ -18,9 +18,9 @@
         "redhat.vscode-yaml",
         "tamasfe.even-better-toml",
         "gruntfuggly.todo-tree",
-        "buenon.scratchpads",
-      ],
-    },
+        "buenon.scratchpads"
+      ]
+    }
   },
 
   // Features to add to the dev container. More info: https://containers.dev/features.
@@ -31,17 +31,17 @@
     {
       "type": "volume",
       "source": "${localWorkspaceFolderBasename}-prek-cache",
-      "target": "/home/vscode/.cache/prek",
+      "target": "/home/vscode/.cache/prek"
     },
     {
       "type": "volume",
       "source": "${localWorkspaceFolderBasename}-gemini-cache",
-      "target": "/home/vscode/.gemini",
-    },
+      "target": "/home/vscode/.gemini"
+    }
   ],
 
   "containerEnv": {
     // Trust the mise config in the repository root.
-    "MISE_TRUSTED_CONFIG_PATHS": "/workspaces",
-  },
+    "MISE_TRUSTED_CONFIG_PATHS": "/workspaces"
+  }
 }

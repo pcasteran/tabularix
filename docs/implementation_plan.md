@@ -14,7 +14,7 @@
 
 - **Step 1: Scaffolding & CI Pipeline**: Initialize `maturin` project, `Cargo.toml`, `pyproject.toml`, and `justfile`. Set up basic PyO3 bindings and Robot framework.
 - **Step 2: Excel Parsing & Sheet Core**: Implement Rust `calamine` wrapper to load an Excel sheet into a custom `Sheet` struct. Expose `load_workbook` to Python.
-- **Step 3: Active Mutator API**: Implement `unmerge_cells` and `search_and_crop_before` on the `Sheet`. Expose to Python. 
+- **Step 3: Active Mutator API**: Implement `unmerge_cells` and `search_and_crop_before` on the `Sheet`. Expose to Python.
 - **Step 4: Layex Engine MVP**: Build the pattern matching core (matching simple types and strings without complex cardinality yet). Expose `RowGroupMatcher`.
 - **Step 5: Advanced Layex & Search**: Add cardinality (`*`, `+`) to the engine. Implement `search_row_group` and `extract_rows_between`.
 - **Step 6: Table API & Data Export**: Implement `build_table_from_row_groups` returning an internal `Table` instance. Add methods to the `Table` to export to Parquet files, Arrow tables, Pandas, and Polars DataFrames.
@@ -25,17 +25,17 @@
 
 ## 4. Risks & Mitigations
 
-- **Risk**: *Performance overhead crossing the Rust/Python boundary.*
+- **Risk**: _Performance overhead crossing the Rust/Python boundary._
   **Mitigation**: The `Sheet` structure will remain entirely in Rust memory. Python will only hold pointer/handle references to it. Data only crosses the boundary at the very end when generating the final tables (which is zero-copy where possible).
-- **Risk**: *Layex Engine Complexity (Regex for tabular data).*
+- **Risk**: _Layex Engine Complexity (Regex for tabular data)._
   **Mitigation**: Start simple. MVP will only support basic exact string matches and primitive types (`[type:string]`, `[type:numeric]`). Cardinality and grouping will be added incrementally with strict unit tests.
 
 ## 5. Parallel vs Sequential Work
 
 - **Sequential**: Steps 1 -> 2 -> 3 must be built sequentially. We cannot mutate a sheet if we cannot load it.
-- **Parallel**: 
-  - The **Layex Pattern Engine** (Step 4 & 5) can be developed purely in Rust entirely in parallel to Step 3 (Active Mutator), as it just needs to operate on row slices.
-  - **Robot Framework Acceptance Tests** can be written by the User (Product Owner) immediately in parallel, based on the expected API defined in the design spec.
+- **Parallel**:
+    - The **Layex Pattern Engine** (Step 4 & 5) can be developed purely in Rust entirely in parallel to Step 3 (Active Mutator), as it just needs to operate on row slices.
+    - **Robot Framework Acceptance Tests** can be written by the User (Product Owner) immediately in parallel, based on the expected API defined in the design spec.
 
 ## 6. Verification Checkpoints
 
