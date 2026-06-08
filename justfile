@@ -72,8 +72,13 @@ gha_update:
 
 # Run the Rust internal unit tests
 [group("test")]
-test:
+unit-test:
     cargo test
+
+# Run the Robot Framework acceptance tests
+[group("test")]
+acceptance-test: build
+    uv run robot -d target/robot tests/
 
 #
 # Documentation recipes

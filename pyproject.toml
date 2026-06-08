@@ -16,3 +16,8 @@ dynamic = ["version"]
 features = ["pyo3/extension-module"]
 module-name = "tabularix._tabularix"
 python-source = "python"
+
+[dependency-groups]
+dev = [
+    "robotframework>=7.4.2",
+]

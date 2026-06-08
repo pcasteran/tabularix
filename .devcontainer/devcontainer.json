@@ -22,7 +22,9 @@
         // Python
         "ms-python.python",
         "charliermarsh.ruff",
-        "astral-sh.ty"
+        "astral-sh.ty",
+        // Robot Framework
+        "d-biehl.robotcode"
       ]
     }
   },
