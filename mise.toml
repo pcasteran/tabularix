@@ -10,6 +10,4 @@ pinact = "latest"
 prek = "latest"
 python = "latest"
 usage = "latest"
-rust = { version = "latest", components = "rustfmt,clippy" }
-"github:PyO3/maturin" = "latest"
 uv = "latest"

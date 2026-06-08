@@ -39,52 +39,6 @@ checksum = "sha256:6e7241b51e6817ea6a047693d8e6fed13b31819c9a0dd6c5a726e1592d22f
 url = "https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_windows_amd64.zip"
 provenance = "github-attestations"
 
-[[tools."github:PyO3/maturin"]]
-version = "1.13.3"
-backend = "github:PyO3/maturin"
-
-[tools."github:PyO3/maturin"."platforms.linux-arm64"]
-checksum = "sha256:d4d05ad0ad63e0588dbda0f828bc17608e06b4008cc1f8725835c41fe382c45b"
-url = "https://github.com/PyO3/maturin/releases/download/v1.13.3/maturin-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/PyO3/maturin/releases/assets/417246679"
-provenance = "github-attestations"
-
-[tools."github:PyO3/maturin"."platforms.linux-arm64-musl"]
-checksum = "sha256:d4d05ad0ad63e0588dbda0f828bc17608e06b4008cc1f8725835c41fe382c45b"
-url = "https://github.com/PyO3/maturin/releases/download/v1.13.3/maturin-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/PyO3/maturin/releases/assets/417246679"
-provenance = "github-attestations"
-
-[tools."github:PyO3/maturin"."platforms.linux-x64"]
-checksum = "sha256:2d30671276499cd11c4ed9359e5bccaa2996b42eb7a6d6aed8d60309df868228"
-url = "https://github.com/PyO3/maturin/releases/download/v1.13.3/maturin-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/PyO3/maturin/releases/assets/417246676"
-provenance = "github-attestations"
-
-[tools."github:PyO3/maturin"."platforms.linux-x64-musl"]
-checksum = "sha256:2d30671276499cd11c4ed9359e5bccaa2996b42eb7a6d6aed8d60309df868228"
-url = "https://github.com/PyO3/maturin/releases/download/v1.13.3/maturin-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/PyO3/maturin/releases/assets/417246676"
-provenance = "github-attestations"
-
-[tools."github:PyO3/maturin"."platforms.macos-arm64"]
-checksum = "sha256:f643be7cf42ed1725f9715492ce2ca1cda5ecd651591b1b98dc3413901496f44"
-url = "https://github.com/PyO3/maturin/releases/download/v1.13.3/maturin-aarch64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/PyO3/maturin/releases/assets/417246682"
-provenance = "github-attestations"
-
-[tools."github:PyO3/maturin"."platforms.macos-x64"]
-checksum = "sha256:f821e9e0daf3ccfd22e4034cebf23260c8193657207cc188db3e1d418e6e2ee2"
-url = "https://github.com/PyO3/maturin/releases/download/v1.13.3/maturin-x86_64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/PyO3/maturin/releases/assets/417246675"
-provenance = "github-attestations"
-
-[tools."github:PyO3/maturin"."platforms.windows-x64"]
-checksum = "sha256:709b6d4351c3f3654072a2cb05c5debb7c7bfa8743adcfff945c155035498297"
-url = "https://github.com/PyO3/maturin/releases/download/v1.13.3/maturin-x86_64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/PyO3/maturin/releases/assets/417246689"
-provenance = "github-attestations"
-
 [[tools.just]]
 version = "1.51.0"
 backend = "aqua:casey/just"
