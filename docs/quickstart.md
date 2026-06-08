@@ -26,6 +26,7 @@ uv run maturin develop
 
 Once installed, you can import Tabularix just like any other Python module.
 
+<!-- prettier-ignore -->
 !!! example "Basic Usage"
     Here is a quick example of how to interact with the Tabularix core from Python.
 
@@ -37,6 +38,7 @@ response = tabularix.hello_world()
 print(response)
 ```
 
+<!-- prettier-ignore -->
 !!! success "Expected Output"
     ```text
     Hello from Tabularix Rust Core!

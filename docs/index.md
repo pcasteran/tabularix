@@ -32,6 +32,7 @@ We built Tabularix to navigate this layout chaos natively and securely. It opera
 
 Our approach allows you to implement distinct data extraction strategies that can identify, clean, and organize hidden data into structured formats ready for downstream use.
 
+<!-- prettier-ignore -->
 !!! tip "Configuration as Code"
     By writing your extraction "recipes" in Python, you get all the benefits of modern software engineering: version control, linters, CI/CD, and local debugging. The heavy lifting is safely offloaded to Rust.
 
