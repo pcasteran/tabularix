@@ -14,6 +14,10 @@ set dotenv-load
 help:
     @just --justfile {{ justfile() }} --list
 
+# Upgrade all project dependencies
+[group("misc")]
+upgrade-all: upgrade-toolchain prek-hooks-update gha_update
+
 #
 # Development recipes
 #
@@ -23,32 +27,38 @@ help:
 devcontainer-build:
     docker build -f ./.devcontainer/Dockerfile .
 
-# Execute the pre-commit hooks using prek
-[group("dev")]
-prek:
-    prek run --all-files
-
-# Update the pre-commit hooks
-[group("dev")]
-prek-hooks-update:
-    prek autoupdate
-
 # Upgrade the tools used in the project
 [group("dev")]
 upgrade-toolchain:
     mise upgrade
     mise lock
 
-# Upgrade all project dependencies
+# Build the Python extension module using Maturin and uv
 [group("dev")]
-upgrade-all: upgrade-toolchain prek-hooks-update
+build:
+    uv run maturin develop
+
+# Execute the pre-commit hooks using prek
+[group("static analysis")]
+prek:
+    prek run --all-files
+
+# Update the pre-commit hooks
+[group("static analysis")]
+prek-hooks-update:
+    prek autoupdate
 
 # Pin the GitHub Actions hash
-[group("dev")]
+[group("ci/cd")]
 gha_pin:
     pinact run
 
 # Update the GitHub Actions
-[group("dev")]
+[group("ci/cd")]
 gha_update:
     pinact run -update
+
+# Run the Rust internal unit tests
+[group("test")]
+test:
+    cargo test

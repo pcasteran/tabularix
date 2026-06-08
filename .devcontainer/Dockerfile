@@ -13,6 +13,10 @@ USER ${USERNAME}
 ARG USER_HOME="/home/${USERNAME}"
 ARG USER_CACHE_DIR="${USER_HOME}/.cache"
 
+# Install the Rust toolchain.
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal -c rustfmt,clippy
+ENV PATH="${USER_HOME}/.cargo/bin:${PATH}"
+
 # Install the tools from mise.toml.
 COPY --chown=${USERNAME}:${USERNAME} mise.toml /home/${USERNAME}/.config/mise/config.toml
 COPY --chown=${USERNAME}:${USERNAME} mise.lock /home/${USERNAME}/.config/mise/mise.lock
@@ -25,6 +29,9 @@ RUN mise exec -- npm install -g @google/gemini-cli
 
 # Install Antigravity CLI.
 RUN curl -fsSL https://antigravity.google/cli/install.sh | bash
+
+# Install Maturin.
+RUN mise exec -- uv tool install maturin
 
 # Install custom git commands.
 COPY .devcontainer/git-custom-cmd/git-* /usr/local/bin/

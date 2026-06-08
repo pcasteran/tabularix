@@ -18,15 +18,33 @@
         "redhat.vscode-yaml",
         "tamasfe.even-better-toml",
         "gruntfuggly.todo-tree",
-        "buenon.scratchpads"
+        "buenon.scratchpads",
+        // Python
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "astral-sh.ty"
       ]
     }
   },
 
   // Features to add to the dev container. More info: https://containers.dev/features.
-  "features": {},
+  "features": {
+    // Use the "Docker outside of Docker" feature to allow building the application Docker image.
+    // We don't use "Docker-in-Docker" to keep the dev container small and avoid losing the Docker cache on devcontainer restart.
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "moby": false
+    }
+  },
 
   "mounts": [
+    // Podman socket (Rootless support following official feature documentation).
+    // The `docker-outside-of-docker` feature internally uses /var/run/docker-host.sock as the mount point for the host socket when overridden.
+    {
+      "type": "bind",
+      "source": "${localEnv:XDG_RUNTIME_DIR}/podman/podman.sock",
+      "target": "/var/run/docker-host.sock"
+    },
+
     // Use some volumes to persist tools configuration upon container restart.
     {
       "type": "volume",
