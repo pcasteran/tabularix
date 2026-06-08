@@ -19,7 +19,7 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Verify:** Run `just test-acceptance` and see the Robot Framework output `PASS`.
     - **Files:** `justfile`, `tests/hello.robot`, `tests/requirements.txt` (or similar for Python deps).
 
-- [ ] **Task 1.4: Initialize Project Documentation**
+- [x] **Task 1.4: Initialize Project Documentation**
     - **Acceptance:** Use Zensical to initialize the documentation site structure. Add `just` recipes to serve and build the docs.
     - **Verify:** Run `just docs-serve` to see the local documentation site running.
     - **Files:** `justfile`, `zensical` config files, `docs/index.md`.

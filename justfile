@@ -38,6 +38,10 @@ upgrade-toolchain:
 build:
     uv run maturin develop
 
+#
+# Static analysis recipes
+#
+
 # Execute the pre-commit hooks using prek
 [group("static analysis")]
 prek:
@@ -47,6 +51,10 @@ prek:
 [group("static analysis")]
 prek-hooks-update:
     prek autoupdate
+
+#
+# CI/CD recipes
+#
 
 # Pin the GitHub Actions hash
 [group("ci/cd")]
@@ -58,7 +66,25 @@ gha_pin:
 gha_update:
     pinact run -update
 
+#
+# Tests recipes
+#
+
 # Run the Rust internal unit tests
 [group("test")]
 test:
     cargo test
+
+#
+# Documentation recipes
+#
+
+# Build the documentation site
+[group("docs")]
+docs-build:
+    uvx zensical build
+
+# Serve the documentation site locally
+[group("docs")]
+docs-serve:
+    uvx zensical serve
