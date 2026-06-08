@@ -14,7 +14,7 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Verify:** Run `just build`, `just prek` (which runs pre-commit hooks), and `just test`. They should all pass cleanly.
     - **Files:** `justfile`, `Cargo.toml`, `.pre-commit-config.yaml`.
 
-- [ ] **Task 1.3: Setup Robot Framework**
+- [x] **Task 1.3: Setup Robot Framework**
     - **Acceptance:** A dummy Robot Framework test exists and can be executed via a `just` command, testing the dummy PyO3 `hello_world` output.
     - **Verify:** Run `just test-acceptance` and see the Robot Framework output `PASS`.
     - **Files:** `justfile`, `tests/hello.robot`, `tests/requirements.txt` (or similar for Python deps).
