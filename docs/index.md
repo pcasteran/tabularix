@@ -1,10 +1,10 @@
 ---
 title: Welcome to Tabularix
 description: A high-performance Excel parser and evaluator built in Rust with Python bindings designed to solve the hidden data problem.
-icon: lucide/table
+icon: lucide/table-2
 ---
 
-# ⚙️ Welcome to Tabularix
+# ✨ Welcome to Tabularix
 
 **Tabularix** is a fast, reliable, and memory-efficient framework for parsing, cleaning, and extracting data from messy Excel spreadsheets. Built from the ground up in **Rust** with seamless **Python bindings**, it brings systems-level performance to your data pipelines while allowing you to script extraction logic in your favorite ecosystem.
 
