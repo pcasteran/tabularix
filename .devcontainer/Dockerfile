@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/base:debian-13
+FROM mcr.microsoft.com/devcontainers/python:3.14
 
 ARG USERNAME=vscode
 
@@ -14,18 +14,16 @@ ARG USER_HOME="/home/${USERNAME}"
 ARG USER_CACHE_DIR="${USER_HOME}/.cache"
 
 # Install the Rust toolchain.
+ENV CARGO_HOME="${USER_HOME}/.cargo"
+ENV RUSTUP_HOME="${USER_HOME}/.rustup"
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal -c rustfmt,clippy
-ENV PATH="${USER_HOME}/.cargo/bin:${PATH}"
+ENV PATH="${CARGO_HOME}/bin:${PATH}"
 
 # Install the tools from mise.toml.
 COPY --chown=${USERNAME}:${USERNAME} mise.toml /home/${USERNAME}/.config/mise/config.toml
 COPY --chown=${USERNAME}:${USERNAME} mise.lock /home/${USERNAME}/.config/mise/mise.lock
 
 RUN mise install --locked
-
-# Install Gemini CLI.
-# hadolint ignore=DL3059
-RUN mise exec -- npm install -g @google/gemini-cli
 
 # Install Antigravity CLI.
 RUN curl -fsSL https://antigravity.google/cli/install.sh | bash
