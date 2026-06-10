@@ -8,4 +8,5 @@ name = "_tabularix"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.23.4", features = ["extension-module", "abi3-py312"] }
+calamine = "0.35.0"
+pyo3 = { version = "0.23.4", features = ["abi3-py312"] }

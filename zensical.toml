@@ -47,6 +47,7 @@ Copyright &copy; 2026 The authors
 nav = [
   { "Home" = "index.md" },
   { "Quickstart" = "quickstart.md" },
+  { "API Reference" = "api.md" },
   { "Development" = [
       { "Specification" = "spec.md" },
       { "Implementation Plan" = "implementation_plan.md" },

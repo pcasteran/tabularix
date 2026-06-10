@@ -20,7 +20,6 @@
         "gruntfuggly.todo-tree",
         "buenon.scratchpads",
         // Python
-        "ms-python.python",
         "charliermarsh.ruff",
         "astral-sh.ty",
         // Robot Framework
