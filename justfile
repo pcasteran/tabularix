@@ -50,7 +50,7 @@ prek:
 # Update the pre-commit hooks
 [group("static analysis")]
 prek-hooks-update:
-    prek autoupdate
+    prek auto-update
 
 #
 # CI/CD recipes
