@@ -4,6 +4,7 @@ import openpyxl
 
 
 def generate():
+    """Generate sample Excel test data for acceptance testing."""
     os.makedirs("tests/data", exist_ok=True)
 
     wb = openpyxl.Workbook()

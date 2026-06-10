@@ -2,6 +2,7 @@ import tabularix as tx
 
 
 def main():
+    """Run a simple demonstration of Tabularix workbook loading and SVG export."""
     # Load a workbook
     wb = tx.load_workbook("tests/data/sample.xlsx")
     print(wb.sheet_names())
