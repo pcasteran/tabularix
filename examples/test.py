@@ -1,5 +1,6 @@
 import tabularix as tx
 
+
 def main():
     # Load a workbook
     wb = tx.load_workbook("tests/data/sample.xlsx")

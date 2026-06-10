@@ -46,6 +46,34 @@ repos:
         exclude: ^\.agents/skills
         types_or: [markdown, json, yaml, toml]
 
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.16
+    hooks:
+      # Linter
+      - id: ruff-check
+        types_or: [python, pyi, jupyter, pyproject]
+        args: [--fix]
+      # Formatter
+      - id: ruff-format
+        types_or: [python, pyi, jupyter]
+
+  # TODO: replace the following with a pre-commit hook from ty when it is released.
+  # See https://github.com/astral-sh/ty/issues/269
+  - repo: local
+    hooks:
+      - id: ty
+        name: ty check
+        entry: bash -c 'uv sync --locked && ty check .'
+        language: system
+        types_or: [python, pyi]
+        pass_filenames: false # Run on all files
+
+  - repo: https://github.com/tweag/FawltyDeps
+    rev: v0.20.0
+    hooks:
+      - id: check-undeclared
+      - id: check-unused
+
   - repo: local
     hooks:
       - id: cargo-fmt

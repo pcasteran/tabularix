@@ -1,6 +1,7 @@
 import openpyxl
 import os
 
+
 def generate():
     os.makedirs("tests/data", exist_ok=True)
 
@@ -23,6 +24,7 @@ def generate():
 
     wb.save("tests/data/sample.xlsx")
     print("Sample Excel created at tests/data/sample.xlsx")
+
 
 if __name__ == "__main__":
     generate()
