@@ -54,16 +54,10 @@ repos:
       - id: ruff-format
         types_or: [python, pyi, jupyter]
 
-  # TODO: replace the following with a pre-commit hook from ty when it is released.
-  # See https://github.com/astral-sh/ty/issues/269
-  - repo: local
+  - repo: https://github.com/astral-sh/ty-pre-commit
+    rev: v0.0.47
     hooks:
       - id: ty
-        name: ty check
-        entry: bash -c 'uv sync --locked && ty check .'
-        language: system
-        types_or: [python, pyi]
-        pass_filenames: false # Run on all files
 
   - repo: https://github.com/tweag/FawltyDeps
     rev: v0.20.0
