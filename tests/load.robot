@@ -5,7 +5,7 @@ Library           Collections
 *** Test Cases ***
 Load Workbook And Inspect Sheets
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
-    
+
     # Check sheet names
     ${names}=    Evaluate    $wb.sheet_names()
     ${expected_names}=    Create List    Sheet1
