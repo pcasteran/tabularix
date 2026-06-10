@@ -1,8 +1,10 @@
 *** Settings ***
-Documentation     Acceptance tests for A1 coordinate conversion API.
+Documentation       Acceptance tests for A1 coordinate conversion API.
+
 
 *** Test Cases ***
 Verify Index To A1 Conversion
+    [Documentation]    Verify converting 0-based indices to Excel A1 notation.
     ${a1_1}=    Evaluate    tabularix.index_to_a1(0, 0)    modules=tabularix
     Should Be Equal As Strings    ${a1_1}    A1
 
@@ -13,6 +15,7 @@ Verify Index To A1 Conversion
     Should Be Equal As Strings    ${a1_3}    AA1
 
 Verify A1 To Index Conversion
+    [Documentation]    Verify converting Excel A1 notation to 0-based indices.
     ${idx_1}=    Evaluate    tabularix.a1_to_index("A1")    modules=tabularix
     ${expected_idx_1}=    Evaluate    (0, 0)
     Should Be Equal    ${idx_1}    ${expected_idx_1}
@@ -26,5 +29,14 @@ Verify A1 To Index Conversion
     Should Be Equal    ${idx_3}    ${expected_idx_3}
 
 Verify Invalid A1 Conversions Raise ValueError
-    Run Keyword And Expect Error    *ValueError: Invalid A1 notation*    Evaluate    tabularix.a1_to_index("A")    modules=tabularix
-    Run Keyword And Expect Error    *ValueError: Invalid A1 notation*    Evaluate    tabularix.a1_to_index("1")    modules=tabularix
+    [Documentation]    Verify invalid A1 notation raises ValueError.
+    Run Keyword And Expect Error
+    ...    *ValueError: Invalid A1 notation*
+    ...    Evaluate
+    ...    tabularix.a1_to_index("A")
+    ...    modules=tabularix
+    Run Keyword And Expect Error
+    ...    *ValueError: Invalid A1 notation*
+    ...    Evaluate
+    ...    tabularix.a1_to_index("1")
+    ...    modules=tabularix

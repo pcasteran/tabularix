@@ -122,6 +122,15 @@ repos:
             "clippy::pedantic",
           ]
 
+  - repo: https://github.com/MarketSquare/robotframework-robocop
+    # Robocop version.
+    rev: v8.2.10
+    hooks:
+      # Run the linter.
+      - id: robocop
+      # Run the formatter.
+      - id: robocop-format
+
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.12
     hooks:

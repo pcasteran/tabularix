@@ -5,3 +5,6 @@ target/
 
 # Zensical documentation.
 site/
+
+# Robot test results.
+results/
