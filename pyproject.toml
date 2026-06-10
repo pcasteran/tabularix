@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "tabularix"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -25,3 +25,19 @@ dev = [
 
 [tool.fawltydeps]
 ignore_unused = ["robotframework"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = [
+  "I", # isort
+  "D", # pydocstyle
+]
+extend-ignore = [
+  "D100", # Missing docstring in public module
+  "D104", # Missing docstring in public package
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

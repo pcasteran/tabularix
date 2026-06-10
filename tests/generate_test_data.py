@@ -1,5 +1,6 @@
-import openpyxl
 import os
+
+import openpyxl
 
 
 def generate():
