@@ -59,6 +59,6 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Files:** `src/sheet.rs`.
 
 - [ ] **Task 3.3: Expose Active Mutators to Python**
-    - **Acceptance:** PyO3 bindings for `unmerge_cells` and `search_and_crop_before` are exposed. Robot tests added.
+    - **Acceptance:** PyO3 bindings for `unmerge_cells` and `search_and_crop_before` are exposed. Type stubs in `python/tabularix/__init__.pyi` are updated with the new signatures, types, and docstrings. Robot tests added.
     - **Verify:** `just test-acceptance` passes.
-    - **Files:** `src/lib.rs`, `python/tabularix/__init__.py`, `tests/mutators.robot`, `docs/api.md`.
+    - **Files:** `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/mutators.robot`, `docs/api.md`.
