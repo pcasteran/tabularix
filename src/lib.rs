@@ -8,7 +8,7 @@ fn load_workbook(path: &str) -> PyResult<sheet::Workbook> {
 }
 
 #[pyfunction]
-fn index_to_a1(row: usize, col: usize) -> String {
+fn index_to_a1(row: isize, col: isize) -> PyResult<String> {
     sheet::index_to_a1(row, col)
 }
 

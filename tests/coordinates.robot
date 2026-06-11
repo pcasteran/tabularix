@@ -35,8 +35,40 @@ Verify Invalid A1 Conversions Raise ValueError
     ...    Evaluate
     ...    tabularix.a1_to_index("A")
     ...    modules=tabularix
+
     Run Keyword And Expect Error
     ...    *ValueError: Invalid A1 notation*
     ...    Evaluate
     ...    tabularix.a1_to_index("1")
+    ...    modules=tabularix
+
+Verify Empty A1 Conversion Raises ValueError
+    [Documentation]    Verify empty A1 notation raises ValueError.
+    Run Keyword And Expect Error
+    ...    *ValueError: Invalid A1 notation*
+    ...    Evaluate
+    ...    tabularix.a1_to_index("")
+    ...    modules=tabularix
+
+
+Verify Negative Row in A1 Raises ValueError
+    [Documentation]    Verify negative row in A1 notation raises ValueError.
+    Run Keyword And Expect Error
+    ...    *ValueError: Invalid row number: -1*
+    ...    Evaluate
+    ...    tabularix.a1_to_index("A-1")
+    ...    modules=tabularix
+
+Verify Negative Indices Raise Error
+    [Documentation]    Verify passing negative row or column indices to index_to_a1 raises ValueError.
+    Run Keyword And Expect Error
+    ...    *ValueError: Row and column indices must be non-negative:*
+    ...    Evaluate
+    ...    tabularix.index_to_a1(-1, 0)
+    ...    modules=tabularix
+
+    Run Keyword And Expect Error
+    ...    *ValueError: Row and column indices must be non-negative:*
+    ...    Evaluate
+    ...    tabularix.index_to_a1(0, -1)
     ...    modules=tabularix

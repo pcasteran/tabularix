@@ -453,8 +453,17 @@ fn html_escape(s: &str) -> String {
 }
 
 #[pyfunction]
-pub fn index_to_a1(row: usize, col: usize) -> String {
-    format!("{}{}", index_to_col_letters(col), row + 1)
+pub fn index_to_a1(row: isize, col: isize) -> PyResult<String> {
+    if row < 0 || col < 0 {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "Row and column indices must be non-negative: ({row}, {col})"
+        )));
+    }
+    let u_row = usize::try_from(row)
+        .map_err(|_| pyo3::exceptions::PyValueError::new_err("Row index is too large"))?;
+    let u_col = usize::try_from(col)
+        .map_err(|_| pyo3::exceptions::PyValueError::new_err("Column index is too large"))?;
+    Ok(format!("{}{}", index_to_col_letters(u_col), u_row + 1))
 }
 
 #[pyfunction]
@@ -523,12 +532,15 @@ mod tests {
 
     #[test]
     fn test_coordinates() {
-        assert_eq!(index_to_a1(0, 0), "A1");
-        assert_eq!(index_to_a1(9, 25), "Z10");
-        assert_eq!(index_to_a1(0, 26), "AA1");
-        assert_eq!(index_to_a1(0, 27), "AB1");
-        assert_eq!(index_to_a1(0, 701), "ZZ1");
-        assert_eq!(index_to_a1(0, 702), "AAA1");
+        assert_eq!(index_to_a1(0, 0).unwrap(), "A1");
+        assert_eq!(index_to_a1(9, 25).unwrap(), "Z10");
+        assert_eq!(index_to_a1(0, 26).unwrap(), "AA1");
+        assert_eq!(index_to_a1(0, 27).unwrap(), "AB1");
+        assert_eq!(index_to_a1(0, 701).unwrap(), "ZZ1");
+        assert_eq!(index_to_a1(0, 702).unwrap(), "AAA1");
+
+        assert!(index_to_a1(-1, 0).is_err());
+        assert!(index_to_a1(0, -1).is_err());
 
         assert_eq!(a1_to_index("A1").unwrap(), (0, 0));
         assert_eq!(a1_to_index("Z10").unwrap(), (9, 25));

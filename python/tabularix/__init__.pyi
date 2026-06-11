@@ -24,6 +24,9 @@ def index_to_a1(row: int, col: int) -> str:
 
     Returns:
         The A1 notation string (e.g., "A1", "B2", "AA10").
+
+    Raises:
+        ValueError: If row or column index is negative.
     """
     ...
 
