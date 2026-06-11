@@ -452,48 +452,6 @@ fn html_escape(s: &str) -> String {
         .replace('\'', "&apos;")
 }
 
-#[pyfunction]
-pub fn index_to_a1(row: isize, col: isize) -> PyResult<String> {
-    if row < 0 || col < 0 {
-        return Err(pyo3::exceptions::PyValueError::new_err(format!(
-            "Row and column indices must be non-negative: ({row}, {col})"
-        )));
-    }
-    let u_row = usize::try_from(row)
-        .map_err(|_| pyo3::exceptions::PyValueError::new_err("Row index is too large"))?;
-    let u_col = usize::try_from(col)
-        .map_err(|_| pyo3::exceptions::PyValueError::new_err("Column index is too large"))?;
-    Ok(format!("{}{}", index_to_col_letters(u_col), u_row + 1))
-}
-
-#[pyfunction]
-pub fn a1_to_index(a1: &str) -> PyResult<(usize, usize)> {
-    let letters: String = a1.chars().take_while(char::is_ascii_alphabetic).collect();
-    let numbers: String = a1.chars().skip_while(char::is_ascii_alphabetic).collect();
-
-    if letters.is_empty() || numbers.is_empty() {
-        return Err(pyo3::exceptions::PyValueError::new_err(format!(
-            "Invalid A1 notation: {a1}"
-        )));
-    }
-
-    let row: usize = numbers.parse::<usize>().map_err(|_| {
-        pyo3::exceptions::PyValueError::new_err(format!("Invalid row number: {numbers}"))
-    })?;
-    if row == 0 {
-        return Err(pyo3::exceptions::PyValueError::new_err(format!(
-            "Row index must be >= 1: {numbers}"
-        )));
-    }
-
-    let mut col: usize = 0;
-    for ch in letters.to_ascii_uppercase().chars() {
-        let val = (ch as u8 - b'A' + 1) as usize;
-        col = col * 26 + val;
-    }
-    Ok((row - 1, col - 1))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -528,30 +486,5 @@ mod tests {
         // Merged regions check
         assert_eq!(sheet.merged_regions.len(), 1);
         assert_eq!(sheet.merged_regions[0], ((3, 0), (4, 1))); // A4:B5
-    }
-
-    #[test]
-    fn test_coordinates() {
-        assert_eq!(index_to_a1(0, 0).unwrap(), "A1");
-        assert_eq!(index_to_a1(9, 25).unwrap(), "Z10");
-        assert_eq!(index_to_a1(0, 26).unwrap(), "AA1");
-        assert_eq!(index_to_a1(0, 27).unwrap(), "AB1");
-        assert_eq!(index_to_a1(0, 701).unwrap(), "ZZ1");
-        assert_eq!(index_to_a1(0, 702).unwrap(), "AAA1");
-
-        assert!(index_to_a1(-1, 0).is_err());
-        assert!(index_to_a1(0, -1).is_err());
-
-        assert_eq!(a1_to_index("A1").unwrap(), (0, 0));
-        assert_eq!(a1_to_index("Z10").unwrap(), (9, 25));
-        assert_eq!(a1_to_index("AA1").unwrap(), (0, 26));
-        assert_eq!(a1_to_index("AB1").unwrap(), (0, 27));
-        assert_eq!(a1_to_index("ZZ1").unwrap(), (0, 701));
-        assert_eq!(a1_to_index("AAA1").unwrap(), (0, 702));
-
-        assert!(a1_to_index("A").is_err());
-        assert!(a1_to_index("1").is_err());
-        assert!(a1_to_index("A0").is_err());
-        assert!(a1_to_index("").is_err());
     }
 }

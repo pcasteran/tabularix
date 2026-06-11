@@ -36,12 +36,7 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Verify:** Run `just test-acceptance` and ensure the Robot test can load an Excel file.
     - **Files:** `src/lib.rs`, `python/tabularix/__init__.py`, `tests/load.robot`, `docs/api.md`.
 
-- [x] **Task 2.3: Implement A1 Coordinate Conversions**
-    - **Acceptance:** Implement functions to convert cell coordinates between 0-based indices and A1 notation. Expose them to Python as `tabularix.index_to_a1(row, col)` and `tabularix.a1_to_index(a1)`. Add unit and acceptance tests.
-    - **Verify:** `just test` and `just acceptance-test` both pass.
-    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `tests/coordinates.robot`.
-
-- [x] **Task 2.4: Implement SVG Sheet Export**
+- [x] **Task 2.3: Implement SVG Sheet Export**
     - **Acceptance:** `Sheet` has a method `to_svg(path: str)` that renders the cell grid into a beautifully styled SVG file, handling cell types and merged cells correctly.
     - **Verify:** `just acceptance-test` runs a test that loads `sample.xlsx`, exports to SVG, and verifies the SVG file is created.
     - **Files:** `src/sheet.rs`, `python/tabularix/__init__.py`, `tests/svg.robot`.

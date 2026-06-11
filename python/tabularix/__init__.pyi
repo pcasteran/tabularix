@@ -15,35 +15,6 @@ def load_workbook(path: str) -> Workbook:
     """
     ...
 
-def index_to_a1(row: int, col: int) -> str:
-    """Converts 0-based row and column indices to Excel A1 cell notation.
-
-    Args:
-        row: The 0-based row index (e.g., 0 for row 1).
-        col: The 0-based column index (e.g., 0 for column A).
-
-    Returns:
-        The A1 notation string (e.g., "A1", "B2", "AA10").
-
-    Raises:
-        ValueError: If row or column index is negative.
-    """
-    ...
-
-def a1_to_index(a1: str) -> tuple[int, int]:
-    """Converts an Excel A1 cell notation string to 0-based row and column indices.
-
-    Args:
-        a1: The A1 notation string (e.g., "A1", "B2", "AA10").
-
-    Returns:
-        A tuple of (row_index, col_index).
-
-    Raises:
-        ValueError: If the A1 notation is invalid (e.g. empty, missing row number, or row index is 0).
-    """
-    ...
-
 class Sheet:
     """Represents an Excel worksheet containing a grid of cells."""
 
