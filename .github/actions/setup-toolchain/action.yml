@@ -10,11 +10,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout repository
-      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-      with:
-        persist-credentials: false
-
     - name: Install toolchains via mise
       uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
       with:
