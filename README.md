@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/assets/logo.jpeg" alt="Tabularix Logo" width="400"/>
+  <img src="docs/assets/logo_2.png" alt="Tabularix Logo" width="350"/>
 </div>
 
 # Tabularix
