@@ -5,14 +5,14 @@ def main():
     """Run a simple demonstration of Tabularix workbook loading and SVG export."""
     # Load a workbook
     wb = tx.load_workbook("tests/data/sample.xlsx")
-    print(wb.sheet_names())
+    print(f"Sheets: {wb.sheet_names()}")
 
-    sheet = wb.get_sheet("Sheet1")
+    sheet = wb.get_sheet("simple")
 
     shape = sheet.shape
-    print(shape)
+    print(f"Shape: {shape}")
 
-    sheet.to_svg("a.svg")
+    sheet.to_svg("sheet.svg")
 
 
 if __name__ == "__main__":

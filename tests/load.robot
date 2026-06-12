@@ -9,7 +9,8 @@ Verify Workbook Sheet Names
     [Documentation]    Verify sheet names in the workbook match expectations.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${names}=    Evaluate    $wb.sheet_names()
-    VAR    @{expected_names}=    Sheet1
+    Sort List    ${names}
+    VAR    @{expected_names}=    complex    simple
     Lists Should Be Equal    ${names}    ${expected_names}
 
 Verify Active Sheet Metadata
@@ -17,7 +18,7 @@ Verify Active Sheet Metadata
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.active_sheet()
     ${name}=    Evaluate    $sheet.name
-    Should Be Equal As Strings    ${name}    Sheet1
+    Should Be Equal As Strings    ${name}    simple
     ${shape}=    Evaluate    $sheet.shape
     ${expected_shape}=    Evaluate    (5, 2)
     Should Be Equal    ${shape}    ${expected_shape}

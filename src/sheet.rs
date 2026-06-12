@@ -459,24 +459,26 @@ mod tests {
     #[test]
     fn test_load_workbook() {
         let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
-        assert_eq!(wb.sheet_names(), vec!["Sheet1"]);
+        let mut names = wb.sheet_names();
+        names.sort();
+        assert_eq!(names, vec!["complex", "simple"]);
 
-        let sheet = wb.get_sheet("Sheet1").unwrap();
-        assert_eq!(sheet.name, "Sheet1");
+        let sheet = wb.get_sheet("simple").unwrap();
+        assert_eq!(sheet.name, "simple");
         assert_eq!(sheet.shape(), (5, 2)); // 5 rows, 2 cols (A1 to B5)
 
         // Check cell values
         assert_eq!(sheet.data[0][0], CellValue::String("Header1".to_string()));
         assert_eq!(sheet.data[0][1], CellValue::String("Header2".to_string()));
-        assert_eq!(sheet.data[1][0], CellValue::String("Row1Col1".to_string()));
+        assert_eq!(sheet.data[1][0], CellValue::String("ABC".to_string()));
         assert_eq!(sheet.data[1][1], CellValue::Float(123.45));
-        assert_eq!(sheet.data[2][0], CellValue::String("Row2Col1".to_string()));
+        assert_eq!(sheet.data[2][0], CellValue::String("DEF".to_string()));
         assert_eq!(sheet.data[2][1], CellValue::Float(678.0));
 
-        // Merged cell A4 is "MergedValue"
+        // Merged cell A4 is "Merged value"
         assert_eq!(
             sheet.data[3][0],
-            CellValue::String("MergedValue".to_string())
+            CellValue::String("Merged value".to_string())
         );
         // B4, A5, B5 should be Empty in raw data because calamine does not automatically fill them
         assert_eq!(sheet.data[3][1], CellValue::Empty);
@@ -486,5 +488,20 @@ mod tests {
         // Merged regions check
         assert_eq!(sheet.merged_regions.len(), 1);
         assert_eq!(sheet.merged_regions[0], ((3, 0), (4, 1))); // A4:B5
+
+        // Verify complex sheet loading
+        let complex_sheet = wb.get_sheet("complex").unwrap();
+        assert_eq!(complex_sheet.name, "complex");
+        assert_eq!(complex_sheet.shape(), (15, 5)); // 15 rows, 5 columns
+        assert_eq!(
+            complex_sheet.data[0][0],
+            CellValue::String("Financial Report 2026".to_string())
+        );
+        assert_eq!(
+            complex_sheet.data[3][0],
+            CellValue::String("North".to_string())
+        );
+        assert_eq!(complex_sheet.data[10][2], CellValue::Bool(true));
+        assert_eq!(complex_sheet.merged_regions.len(), 2);
     }
 }
