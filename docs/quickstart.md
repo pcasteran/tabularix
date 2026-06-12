@@ -38,12 +38,6 @@ wb = tx.load_workbook("tests/data/sample.xlsx")
 print(wb.sheet_names())
 ```
 
-<!-- prettier-ignore -->
-!!! success "Expected Output"
-    ```text
-    ['Sheet1']
-    ```
-
 ## Next Steps
 
-Check out the [Project Specification](spec.md) to see our roadmap and architectural design!
+**TODO**
