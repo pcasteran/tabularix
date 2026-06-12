@@ -1,0 +1,28 @@
+name: "Setup Toolchain"
+description: "Checks out the repository, installs toolchains via mise, and sets up the Rust toolchain."
+
+inputs:
+  rust-components:
+    description: "Comma-separated list of Rust components to install (e.g. rustfmt, clippy)"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      with:
+        persist-credentials: false
+
+    - name: Install toolchains via mise
+      uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+      with:
+        install: true
+        install_args: "--locked"
+
+    - name: Install Rust toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1.16.1
+      with:
+        toolchain: stable
+        components: ${{ inputs.rust-components }}
