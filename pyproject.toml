@@ -1,0 +1,43 @@
+[build-system]
+requires = ["maturin>=1.13.3,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "tabularix"
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = ["version"]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "tabularix._tabularix"
+python-source = "python"
+
+[dependency-groups]
+dev = [
+    "openpyxl>=3.1.5",
+    "robotframework>=7.4.2",
+]
+
+[tool.fawltydeps]
+ignore_unused = ["robotframework"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = [
+  "I", # isort
+  "D", # pydocstyle
+]
+extend-ignore = [
+  "D100", # Missing docstring in public module
+  "D104", # Missing docstring in public package
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

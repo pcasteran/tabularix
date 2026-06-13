@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -eu
+
+echo "\033[1;93mFetch everything from the remote repository.\033[0m"
+git fetch --prune
+
+echo "\033[1;93mSwitch to the main/master branch.\033[0m"
+git switch main
+
+echo "\033[1;93mUpdate the branch.\033[0m"
+git pull
