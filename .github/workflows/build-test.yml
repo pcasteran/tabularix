@@ -33,10 +33,6 @@ jobs:
       - name: Setup Toolchain
         uses: ./.github/actions/setup-toolchain
 
-      - name: Install cargo-audit
-        run: cargo binstall -y cargo-audit
-        shell: bash
-
       - name: Run Cargo Audit
         run: cargo audit
 

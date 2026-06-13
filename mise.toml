@@ -5,6 +5,7 @@ lockfile = true
 [tools]
 actionlint = "latest"
 cargo-binstall = "latest"
+"cargo:cargo-audit" = "latest"
 just = "latest"
 node = "latest"
 pinact = "latest"
