@@ -82,6 +82,10 @@ provenance = "github-attestations"
 version = "0.22.2"
 backend = "cargo:cargo-audit"
 
+[[tools."cargo:maturin"]]
+version = "1.14.0"
+backend = "cargo:maturin"
+
 [[tools.just]]
 version = "1.52.0"
 backend = "aqua:casey/just"

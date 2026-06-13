@@ -28,9 +28,6 @@ RUN mise install --locked
 # Install Antigravity CLI.
 RUN curl -fsSL https://antigravity.google/cli/install.sh | bash
 
-# Install Maturin.
-RUN mise exec -- uv tool install maturin
-
 # Install custom git commands.
 COPY .devcontainer/git-custom-cmd/git-* /usr/local/bin/
 
