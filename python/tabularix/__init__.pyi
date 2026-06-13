@@ -1,0 +1,91 @@
+from typing import Any
+
+def load_workbook(path: str) -> Workbook:
+    """Loads an Excel workbook from the specified file path.
+
+    Args:
+        path: Path to the .xlsx file.
+
+    Returns:
+        A Workbook object containing the parsed sheets.
+
+    Raises:
+        FileNotFoundError: If the file does not exist at the given path.
+        IOError: If there is an error reading or parsing the file.
+    """
+    ...
+
+class Sheet:
+    """Represents an Excel worksheet containing a grid of cells."""
+
+    @property
+    def name(self) -> str:
+        """The name of the worksheet."""
+        ...
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        """A tuple of (rows, columns) representing the size of the cell grid."""
+        ...
+
+    def cell(self, row: int, col: int) -> Any:
+        """Retrieves the value of a cell at the given 0-based row and column indices.
+
+        Args:
+            row: 0-based row index.
+            col: 0-based column index.
+
+        Returns:
+            The cell's value (None, str, float, int, bool, or an error string).
+
+        Raises:
+            IndexError: If the indices are out of bounds.
+        """
+        ...
+
+    def to_svg(self, path: str) -> None:
+        """Renders the worksheet to a beautifully styled SVG file.
+
+        Args:
+            path: Target file path where the SVG should be saved.
+
+        Raises:
+            IOError: If writing to the destination path fails.
+        """
+        ...
+
+class Workbook:
+    """Represents an Excel workbook containing multiple worksheets."""
+
+    def active_sheet(self) -> Sheet:
+        """Retrieves the active worksheet of the workbook.
+
+        Returns:
+            The active Sheet object.
+
+        Raises:
+            ValueError: If the workbook contains no sheets.
+        """
+        ...
+
+    def sheet_names(self) -> list[str]:
+        """Returns a list of all sheet names in the workbook.
+
+        Returns:
+            A list of sheet name strings.
+        """
+        ...
+
+    def get_sheet(self, name: str) -> Sheet:
+        """Retrieves a worksheet by its name.
+
+        Args:
+            name: The case-sensitive name of the sheet.
+
+        Returns:
+            The Sheet object.
+
+        Raises:
+            KeyError: If no worksheet with the given name exists.
+        """
+        ...

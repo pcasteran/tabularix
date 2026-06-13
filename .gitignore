@@ -1,0 +1,10 @@
+target/
+
+**/__pycache__/
+*.so
+
+# Zensical documentation.
+site/
+
+# Robot test results.
+results/
