@@ -50,7 +50,7 @@ impl<'py> IntoPyObject<'py> for CellValue {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct Sheet {
     #[pyo3(get)]
@@ -68,7 +68,7 @@ impl Sheet {
         (rows, cols)
     }
 
-    pub fn cell(&self, py: Python<'_>, row: usize, col: usize) -> PyResult<PyObject> {
+    pub fn cell(&self, py: Python<'_>, row: usize, col: usize) -> PyResult<Py<PyAny>> {
         if row >= self.data.len() || (!self.data.is_empty() && col >= self.data[0].len()) {
             return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
         }
@@ -300,7 +300,7 @@ impl Sheet {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct Workbook {
     pub sheets: HashMap<String, Sheet>,
