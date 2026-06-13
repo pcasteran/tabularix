@@ -30,39 +30,6 @@ Loads an Excel workbook from the specified file path.
 
 ---
 
-### `index_to_a1(row: int, col: int) -> str`
-
-Converts zero-based coordinates `(row, col)` into A1 notation (e.g., `(0, 0)` -> `"A1"`).
-
-**Parameters:**
-
-- `row` (int): Zero-based row index.
-- `col` (int): Zero-based column index.
-
-**Returns:**
-
-- `str`: The corresponding A1 notation.
-
----
-
-### `a1_to_index(a1: str) -> tuple[int, int]`
-
-Converts A1 notation into zero-based coordinates `(row, col)` (e.g., `"A1"` -> `(0, 0)`).
-
-**Parameters:**
-
-- `a1` (str): Cell coordinate in A1 notation.
-
-**Returns:**
-
-- `tuple[int, int]`: The zero-based row and column indices as `(row, column)`.
-
-**Raises:**
-
-- `ValueError`: If the notation is invalid (e.g. missing coordinates, row <= 0).
-
----
-
 ## Classes
 
 ### `Workbook`

@@ -1,3 +1,7 @@
-from ._tabularix import load_workbook, index_to_a1, a1_to_index, Sheet, Workbook
+from ._tabularix import (  # ty: ignore[unresolved-import]
+    Sheet,
+    Workbook,
+    load_workbook,
+)
 
-__all__ = ["load_workbook", "index_to_a1", "a1_to_index", "Sheet", "Workbook"]
+__all__ = ["load_workbook", "Sheet", "Workbook"]

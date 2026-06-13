@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/assets/logo.jpeg" alt="Tabularix Logo" width="400"/>
+  <img src="docs/assets/logo_2.png" alt="Tabularix Logo" width="350"/>
 </div>
 
 # Tabularix
@@ -7,6 +7,8 @@
 Smart data extraction from Excel documents.
 
 Tabularix is a high-performance framework designed to identify, extract, and organize "hidden data" trapped in fragmented Excel files, transforming it into clean, structured formats (such as Parquet or Arrow) ready for AI and advanced analytics.
+
+Developed as a direct continuation of the [Archery](https://github.com/RomualdRousseau/Archery) framework, it inherits and builds upon its core paradigms to optimize data extraction for modern high-performance requirements.
 
 > [!WARNING]
 > This project is developed using AI coding assistants under a strict [Black Box Development Methodology](#black-box-development-methodology) framework.
@@ -58,15 +60,18 @@ This project is built using the **Black Box Development** methodology, a paradig
 
 ```mermaid
 graph TD
-    User[Product Owner / User] -->|1. Writes Specs & Acceptance Tests| Robot[Robot Framework Tests]
-    Robot -->|2. Feeds Into| CI[CI/CD Pipeline]
-    AI[AI Developer] -->|3. Implements Features & Unit Tests| Code[Rust Core / Python Bindings]
-    Code -->|4. Evaluated By| CI
-    CI -->|5. Result: Green/Red| User
+    User{{"Product Owner / User"}} -->|1. Defines Specs| Specs[Specifications]
+    User -->|2. Defines Acceptance Tests| Robot[Robot Framework Tests]
+    Specs --> AI{{"AI Developer"}}
+    AI -->|3. Implements Features & Unit Tests| Code[Rust Core / Python Bindings]
+    Code -->|4. Checked against| Check[Acceptance Tests Verification]
+    Robot --> Check
+    Check -->|5. Once fully developed and verified| CI[CI/CD Pipeline]
+    CI -->|6. Result: Green/Red| User
 ```
 
-- **Product Owner (User)**: Focuses entirely on defining the desired behavior. The User writes high-level specifications and acceptance tests in plain English using the **Robot Framework** and validates features without ever needing to read or write application code.
-- **AI Developer**: Responsible for interpreting the requirements, implementing the application code, creating the Python bindings, and writing the internal unit/integration tests to ensure code correctness and test coverage.
+- **Product Owner (User)**: Focuses entirely on defining the desired behavior. The User defines high-level specifications and acceptance tests in plain English and validates features without ever needing to read or write application code.
+- **AI Developer**: Responsible for interpreting the requirements, implementing the application code, creating the Python bindings, writing the internal unit/integration tests, and verifying that the acceptance tests are correctly passing.
 
 ### Tech Stack & Architecture
 

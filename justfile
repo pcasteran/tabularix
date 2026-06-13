@@ -50,7 +50,7 @@ prek:
 # Update the pre-commit hooks
 [group("static analysis")]
 prek-hooks-update:
-    prek autoupdate
+    prek auto-update
 
 #
 # CI/CD recipes
@@ -78,7 +78,7 @@ unit-test:
 # Run the Robot Framework acceptance tests
 [group("test")]
 acceptance-test: build
-    uv run robot -d target/robot tests/
+    uv run robot -d results tests/
 
 #
 # Documentation recipes

@@ -50,7 +50,7 @@ impl<'py> IntoPyObject<'py> for CellValue {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct Sheet {
     #[pyo3(get)]
@@ -68,7 +68,7 @@ impl Sheet {
         (rows, cols)
     }
 
-    pub fn cell(&self, py: Python<'_>, row: usize, col: usize) -> PyResult<PyObject> {
+    pub fn cell(&self, py: Python<'_>, row: usize, col: usize) -> PyResult<Py<PyAny>> {
         if row >= self.data.len() || (!self.data.is_empty() && col >= self.data[0].len()) {
             return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
         }
@@ -300,7 +300,7 @@ impl Sheet {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct Workbook {
     pub sheets: HashMap<String, Sheet>,
@@ -452,39 +452,6 @@ fn html_escape(s: &str) -> String {
         .replace('\'', "&apos;")
 }
 
-#[pyfunction]
-pub fn index_to_a1(row: usize, col: usize) -> String {
-    format!("{}{}", index_to_col_letters(col), row + 1)
-}
-
-#[pyfunction]
-pub fn a1_to_index(a1: &str) -> PyResult<(usize, usize)> {
-    let letters: String = a1.chars().take_while(char::is_ascii_alphabetic).collect();
-    let numbers: String = a1.chars().skip_while(char::is_ascii_alphabetic).collect();
-
-    if letters.is_empty() || numbers.is_empty() {
-        return Err(pyo3::exceptions::PyValueError::new_err(format!(
-            "Invalid A1 notation: {a1}"
-        )));
-    }
-
-    let row: usize = numbers.parse::<usize>().map_err(|_| {
-        pyo3::exceptions::PyValueError::new_err(format!("Invalid row number: {numbers}"))
-    })?;
-    if row == 0 {
-        return Err(pyo3::exceptions::PyValueError::new_err(format!(
-            "Row index must be >= 1: {numbers}"
-        )));
-    }
-
-    let mut col: usize = 0;
-    for ch in letters.to_ascii_uppercase().chars() {
-        let val = (ch as u8 - b'A' + 1) as usize;
-        col = col * 26 + val;
-    }
-    Ok((row - 1, col - 1))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -492,24 +459,26 @@ mod tests {
     #[test]
     fn test_load_workbook() {
         let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
-        assert_eq!(wb.sheet_names(), vec!["Sheet1"]);
+        let mut names = wb.sheet_names();
+        names.sort();
+        assert_eq!(names, vec!["complex", "simple"]);
 
-        let sheet = wb.get_sheet("Sheet1").unwrap();
-        assert_eq!(sheet.name, "Sheet1");
+        let sheet = wb.get_sheet("simple").unwrap();
+        assert_eq!(sheet.name, "simple");
         assert_eq!(sheet.shape(), (5, 2)); // 5 rows, 2 cols (A1 to B5)
 
         // Check cell values
         assert_eq!(sheet.data[0][0], CellValue::String("Header1".to_string()));
         assert_eq!(sheet.data[0][1], CellValue::String("Header2".to_string()));
-        assert_eq!(sheet.data[1][0], CellValue::String("Row1Col1".to_string()));
+        assert_eq!(sheet.data[1][0], CellValue::String("ABC".to_string()));
         assert_eq!(sheet.data[1][1], CellValue::Float(123.45));
-        assert_eq!(sheet.data[2][0], CellValue::String("Row2Col1".to_string()));
+        assert_eq!(sheet.data[2][0], CellValue::String("DEF".to_string()));
         assert_eq!(sheet.data[2][1], CellValue::Float(678.0));
 
-        // Merged cell A4 is "MergedValue"
+        // Merged cell A4 is "Merged value"
         assert_eq!(
             sheet.data[3][0],
-            CellValue::String("MergedValue".to_string())
+            CellValue::String("Merged value".to_string())
         );
         // B4, A5, B5 should be Empty in raw data because calamine does not automatically fill them
         assert_eq!(sheet.data[3][1], CellValue::Empty);
@@ -519,27 +488,20 @@ mod tests {
         // Merged regions check
         assert_eq!(sheet.merged_regions.len(), 1);
         assert_eq!(sheet.merged_regions[0], ((3, 0), (4, 1))); // A4:B5
-    }
 
-    #[test]
-    fn test_coordinates() {
-        assert_eq!(index_to_a1(0, 0), "A1");
-        assert_eq!(index_to_a1(9, 25), "Z10");
-        assert_eq!(index_to_a1(0, 26), "AA1");
-        assert_eq!(index_to_a1(0, 27), "AB1");
-        assert_eq!(index_to_a1(0, 701), "ZZ1");
-        assert_eq!(index_to_a1(0, 702), "AAA1");
-
-        assert_eq!(a1_to_index("A1").unwrap(), (0, 0));
-        assert_eq!(a1_to_index("Z10").unwrap(), (9, 25));
-        assert_eq!(a1_to_index("AA1").unwrap(), (0, 26));
-        assert_eq!(a1_to_index("AB1").unwrap(), (0, 27));
-        assert_eq!(a1_to_index("ZZ1").unwrap(), (0, 701));
-        assert_eq!(a1_to_index("AAA1").unwrap(), (0, 702));
-
-        assert!(a1_to_index("A").is_err());
-        assert!(a1_to_index("1").is_err());
-        assert!(a1_to_index("A0").is_err());
-        assert!(a1_to_index("").is_err());
+        // Verify complex sheet loading
+        let complex_sheet = wb.get_sheet("complex").unwrap();
+        assert_eq!(complex_sheet.name, "complex");
+        assert_eq!(complex_sheet.shape(), (15, 5)); // 15 rows, 5 columns
+        assert_eq!(
+            complex_sheet.data[0][0],
+            CellValue::String("Financial Report 2026".to_string())
+        );
+        assert_eq!(
+            complex_sheet.data[3][0],
+            CellValue::String("North".to_string())
+        );
+        assert_eq!(complex_sheet.data[10][2], CellValue::Bool(true));
+        assert_eq!(complex_sheet.merged_regions.len(), 2);
     }
 }

@@ -1,0 +1,7 @@
+{
+  // Disable the language server from the Python extension as we use the ty extension.
+  "python.languageServer": "None",
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  }
+}
