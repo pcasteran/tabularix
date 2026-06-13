@@ -19,7 +19,7 @@ cd tabularix
 
 # Create a virtual environment and build the extension
 uv venv
-uv run maturin develop
+maturin develop
 ```
 
 ## First Steps

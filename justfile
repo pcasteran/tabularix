@@ -33,10 +33,10 @@ upgrade-toolchain:
     mise upgrade
     mise lock
 
-# Build the Python extension module using Maturin and uv
+# Build the Python extension module
 [group("dev")]
 build:
-    uv run maturin develop
+    maturin develop
 
 #
 # Static analysis recipes
