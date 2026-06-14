@@ -28,7 +28,7 @@ class Sheet:
         """A tuple of (rows, columns) representing the size of the cell grid."""
         ...
 
-    def cell(self, row: int, col: int) -> Any:
+    def get_cell_value(self, row: int, col: int) -> Any:
         """Retrieves the value of a cell at the given 0-based row and column indices.
 
         Args:
@@ -40,6 +40,20 @@ class Sheet:
 
         Raises:
             IndexError: If the indices are out of bounds.
+        """
+        ...
+
+    def set_cell_value(self, row: int, col: int, value: str) -> None:
+        """Sets the value of a cell at the given 0-based row and column indices.
+
+        Args:
+            row: 0-based row index.
+            col: 0-based column index.
+            value: The string value to write to the cell.
+
+        Raises:
+            IndexError: If the indices are out of bounds.
+            TypeError: If the value is not a string.
         """
         ...
 

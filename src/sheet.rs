@@ -68,13 +68,33 @@ impl Sheet {
         (rows, cols)
     }
 
-    pub fn cell(&self, py: Python<'_>, row: usize, col: usize) -> PyResult<Py<PyAny>> {
-        if row >= self.data.len() || (!self.data.is_empty() && col >= self.data[0].len()) {
+    #[allow(clippy::cast_sign_loss)]
+    pub fn get_cell_value(&self, py: Python<'_>, row: isize, col: isize) -> PyResult<Py<PyAny>> {
+        if row < 0 || col < 0 {
             return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
         }
-        let val = &self.data[row][col];
+        let r = row as usize;
+        let c = col as usize;
+        if r >= self.data.len() || (!self.data.is_empty() && c >= self.data[0].len()) {
+            return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
+        }
+        let val = &self.data[r][c];
         let bound = val.clone().into_pyobject(py)?;
         Ok(bound.into_any().unbind())
+    }
+
+    #[allow(clippy::cast_sign_loss)]
+    pub fn set_cell_value(&mut self, row: isize, col: isize, value: String) -> PyResult<()> {
+        if row < 0 || col < 0 {
+            return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
+        }
+        let r = row as usize;
+        let c = col as usize;
+        if r >= self.data.len() || (!self.data.is_empty() && c >= self.data[0].len()) {
+            return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
+        }
+        self.data[r][c] = CellValue::String(value);
+        Ok(())
     }
 
     pub fn to_svg(&self, path: &str) -> PyResult<()> {
@@ -503,5 +523,24 @@ mod tests {
         );
         assert_eq!(complex_sheet.data[10][2], CellValue::Bool(true));
         assert_eq!(complex_sheet.merged_regions.len(), 2);
+
+        // Verify get_cell_value and set_cell_value
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
+            assert!(sheet.get_cell_value(py, 5, 0).is_err()); // Out of bounds
+            let val = sheet.get_cell_value(py, 0, 0).unwrap();
+            let s: String = val.extract(py).unwrap();
+            assert_eq!(s, "Header1");
+
+            let mut mut_sheet = sheet.clone();
+            mut_sheet
+                .set_cell_value(0, 0, "NewHeader".to_string())
+                .unwrap();
+            let val = mut_sheet.get_cell_value(py, 0, 0).unwrap();
+            let s: String = val.extract(py).unwrap();
+            assert_eq!(s, "NewHeader");
+            assert!(mut_sheet.set_cell_value(5, 0, "Err".to_string()).is_err());
+            // Out of bounds
+        });
     }
 }

@@ -38,19 +38,21 @@ Represents an Excel workbook containing one or more sheets.
 
 #### Methods
 
-- **`active_sheet() -> Sheet`**
-  Returns the active (first) sheet in the workbook.
+##### `active_sheet() -> Sheet`
 
-- **`sheet_names() -> list[str]`**
-  Returns a list containing the names of all worksheets in the workbook.
+Returns the active (first) sheet in the workbook.
 
-<!-- prettier-ignore -->
-- **`get_sheet(name: str) -> Sheet`**
-  Returns the worksheet with the specified name.
+##### `sheet_names() -> list[str]`
 
-  **Raises:**
+Returns a list containing the names of all worksheets in the workbook.
 
-  - `KeyError`: If a sheet with that name does not exist.
+##### `get_sheet(name: str) -> Sheet`
+
+Returns the worksheet with the specified name.
+
+**Raises:**
+
+- `KeyError`: If a sheet with that name does not exist.
 
 ---
 
@@ -60,32 +62,52 @@ Represents a single Excel worksheet as a grid of cell values.
 
 #### Properties
 
-- **`name`** _(str, read-only)_: The name of the worksheet.
-- **`shape`** _(`tuple[int, int]`, read-only)_: The dimensions of the worksheet grid as `(rows, columns)`.
+##### `name` _(`str`, read-only)_
+
+The name of the worksheet.
+
+##### `shape` _(`tuple[int, int]`, read-only)_
+
+The dimensions of the worksheet grid as `(rows, columns)`.
 
 #### Methods
 
-<!-- prettier-ignore -->
-- **`cell(row: int, col: int) -> typing.Any`**
-  Returns the value of the cell at the specified zero-based row and column coordinates.
+##### `get_cell_value(row: int, col: int) -> typing.Any`
 
-  **Returns:**
+Returns the value of the cell at the specified zero-based row and column coordinates.
 
-  - `None` for empty cells.
-  - `str`, `float`, `int`, or `bool` representing the cell's native type.
+**Returns:**
 
-  **Raises:**
+- `None` for empty cells.
+- `str`, `float`, `int`, or `bool` representing the cell's native type.
 
-  - `IndexError`: If the coordinates are out of bounds.
+**Raises:**
 
-<!-- prettier-ignore -->
-- **`to_svg(path: str)`**
-  Renders the worksheet grid into a beautifully styled SVG file, highlighting different cell types and correctly displaying merged cells.
+- `IndexError`: If the coordinates are out of bounds.
 
-  **Parameters:**
+##### `set_cell_value(row: int, col: int, value: str)`
 
-  - `path` (str): Output file path for the SVG.
+Sets the cell at the specified zero-based row and column coordinates to the given string value.
 
-  **Raises:**
+**Parameters:**
 
-  - `IOError`: If the SVG could not be written to the file path.
+- `row` (int): Zero-based row index.
+- `col` (int): Zero-based column index.
+- `value` (str): The string value to write.
+
+**Raises:**
+
+- `IndexError`: If the coordinates are out of bounds.
+- `TypeError`: If the value is not a string.
+
+##### `to_svg(path: str)`
+
+Renders the worksheet grid into a beautifully styled SVG file, highlighting different cell types and correctly displaying merged cells.
+
+**Parameters:**
+
+- `path` (str): Output file path for the SVG.
+
+**Raises:**
+
+- `IOError`: If the SVG could not be written to the file path.
