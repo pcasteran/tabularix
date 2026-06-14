@@ -92,3 +92,8 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Acceptance:** `Sheet` has a `crop_all` method to automatically trim empty rows and columns from all edges of the grid. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/crop_all.robot`, `docs/api.md`.
+
+- [ ] **Task 3.11: Implement and Expose `insert_row` / `insert_column`**
+    - **Acceptance:** `Sheet` has `insert_row(row_idx)` and `insert_column(col_idx)` methods to insert a new empty row or column at the specified index. The methods are exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/insert.robot`, `docs/api.md`.
