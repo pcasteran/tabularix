@@ -43,17 +43,52 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
 
 ## Step 3: Active Mutator API
 
-- [ ] **Task 3.1: Implement `unmerge_cells` in Rust**
-    - **Acceptance:** `Sheet` struct has an `unmerge_cells` method that fills merged cells with their parent values. Include Rust unit tests.
-    - **Verify:** `cargo test` passes.
-    - **Files:** `src/sheet.rs`.
+- [ ] **Task 3.1: Implement and Expose `unmerge_cells`**
+    - **Acceptance:** `Sheet` has an `unmerge_cells` method that fills merged cells with their parent values. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated with the new signatures, types, and docstrings. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/unmerge.robot`, `docs/api.md`.
 
-- [ ] **Task 3.2: Implement `search_and_crop_before` in Rust**
-    - **Acceptance:** `Sheet` struct has a method to crop rows before a marker text. Include Rust unit tests.
-    - **Verify:** `cargo test` passes.
-    - **Files:** `src/sheet.rs`.
+- [ ] **Task 3.2: Implement and Expose `search_and_crop_before`**
+    - **Acceptance:** `Sheet` has a `search_and_crop_before` method to crop rows before a marker text. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated with the new signatures, types, and docstrings. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/crop.robot`, `docs/api.md`.
 
-- [ ] **Task 3.3: Expose Active Mutators to Python**
-    - **Acceptance:** PyO3 bindings for `unmerge_cells` and `search_and_crop_before` are exposed. Type stubs in `python/tabularix/__init__.pyi` are updated with the new signatures, types, and docstrings. Robot tests added.
-    - **Verify:** `just test-acceptance` passes.
-    - **Files:** `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/mutators.robot`, `docs/api.md`.
+- [ ] **Task 3.3: Implement and Expose `get_cell_value` / `set_cell_value`**
+    - **Acceptance:** `Sheet` has `get_cell_value(row, col)` and `set_cell_value(row, col, value)` methods to read and write cell values. The methods are exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated with signatures and docstrings. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/cell_values.robot`, `docs/api.md`.
+
+- [ ] **Task 3.4: Implement and Expose `drop_row` / `drop_column`**
+    - **Acceptance:** `Sheet` has `drop_row(row_idx)` and `drop_column(col_idx)` methods to delete specific rows or columns. The methods are exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated with signatures and docstrings. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/drop.robot`, `docs/api.md`.
+
+- [ ] **Task 3.5: Implement and Expose `drop_rows_when_fill_ratio_less_than` / `drop_columns_when_fill_ratio_less_than`**
+    - **Acceptance:** `Sheet` has methods to drop rows/columns where the proportion of non-empty cells is below a specified threshold. The methods are exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/fill_ratio.robot`, `docs/api.md`.
+
+- [ ] **Task 3.6: Implement and Expose `drop_rows_when_entropy_less_than` / `drop_columns_when_entropy_less_than`**
+    - **Acceptance:** `Sheet` has methods to drop rows/columns where the information entropy (data variability/uniqueness) is below a specified threshold. The methods are exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/entropy.robot`, `docs/api.md`.
+
+- [ ] **Task 3.7: Implement and Expose `swap_rows` / `swap_columns`**
+    - **Acceptance:** `Sheet` has `swap_rows(i, j)` and `swap_columns(i, j)` methods to reorder rows/columns. The methods are exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/swap.robot`, `docs/api.md`.
+
+- [ ] **Task 3.8: Implement and Expose `repeat_row_cell` / `repeat_column_cell`**
+    - **Acceptance:** `Sheet` has methods to fill adjacent empty cells in a row/column with the value of the nearest preceding non-empty cell. The methods are exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/repeat.robot`, `docs/api.md`.
+
+- [ ] **Task 3.9: Implement and Expose `search_first_value` / `search_nth_value`**
+    - **Acceptance:** `Sheet` has methods to search for values matching a query string and return their 0-based cell coordinates. The methods are exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/search.robot`, `docs/api.md`.
+
+- [ ] **Task 3.10: Implement and Expose `crop_all`**
+    - **Acceptance:** `Sheet` has a `crop_all` method to automatically trim empty rows and columns from all edges of the grid. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/crop_all.robot`, `docs/api.md`.
