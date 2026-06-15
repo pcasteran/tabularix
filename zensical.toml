@@ -51,8 +51,11 @@ nav = [
   { "Development" = [
       { "Specification" = "spec.md" },
       { "Implementation Plan" = "implementation_plan.md" },
-      { "Tasks" = "tasks.md" },
-      { "Project Pitch" = "project_pitch.md" }
+      { "Tasks" = "tasks.md" }
+  ]},
+  { "Ideas" = [
+      { "Project Pitch" = "ideas/project_pitch.md" },
+      { "Core design" = "ideas/tabularix_core_design.md" }
   ]}
 ]
 

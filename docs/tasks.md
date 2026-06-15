@@ -97,3 +97,44 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Acceptance:** `Sheet` has `insert_row(row_idx)` and `insert_column(col_idx)` methods to insert a new empty row or column at the specified index. The methods are exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/insert.robot`, `docs/api.md`.
+
+- [ ] **Task 3.12: Implement and Expose `to_excel`**
+    - **Acceptance:** `Sheet` has a `to_excel(file_path: str, sheet_name: str = None)` method to export the sheet content to an Excel file. If `sheet_name` is not provided (or is `None`), the sheet's original name (`self.name`) is used. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/to_excel.robot`, `docs/api.md`.
+
+## Step 4: Layex Engine MVP (Builder & DSL)
+
+- [ ] **Task 4.1: Implement `RowGroupMatcher` Python Builder API**
+    - **Acceptance:** `RowGroupMatcher` class is exposed to Python via PyO3. The Python Builder API allows defining row group matching rules programmatically (e.g. `.string()`, `.numeric()`, `.entity("date")`, `.one_or_more()`). Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/matcher.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/matcher_builder.robot`, `docs/api.md`.
+
+- [ ] **Task 4.2: Implement `RowGroupMatcher` String DSL (Layex)**
+    - **Acceptance:** `RowGroupMatcher.from_layex(dsl_str)` is exposed to Python via PyO3. It parses a string DSL representing row patterns (e.g., `'[entity:date] [type:numeric]+'`). Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/layex.rs`, `src/matcher.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/matcher_dsl.robot`, `docs/api.md`.
+
+## Step 5: Advanced Layex & Search
+
+- [ ] **Task 5.1: Implement `Sheet.search_row_group`**
+    - **Acceptance:** `Sheet` has a `search_row_group(matcher: RowGroupMatcher)` method that searches the sheet rows using the pattern matcher rules and returns the matched row index or range. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/search_row_group.robot`, `docs/api.md`.
+
+- [ ] **Task 5.2: Implement `Sheet.extract_row_group_between`**
+    - **Acceptance:** `Sheet` has an `extract_row_group_between(start_row, end_row)` method to slice and extract a range of rows between two indices. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/extract_row_group.robot`, `docs/api.md`.
+
+## Step 6: Table API & Data Export
+
+- [ ] **Task 6.1: Implement `build_table_from_row_groups`**
+    - **Acceptance:** `build_table_from_row_groups(header, data, footer=None)` is exposed to Python via PyO3, which converts the matched row regions into an internal `Table` object representing structured tabular data. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/table.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/build_table.robot`, `docs/api.md`.
+
+- [ ] **Task 6.2: Implement `Table.to_arrow` / `Table.to_pandas` / `Table.to_polars`**
+    - **Acceptance:** The `Table` class supports `to_arrow()`, `to_pandas()`, and `to_polars()` methods to export structured data respectively into a PyArrow Table, a Pandas DataFrame, and a Polars DataFrame using optimized or zero-copy memory conversions where possible. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/table.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/export.robot`, `docs/api.md`.
