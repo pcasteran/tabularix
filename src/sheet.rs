@@ -97,15 +97,16 @@ impl Sheet {
         Ok(())
     }
 
-    pub fn to_svg(&self, path: &str) -> PyResult<()> {
-        self.to_svg_impl(path)
+    #[pyo3(signature = (path, zero_based_indices = true))]
+    pub fn to_svg(&self, path: &str, zero_based_indices: bool) -> PyResult<()> {
+        self.to_svg_impl(path, zero_based_indices)
             .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("Failed to write SVG: {e}")))
     }
 }
 
 impl Sheet {
     #[allow(clippy::too_many_lines)]
-    fn to_svg_impl(&self, path: &str) -> std::io::Result<()> {
+    fn to_svg_impl(&self, path: &str, zero_based_indices: bool) -> std::io::Result<()> {
         let (rows, cols) = self.shape();
 
         let cell_width = 120;
@@ -287,18 +288,20 @@ impl Sheet {
         for c in 0..cols {
             let cell_x = row_hdr_width + c * cell_width;
             let letters = index_to_col_letters(c);
+            let col_idx = if zero_based_indices { c } else { c + 1 };
+            let col_label = format!("{letters} ({col_idx})");
             let text_x = cell_x + cell_width / 2;
             let text_y = col_hdr_height / 2 + 4;
             let _ = writeln!(
                 svg,
                 r#"  <rect x="{cell_x}" y="0" width="{cell_width}" height="{col_hdr_height}" class="hdr-rect" />
-  <text x="{text_x}" y="{text_y}" class="hdr-text">{letters}</text>"#
+  <text x="{text_x}" y="{text_y}" class="hdr-text">{col_label}</text>"#
             );
         }
 
         for r in 0..rows {
             let cell_y = col_hdr_height + r * cell_height;
-            let label = r + 1;
+            let label = if zero_based_indices { r } else { r + 1 };
             let text_x = row_hdr_width / 2;
             let text_y = cell_y + cell_height / 2 + 4;
             let _ = writeln!(

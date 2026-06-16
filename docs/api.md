@@ -12,6 +12,7 @@ This page describes the public API exposed by the Tabularix library.
 
 ## Functions
 
+<!-- prettier-ignore -->
 ::: tabularix.load_workbook
     options:
       heading_level: 3
@@ -20,12 +21,14 @@ This page describes the public API exposed by the Tabularix library.
 
 ## Classes
 
+<!-- prettier-ignore -->
 ::: tabularix.Workbook
     options:
       heading_level: 3
 
 ---
 
+<!-- prettier-ignore -->
 ::: tabularix.Sheet
     options:
       heading_level: 3

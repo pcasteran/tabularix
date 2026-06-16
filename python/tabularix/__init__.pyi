@@ -57,11 +57,12 @@ class Sheet:
         """
         ...
 
-    def to_svg(self, path: str) -> None:
+    def to_svg(self, path: str, zero_based_indices: bool = True) -> None:
         """Renders the worksheet to a beautifully styled SVG file.
 
         Args:
             path: Target file path where the SVG should be saved.
+            zero_based_indices: If True, uses 0-based indexing for headers (default); otherwise 1-based.
 
         Raises:
             IOError: If writing to the destination path fails.
