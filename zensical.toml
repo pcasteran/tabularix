@@ -357,3 +357,12 @@ combine_header_slug = true
 [project.markdown_extensions.pymdownx.tasklist]
 custom_checkbox = true
 [project.markdown_extensions.pymdownx.tilde]
+
+[project.plugins.mkdocstrings.handlers.python]
+paths = ["python"]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+docstring_style = "google"
+show_root_heading = true
+show_symbol_type_heading = true
+show_symbol_type_toc = true

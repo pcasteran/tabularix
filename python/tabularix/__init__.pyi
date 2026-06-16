@@ -16,7 +16,7 @@ def load_workbook(path: str) -> Workbook:
     ...
 
 class Sheet:
-    """Represents an Excel worksheet containing a grid of cells."""
+    """Represents a single worksheet as a grid of cell values. It provides methods to inspect and modify cells, update the sheet content, and render the sheet visually."""
 
     @property
     def name(self) -> str:

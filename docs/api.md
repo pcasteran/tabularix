@@ -1,6 +1,7 @@
 ---
 title: API Reference
 description: Public API documentation for Tabularix workbook and sheet classes.
+icon: lucide/library
 ---
 
 # 📚 API Reference
@@ -11,103 +12,38 @@ This page describes the public API exposed by the Tabularix library.
 
 ## Functions
 
-### `load_workbook(path: str) -> Workbook`
-
-Loads an Excel workbook from the specified file path.
-
-**Parameters:**
-
-- `path` (str): The absolute or relative path to the `.xlsx` file.
-
-**Returns:**
-
-- `Workbook`: A `Workbook` instance containing the workbook sheets.
-
-**Raises:**
-
-- `FileNotFoundError`: If the file does not exist.
-- `IOError`: If the file could not be parsed by Calamine.
+::: tabularix.load_workbook
+    options:
+      heading_level: 3
 
 ---
 
 ## Classes
 
-### `Workbook`
-
-Represents an Excel workbook containing one or more sheets.
-
-#### Methods
-
-##### `active_sheet() -> Sheet`
-
-Returns the active (first) sheet in the workbook.
-
-##### `sheet_names() -> list[str]`
-
-Returns a list containing the names of all worksheets in the workbook.
-
-##### `get_sheet(name: str) -> Sheet`
-
-Returns the worksheet with the specified name.
-
-**Raises:**
-
-- `KeyError`: If a sheet with that name does not exist.
+::: tabularix.Workbook
+    options:
+      heading_level: 3
 
 ---
 
-### `Sheet`
+::: tabularix.Sheet
+    options:
+      heading_level: 3
+      members:
+        - name
+        - shape
+        - get_cell_value
+        - set_cell_value
+        - to_svg
 
-Represents a single Excel worksheet as a grid of cell values.
+<!-- drow_row() -->
 
-#### Properties
+<!-- ::: tabularix.Sheet.drop_row
+    options:
+      heading_level: 4
+      show_root_full_path: false
 
-##### `name` _(`str`, read-only)_
-
-The name of the worksheet.
-
-##### `shape` _(`tuple[int, int]`, read-only)_
-
-The dimensions of the worksheet grid as `(rows, columns)`.
-
-#### Methods
-
-##### `get_cell_value(row: int, col: int) -> typing.Any`
-
-Returns the value of the cell at the specified zero-based row and column coordinates.
-
-**Returns:**
-
-- `None` for empty cells.
-- `str`, `float`, `int`, or `bool` representing the cell's native type.
-
-**Raises:**
-
-- `IndexError`: If the coordinates are out of bounds.
-
-##### `set_cell_value(row: int, col: int, value: str)`
-
-Sets the cell at the specified zero-based row and column coordinates to the given string value.
-
-**Parameters:**
-
-- `row` (int): Zero-based row index.
-- `col` (int): Zero-based column index.
-- `value` (str): The string value to write.
-
-**Raises:**
-
-- `IndexError`: If the coordinates are out of bounds.
-- `TypeError`: If the value is not a string.
-
-##### `to_svg(path: str)`
-
-Renders the worksheet grid into a beautifully styled SVG file, highlighting different cell types and correctly displaying merged cells.
-
-**Parameters:**
-
-- `path` (str): Output file path for the SVG.
-
-**Raises:**
-
-- `IOError`: If the SVG could not be written to the file path.
+!!! example "Visual Transformation Example"
+    | Before | After |
+    | :---: | :---: |
+    | ![Original Excel Sheet](assets/drop_row_before.svg) | ![Rendered SVG Output](assets/drop_row_after.svg) | -->
