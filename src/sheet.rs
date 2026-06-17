@@ -589,15 +589,18 @@ mod tests {
 
         let sheet = wb.get_sheet("simple").unwrap();
         assert_eq!(sheet.name, "simple");
-        assert_eq!(sheet.shape(), (5, 2)); // 5 rows, 2 cols (A1 to B5)
+        assert_eq!(sheet.shape(), (5, 3)); // 5 rows, 3 cols (A1 to C5)
 
         // Check cell values
-        assert_eq!(sheet.data[0][0], CellValue::String("Header1".to_string()));
-        assert_eq!(sheet.data[0][1], CellValue::String("Header2".to_string()));
+        assert_eq!(sheet.data[0][0], CellValue::String("Header #1".to_string()));
+        assert_eq!(sheet.data[0][1], CellValue::String("Header #2".to_string()));
+        assert_eq!(sheet.data[0][2], CellValue::String("Header #3".to_string()));
         assert_eq!(sheet.data[1][0], CellValue::String("ABC".to_string()));
         assert_eq!(sheet.data[1][1], CellValue::Float(123.45));
+        assert_eq!(sheet.data[1][2], CellValue::String("Alice".to_string()));
         assert_eq!(sheet.data[2][0], CellValue::String("DEF".to_string()));
         assert_eq!(sheet.data[2][1], CellValue::Float(678.0));
+        assert_eq!(sheet.data[2][2], CellValue::String("Bob".to_string()));
 
         // Merged cell A4 is "Merged value"
         assert_eq!(
@@ -608,6 +611,8 @@ mod tests {
         assert_eq!(sheet.data[3][1], CellValue::Empty);
         assert_eq!(sheet.data[4][0], CellValue::Empty);
         assert_eq!(sheet.data[4][1], CellValue::Empty);
+        assert_eq!(sheet.data[3][2], CellValue::String("Charlie".to_string()));
+        assert_eq!(sheet.data[4][2], CellValue::String("David".to_string()));
 
         // Merged regions check
         assert_eq!(sheet.merged_regions.len(), 1);
@@ -634,7 +639,7 @@ mod tests {
             assert!(sheet.get_cell_value(py, 5, 0).is_err()); // Out of bounds
             let val = sheet.get_cell_value(py, 0, 0).unwrap();
             let s: String = val.extract(py).unwrap();
-            assert_eq!(s, "Header1");
+            assert_eq!(s, "Header #1");
 
             let mut mut_sheet = sheet.clone();
             mut_sheet
@@ -652,21 +657,21 @@ mod tests {
             let mut test_sheet = sheet.clone();
             // Drop row 1 (the second row, index 1)
             test_sheet.drop_row(1).unwrap();
-            assert_eq!(test_sheet.shape(), (4, 2));
+            assert_eq!(test_sheet.shape(), (4, 3));
             // Merged region ((3, 0), (4, 1)) should shift up by 1 to ((2, 0), (3, 1))
             assert_eq!(test_sheet.merged_regions.len(), 1);
             assert_eq!(test_sheet.merged_regions[0], ((2, 0), (3, 1)));
 
             // Drop row 2 (which is index 2, now inside the merged region ((2, 0), (3, 1)))
             test_sheet.drop_row(2).unwrap();
-            assert_eq!(test_sheet.shape(), (3, 2));
+            assert_eq!(test_sheet.shape(), (3, 3));
             // Merged region should shrink from 2 rows to 1 row: ((2, 0), (2, 1))
             assert_eq!(test_sheet.merged_regions.len(), 1);
             assert_eq!(test_sheet.merged_regions[0], ((2, 0), (2, 1)));
 
             // Drop column 1 (index 1, which is inside the merged region ((2, 0), (2, 1)))
             test_sheet.drop_column(1).unwrap();
-            assert_eq!(test_sheet.shape(), (3, 1));
+            assert_eq!(test_sheet.shape(), (3, 2));
             // Merged region ((2, 0), (2, 1)) should shrink in width to ((2, 0), (2, 0)),
             // which becomes a 1x1 region, so it must be cleaned up (deleted).
             assert_eq!(test_sheet.merged_regions.len(), 0);
@@ -675,7 +680,7 @@ mod tests {
             assert!(test_sheet.drop_row(-1).is_err());
             assert!(test_sheet.drop_row(3).is_err());
             assert!(test_sheet.drop_column(-1).is_err());
-            assert!(test_sheet.drop_column(1).is_err());
+            assert!(test_sheet.drop_column(2).is_err());
 
             // Drop remaining rows until empty
             test_sheet.drop_row(0).unwrap();

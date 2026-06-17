@@ -11,13 +11,13 @@ Verify drop_row Shape Update
     ${sheet}=    Evaluate    $wb.active_sheet()
 
     ${shape_before}=    Evaluate    $sheet.shape
-    ${expected_before}=    Evaluate    (5, 2)
+    ${expected_before}=    Evaluate    (5, 3)
     Should Be Equal    ${shape_before}    ${expected_before}
 
     Evaluate    $sheet.drop_row(1)
 
     ${shape_after}=    Evaluate    $sheet.shape
-    ${expected_after}=    Evaluate    (4, 2)
+    ${expected_after}=    Evaluate    (4, 3)
     Should Be Equal    ${shape_after}    ${expected_after}
 
 Verify drop_row Values Shifting
@@ -39,13 +39,13 @@ Verify drop_column Shape Update
     ${sheet}=    Evaluate    $wb.active_sheet()
 
     ${shape_before}=    Evaluate    $sheet.shape
-    ${expected_before}=    Evaluate    (5, 2)
+    ${expected_before}=    Evaluate    (5, 3)
     Should Be Equal    ${shape_before}    ${expected_before}
 
     Evaluate    $sheet.drop_column(1)
 
     ${shape_after}=    Evaluate    $sheet.shape
-    ${expected_after}=    Evaluate    (5, 1)
+    ${expected_after}=    Evaluate    (5, 2)
     Should Be Equal    ${shape_after}    ${expected_after}
 
 Verify drop_column Values Shifting
@@ -54,11 +54,13 @@ Verify drop_column Values Shifting
     ${sheet}=    Evaluate    $wb.active_sheet()
 
     ${val_before}=    Evaluate    $sheet.get_cell_value(0, 1)
-    Should Be Equal As Strings    ${val_before}    Header2
+    Should Be Equal As Strings    ${val_before}    Header #2
 
     Evaluate    $sheet.drop_column(1)
 
-    Run Keyword And Expect Error    *IndexError: Out of bounds*    Evaluate    $sheet.get_cell_value(0, 1)
+    ${val_after}=    Evaluate    $sheet.get_cell_value(0, 1)
+    Should Be Equal As Strings    ${val_after}    Header #3
+    Run Keyword And Expect Error    *IndexError: Out of bounds*    Evaluate    $sheet.get_cell_value(0, 2)
 
 Verify drop Out Of Bounds
     [Documentation]    Verify drop_row and drop_column with out of bounds index raise IndexError.
@@ -66,7 +68,7 @@ Verify drop Out Of Bounds
     ${sheet}=    Evaluate    $wb.active_sheet()
 
     Run Keyword And Expect Error    *IndexError: Out of bounds*    Evaluate    $sheet.drop_row(5)
-    Run Keyword And Expect Error    *IndexError: Out of bounds*    Evaluate    $sheet.drop_column(2)
+    Run Keyword And Expect Error    *IndexError: Out of bounds*    Evaluate    $sheet.drop_column(3)
 
 Verify drop Negative Index
     [Documentation]    Verify drop_row and drop_column with negative index raise IndexError.

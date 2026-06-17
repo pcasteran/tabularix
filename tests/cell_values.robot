@@ -10,7 +10,7 @@ Verify get_cell_value Success
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.active_sheet()
     ${val1}=    Evaluate    $sheet.get_cell_value(0, 0)
-    Should Be Equal As Strings    ${val1}    Header1
+    Should Be Equal As Strings    ${val1}    Header #1
     ${val2}=    Evaluate    $sheet.get_cell_value(1, 1)
     ${expected_val2}=    Evaluate    123.45
     Should Be Equal    ${val2}    ${expected_val2}

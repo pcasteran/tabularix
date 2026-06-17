@@ -49,13 +49,36 @@ This page describes the public API exposed by the Tabularix library.
 
 <!-- prettier-ignore -->
 !!! example "Example"
-    ```python
-    sheet.drop_row(1)
-    ```
 
-    | Before | After |
-    | :---: | :---: |
-    | ![Original Excel Sheet](assets/drop_row_before.svg) | ![Rendered SVG Output](assets/drop_row_after.svg) |
+    === "Non-merged"
+
+        ```python title="Drop non-merged row" linenums="1"
+        sheet.drop_row(1)
+        ```
+
+        | Before | After |
+        | :---: | :---: |
+        | ![Original Excel Sheet](assets/sheet_simple.svg) | ![Rendered SVG Output](assets/drop_row_non_merged_after.svg) |
+
+    === "Merged (non-first)"
+
+        ```python title="Drop merged row (non-first)" linenums="1"
+        sheet.drop_row(4)
+        ```
+
+        | Before | After |
+        | :---: | :---: |
+        | ![Original Excel Sheet](assets/sheet_simple.svg) | ![Rendered SVG Output](assets/drop_row_merged_non_first_after.svg) |
+
+    === "Merged (first)"
+
+        ```python title="Drop merged row (first)" linenums="1"
+        sheet.drop_row(3)
+        ```
+
+        | Before | After |
+        | :---: | :---: |
+        | ![Original Excel Sheet](assets/sheet_simple.svg) | ![Rendered SVG Output](assets/drop_row_merged_first_after.svg) |
 
 <!-- drop_column() -->
 
@@ -67,10 +90,33 @@ This page describes the public API exposed by the Tabularix library.
 
 <!-- prettier-ignore -->
 !!! example "Example"
-    ```python
-    sheet.drop_column(1)
-    ```
 
-    | Before | After |
-    | :---: | :---: |
-    | ![Original Excel Sheet](assets/drop_column_before.svg) | ![Rendered SVG Output](assets/drop_column_after.svg) |
+    === "Non-merged"
+
+        ```python title="Drop non-merged column" linenums="1"
+        sheet.drop_column(2)
+        ```
+
+        | Before | After |
+        | :---: | :---: |
+        | ![Original Excel Sheet](assets/sheet_simple.svg) | ![Rendered SVG Output](assets/drop_column_non_merged_after.svg) |
+
+    === "Merged (non-first)"
+
+        ```python title="Drop merged column (non-first)" linenums="1"
+        sheet.drop_column(1)
+        ```
+
+        | Before | After |
+        | :---: | :---: |
+        | ![Original Excel Sheet](assets/sheet_simple.svg) | ![Rendered SVG Output](assets/drop_column_merged_non_first_after.svg) |
+
+    === "Merged (first)"
+
+        ```python title="Drop merged column (first)" linenums="1"
+        sheet.drop_column(0)
+        ```
+
+        | Before | After |
+        | :---: | :---: |
+        | ![Original Excel Sheet](assets/sheet_simple.svg) | ![Rendered SVG Output](assets/drop_column_merged_first_after.svg) |

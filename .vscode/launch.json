@@ -16,7 +16,7 @@
       "name": "Docs screenshots",
       "type": "debugpy",
       "request": "launch",
-      "program": "examples/generate_docs_api_screenshots.py",
+      "program": "docs/assets/generate_api_screenshots.py",
       "console": "integratedTerminal",
       "justMyCode": false
     }
