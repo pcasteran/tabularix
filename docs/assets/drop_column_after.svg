@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="280" height="145">
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="175">
 <style>
   text {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -54,18 +54,14 @@
 </style>
   <rect x="40" y="25" width="120" height="30" class="cell-rect" />
   <text x="48" y="44" class="val-string">Header1</text>
-  <rect x="160" y="25" width="120" height="30" class="cell-rect" />
-  <text x="168" y="44" class="val-string">Header2</text>
   <rect x="40" y="55" width="120" height="30" class="cell-rect" />
-  <text x="48" y="74" class="val-string">DEF</text>
-  <rect x="160" y="55" width="120" height="30" class="cell-rect" />
-  <text x="272" y="74" class="val-number">678</text>
-  <rect x="40" y="85" width="240" height="60" class="cell-rect cell-merged" />
-  <text x="48" y="119" class="val-string">Merged value</text>
+  <text x="48" y="74" class="val-string">ABC</text>
+  <rect x="40" y="85" width="120" height="30" class="cell-rect" />
+  <text x="48" y="104" class="val-string">DEF</text>
+  <rect x="40" y="115" width="120" height="60" class="cell-rect cell-merged" />
+  <text x="48" y="149" class="val-string">Merged value</text>
   <rect x="40" y="0" width="120" height="25" class="hdr-rect" />
   <text x="100" y="16" class="hdr-text">A (0)</text>
-  <rect x="160" y="0" width="120" height="25" class="hdr-rect" />
-  <text x="220" y="16" class="hdr-text">B (1)</text>
   <rect x="0" y="25" width="40" height="30" class="hdr-rect" />
   <text x="20" y="44" class="hdr-text">0</text>
   <rect x="0" y="55" width="40" height="30" class="hdr-rect" />
@@ -74,5 +70,7 @@
   <text x="20" y="104" class="hdr-text">2</text>
   <rect x="0" y="115" width="40" height="30" class="hdr-rect" />
   <text x="20" y="134" class="hdr-text">3</text>
+  <rect x="0" y="145" width="40" height="30" class="hdr-rect" />
+  <text x="20" y="164" class="hdr-text">4</text>
   <rect x="0" y="0" width="40" height="25" class="hdr-rect" />
 </svg>

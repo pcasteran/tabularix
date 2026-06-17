@@ -69,6 +69,28 @@ class Sheet:
         """
         ...
 
+    def drop_row(self, row_idx: int) -> None:
+        """Deletes a row from the sheet.
+
+        Args:
+            row_idx: Zero-based index of the row to drop.
+
+        Raises:
+            IndexError: If row_idx is out of bounds or negative.
+        """
+        ...
+
+    def drop_column(self, col_idx: int) -> None:
+        """Deletes a column from the sheet.
+
+        Args:
+            col_idx: Zero-based index of the column to drop.
+
+        Raises:
+            IndexError: If col_idx is out of bounds or negative.
+        """
+        ...
+
 class Workbook:
     """Represents an Excel workbook containing multiple worksheets."""
 

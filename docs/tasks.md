@@ -58,7 +58,7 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/cell_values.robot`, `docs/api.md`.
 
-- [ ] **Task 3.4: Implement and Expose `drop_row` / `drop_column`**
+- [x] **Task 3.4: Implement and Expose `drop_row` / `drop_column`**
     - **Acceptance:** `Sheet` has `drop_row(row_idx)` and `drop_column(col_idx)` methods to delete specific rows or columns. The methods are exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated with signatures and docstrings. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/drop.robot`, `docs/api.md`.

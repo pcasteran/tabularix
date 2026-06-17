@@ -41,12 +41,36 @@ This page describes the public API exposed by the Tabularix library.
 
 <!-- drow_row() -->
 
-<!-- ::: tabularix.Sheet.drop_row
+<!-- prettier-ignore -->
+::: tabularix.Sheet.drop_row
     options:
       heading_level: 4
       show_root_full_path: false
 
-!!! example "Visual Transformation Example"
+<!-- prettier-ignore -->
+!!! example "Example"
+    ```python
+    sheet.drop_row(1)
+    ```
+
     | Before | After |
     | :---: | :---: |
-    | ![Original Excel Sheet](assets/drop_row_before.svg) | ![Rendered SVG Output](assets/drop_row_after.svg) | -->
+    | ![Original Excel Sheet](assets/drop_row_before.svg) | ![Rendered SVG Output](assets/drop_row_after.svg) |
+
+<!-- drop_column() -->
+
+<!-- prettier-ignore -->
+::: tabularix.Sheet.drop_column
+    options:
+      heading_level: 4
+      show_root_full_path: false
+
+<!-- prettier-ignore -->
+!!! example "Example"
+    ```python
+    sheet.drop_column(1)
+    ```
+
+    | Before | After |
+    | :---: | :---: |
+    | ![Original Excel Sheet](assets/drop_column_before.svg) | ![Rendered SVG Output](assets/drop_column_after.svg) |

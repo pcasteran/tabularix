@@ -102,6 +102,107 @@ impl Sheet {
         self.to_svg_impl(path, zero_based_indices)
             .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("Failed to write SVG: {e}")))
     }
+
+    #[allow(clippy::cast_sign_loss, clippy::similar_names)]
+    pub fn drop_row(&mut self, row_idx: isize) -> PyResult<()> {
+        if row_idx < 0 {
+            return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
+        }
+        let target = row_idx as usize;
+        if target >= self.data.len() {
+            return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
+        }
+
+        // Remove row from grid data
+        self.data.remove(target);
+
+        // Adjust merged regions
+        let mut new_merged = Vec::new();
+        for &((s_row, s_col), (e_row, e_col)) in &self.merged_regions {
+            // Case 3: Completely contained in target -> Delete
+            if s_row == target && e_row == target {
+                continue;
+            }
+
+            let mut next_s_row = s_row;
+            let mut next_e_row = e_row;
+
+            // Case 1: Shift Up
+            if s_row > target {
+                next_s_row -= 1;
+                next_e_row -= 1;
+            }
+            // Case 2: Shrink
+            else if s_row <= target && e_row >= target {
+                next_e_row -= 1;
+            }
+
+            // Case 4: Cleanup (if 1x1 region, discard it)
+            if next_s_row == next_e_row && s_col == e_col {
+                continue;
+            }
+
+            new_merged.push(((next_s_row, s_col), (next_e_row, e_col)));
+        }
+        self.merged_regions = new_merged;
+
+        Ok(())
+    }
+
+    #[allow(clippy::cast_sign_loss, clippy::similar_names)]
+    pub fn drop_column(&mut self, col_idx: isize) -> PyResult<()> {
+        if col_idx < 0 {
+            return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
+        }
+        let target = col_idx as usize;
+        let cols = if self.data.is_empty() {
+            0
+        } else {
+            self.data[0].len()
+        };
+        if target >= cols {
+            return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
+        }
+
+        // Remove column from grid data
+        for row in &mut self.data {
+            if target < row.len() {
+                row.remove(target);
+            }
+        }
+
+        // Adjust merged regions
+        let mut new_merged = Vec::new();
+        for &((s_row, s_col), (e_row, e_col)) in &self.merged_regions {
+            // Case 3: Completely contained in target -> Delete
+            if s_col == target && e_col == target {
+                continue;
+            }
+
+            let mut next_s_col = s_col;
+            let mut next_e_col = e_col;
+
+            // Case 1: Shift Left
+            if s_col > target {
+                next_s_col -= 1;
+                next_e_col -= 1;
+            }
+            // Case 2: Shrink
+            else if s_col <= target && e_col >= target {
+                next_e_col -= 1;
+            }
+
+            // Case 4: Cleanup (if 1x1 region, discard it)
+            if s_row == e_row && next_s_col == next_e_col {
+                continue;
+            }
+
+            new_merged.push(((s_row, next_s_col), (e_row, next_e_col)));
+        }
+        self.merged_regions = new_merged;
+
+        Ok(())
+    }
 }
 
 impl Sheet {
@@ -182,7 +283,7 @@ impl Sheet {
         if rows == 0 || cols == 0 {
             svg.push_str(r##"<rect width="100%" height="100%" fill="#f9fafb"/>"##);
             svg.push_str(r##"<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="14" fill="#9ca3af">Empty Sheet</text>"##);
-            svg.push_str("</svg>");
+            svg.push_str("</svg>\n");
             std::fs::write(path, svg)?;
             return Ok(());
         }
@@ -316,7 +417,7 @@ impl Sheet {
             r#"  <rect x="0" y="0" width="{row_hdr_width}" height="{col_hdr_height}" class="hdr-rect" />"#
         );
 
-        svg.push_str("</svg>");
+        svg.push_str("</svg>\n");
 
         std::fs::write(path, svg)?;
         Ok(())
@@ -545,5 +646,42 @@ mod tests {
             assert!(mut_sheet.set_cell_value(5, 0, "Err".to_string()).is_err());
             // Out of bounds
         });
+
+        // Verify drop_row and drop_column
+        {
+            let mut test_sheet = sheet.clone();
+            // Drop row 1 (the second row, index 1)
+            test_sheet.drop_row(1).unwrap();
+            assert_eq!(test_sheet.shape(), (4, 2));
+            // Merged region ((3, 0), (4, 1)) should shift up by 1 to ((2, 0), (3, 1))
+            assert_eq!(test_sheet.merged_regions.len(), 1);
+            assert_eq!(test_sheet.merged_regions[0], ((2, 0), (3, 1)));
+
+            // Drop row 2 (which is index 2, now inside the merged region ((2, 0), (3, 1)))
+            test_sheet.drop_row(2).unwrap();
+            assert_eq!(test_sheet.shape(), (3, 2));
+            // Merged region should shrink from 2 rows to 1 row: ((2, 0), (2, 1))
+            assert_eq!(test_sheet.merged_regions.len(), 1);
+            assert_eq!(test_sheet.merged_regions[0], ((2, 0), (2, 1)));
+
+            // Drop column 1 (index 1, which is inside the merged region ((2, 0), (2, 1)))
+            test_sheet.drop_column(1).unwrap();
+            assert_eq!(test_sheet.shape(), (3, 1));
+            // Merged region ((2, 0), (2, 1)) should shrink in width to ((2, 0), (2, 0)),
+            // which becomes a 1x1 region, so it must be cleaned up (deleted).
+            assert_eq!(test_sheet.merged_regions.len(), 0);
+
+            // Test out of bounds drop
+            assert!(test_sheet.drop_row(-1).is_err());
+            assert!(test_sheet.drop_row(3).is_err());
+            assert!(test_sheet.drop_column(-1).is_err());
+            assert!(test_sheet.drop_column(1).is_err());
+
+            // Drop remaining rows until empty
+            test_sheet.drop_row(0).unwrap();
+            test_sheet.drop_row(0).unwrap();
+            test_sheet.drop_row(0).unwrap();
+            assert_eq!(test_sheet.shape(), (0, 0));
+        }
     }
 }

@@ -5,10 +5,18 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "example 1",
+      "name": "Test",
       "type": "debugpy",
       "request": "launch",
       "program": "examples/test.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Docs screenshots",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "examples/generate_docs_api_screenshots.py",
       "console": "integratedTerminal",
       "justMyCode": false
     }
