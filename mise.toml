@@ -1,6 +1,8 @@
 [settings]
 experimental = true
 lockfile = true
+# Delay upgrading to new versions until they are at least 7 days old to implement a cooldown period.
+minimum_release_age = "7d"
 
 [tools]
 actionlint = "latest"
