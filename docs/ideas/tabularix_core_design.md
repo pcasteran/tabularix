@@ -22,7 +22,7 @@ The final output of any extraction pipeline is an **Apache Arrow Table**, allowi
 ## MVP Scope
 
 - **Rust Core & PyO3 Bindings**: High-performance core engine reading raw Excel files.
-- **Active Mutator APIs**: `search_and_crop_before()`, `unmerge_and_fill()`, `crop()`, `drop_rows()`.
+- **Active Mutator APIs**: `search_and_drop_before()`, `unmerge_and_fill()`, `crop()`, `drop_rows()`.
 - **RowGroupMatcher Engine**:
     - Match by Exact Value, Type (String, Numeric, Empty), and **Entity** (Semantic regex bundles like `[entity:date]`).
     - Regex-style cardinality (`*`, `+`, `?`, `{n,m}`) and grouping `()`.
@@ -43,7 +43,7 @@ import tabularix as tx
 # 1. Load and Active Mutator Cleaning
 sheet = tx.load_workbook("report.xlsx").active_sheet()
 sheet.unmerge_cells(strategy="fill_down")
-sheet.search_and_crop_before(marker="Invoice Date", direction="TOP")
+sheet.search_and_drop_before(marker="Invoice Date", direction="TOP")
 
 # 2. RowGroupMatcher Pattern Definition (Using Dual API)
 header_matcher = tx.RowGroupMatcher.from_layex('"Date" "Description" "Amount"')

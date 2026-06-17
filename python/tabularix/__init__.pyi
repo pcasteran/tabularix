@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal, Pattern, Union
 
 def load_workbook(path: str) -> Workbook:
     """Loads an Excel workbook from the specified file path.
@@ -108,6 +108,28 @@ class Sheet:
 
         Args:
             memo: The memoization dictionary used by Python's copy module.
+        """
+        ...
+
+    def search_and_drop(
+        self,
+        str_or_regex: Union[str, Pattern[str]],
+        drop_direction: Literal[
+            "top", "bottom", "left", "right", "top_left", "top_right", "bottom_left", "bottom_right"
+        ],
+    ) -> tuple[tuple[int, int], tuple[int, int]]:
+        """Searches for a text or compiled regex pattern and drops rows/columns in the specified direction. Regex matches use [Python flavor Regular Expressions](https://docs.python.org/3/library/re.html).
+
+        Args:
+            str_or_regex: A string to search for (exact match), or a compiled regex pattern (from `re.compile`).
+            drop_direction: The direction in which to drop rows/columns relative to the match.
+
+        Returns:
+            A nested tuple of ((orig_row, orig_col), (new_row, new_col)) representing the 0-based coordinates of the matched cell before and after the drop operations.
+
+        Raises:
+            TypeError: If str_or_regex is neither a string nor a compiled regex pattern.
+            ValueError: If the search term is not found, or if an invalid drop_direction is provided.
         """
         ...
 
