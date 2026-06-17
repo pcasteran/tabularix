@@ -91,6 +91,26 @@ class Sheet:
         """
         ...
 
+    def copy(self) -> Sheet:
+        """Creates an independent copy (deep copy) of the worksheet.
+
+        Returns:
+            A new Sheet instance that is a deep copy of this sheet.
+        """
+        ...
+
+    def __copy__(self) -> Sheet:
+        """Shallow copy protocol support (returns a deep copy)."""
+        ...
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> Sheet:
+        """Deep copy protocol support.
+
+        Args:
+            memo: The memoization dictionary used by Python's copy module.
+        """
+        ...
+
 class Workbook:
     """Represents an Excel workbook containing multiple worksheets."""
 

@@ -35,6 +35,7 @@ This page describes the public API exposed by the Tabularix library.
       members:
         - name
         - shape
+        - copy
         - get_cell_value
         - set_cell_value
         - to_svg

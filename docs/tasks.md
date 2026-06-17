@@ -41,6 +41,11 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Verify:** `just acceptance-test` runs a test that loads `sample.xlsx`, exports to SVG, and verifies the SVG file is created.
     - **Files:** `src/sheet.rs`, `python/tabularix/__init__.py`, `tests/svg.robot`.
 
+- [x] **Task 2.4: Implement Sheet Cloning (Deep Copy)**
+    - **Acceptance:** `Sheet` has a `copy()` method or implements Python's standard `copy`/`deepcopy` protocols (e.g. `__copy__` and `__deepcopy__`) allowing users to create an independent deep copy of a sheet. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `python/tabularix/__init__.pyi`, `tests/clone.robot`, `docs/api.md`.
+
 ## Step 3: Active Mutator API
 
 - [ ] **Task 3.1: Implement and Expose `unmerge_cells`**

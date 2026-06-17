@@ -97,6 +97,18 @@ impl Sheet {
         Ok(())
     }
 
+    pub fn copy(&self) -> Self {
+        self.clone()
+    }
+
+    pub fn __copy__(&self) -> Self {
+        self.clone()
+    }
+
+    pub fn __deepcopy__(&self, _memo: &Bound<'_, PyAny>) -> Self {
+        self.clone()
+    }
+
     #[pyo3(signature = (path, zero_based_indices = true))]
     pub fn to_svg(&self, path: &str, zero_based_indices: bool) -> PyResult<()> {
         self.to_svg_impl(path, zero_based_indices)
@@ -688,5 +700,57 @@ mod tests {
             test_sheet.drop_row(0).unwrap();
             assert_eq!(test_sheet.shape(), (0, 0));
         }
+    }
+
+    #[test]
+    fn test_sheet_copy() {
+        let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
+        let sheet = wb.get_sheet("simple").unwrap();
+
+        let cloned_sheet = sheet.copy();
+        assert_eq!(cloned_sheet.name, sheet.name);
+        assert_eq!(cloned_sheet.shape(), sheet.shape());
+        assert_eq!(cloned_sheet.merged_regions, sheet.merged_regions);
+
+        // Mutate clone and check that original is unchanged
+        let mut mut_clone = cloned_sheet;
+        mut_clone
+            .set_cell_value(0, 0, "Mutated".to_string())
+            .unwrap();
+
+        // Original has "Header #1"
+        assert_eq!(sheet.data[0][0], CellValue::String("Header #1".to_string()));
+        // Clone has "Mutated"
+        assert_eq!(
+            mut_clone.data[0][0],
+            CellValue::String("Mutated".to_string())
+        );
+
+        // Verify PyO3 bindings for copy, __copy__, __deepcopy__
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
+            let bound_sheet = sheet.clone().into_pyobject(py).unwrap();
+
+            // test copy
+            let copied: Sheet = bound_sheet.call_method0("copy").unwrap().extract().unwrap();
+            assert_eq!(copied.name, sheet.name);
+
+            // test __copy__
+            let copied_dunder: Sheet = bound_sheet
+                .call_method0("__copy__")
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert_eq!(copied_dunder.name, sheet.name);
+
+            // test __deepcopy__
+            let memo = pyo3::types::PyDict::new(py);
+            let deep_copied: Sheet = bound_sheet
+                .call_method1("__deepcopy__", (memo,))
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert_eq!(deep_copied.name, sheet.name);
+        });
     }
 }
