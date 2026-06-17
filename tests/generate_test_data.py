@@ -9,12 +9,21 @@ def create_sheet_simple(wb):
     ws.title = "simple"
 
     # Add some simple data
-    ws["A1"] = "Header1"
-    ws["B1"] = "Header2"
+    ws["A1"] = "Header #1"
+    ws["B1"] = "Header #2"
+    ws["C1"] = "Header #3"
+
     ws["A2"] = "ABC"
     ws["B2"] = 123.45
+    ws["C2"] = "Alice"
+
     ws["A3"] = "DEF"
     ws["B3"] = 678.0
+    ws["C3"] = "Bob"
+
+    ws["C4"] = "Charlie"
+
+    ws["C5"] = "David"
 
     # Add some merged cells to test merges
     # Merge A4:B5

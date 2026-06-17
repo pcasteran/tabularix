@@ -16,7 +16,7 @@ def load_workbook(path: str) -> Workbook:
     ...
 
 class Sheet:
-    """Represents an Excel worksheet containing a grid of cells."""
+    """Represents a single worksheet as a grid of cell values. It provides methods to inspect and modify cells, update the sheet content, and render the sheet visually."""
 
     @property
     def name(self) -> str:
@@ -28,7 +28,7 @@ class Sheet:
         """A tuple of (rows, columns) representing the size of the cell grid."""
         ...
 
-    def cell(self, row: int, col: int) -> Any:
+    def get_cell_value(self, row: int, col: int) -> Any:
         """Retrieves the value of a cell at the given 0-based row and column indices.
 
         Args:
@@ -43,14 +43,71 @@ class Sheet:
         """
         ...
 
-    def to_svg(self, path: str) -> None:
+    def set_cell_value(self, row: int, col: int, value: str) -> None:
+        """Sets the value of a cell at the given 0-based row and column indices.
+
+        Args:
+            row: 0-based row index.
+            col: 0-based column index.
+            value: The string value to write to the cell.
+
+        Raises:
+            IndexError: If the indices are out of bounds.
+            TypeError: If the value is not a string.
+        """
+        ...
+
+    def to_svg(self, path: str, zero_based_indices: bool = True) -> None:
         """Renders the worksheet to a beautifully styled SVG file.
 
         Args:
             path: Target file path where the SVG should be saved.
+            zero_based_indices: If True, uses 0-based indexing for headers (default); otherwise 1-based.
 
         Raises:
             IOError: If writing to the destination path fails.
+        """
+        ...
+
+    def drop_row(self, row_idx: int) -> None:
+        """Deletes a row from the sheet.
+
+        Args:
+            row_idx: Zero-based index of the row to drop.
+
+        Raises:
+            IndexError: If row_idx is out of bounds or negative.
+        """
+        ...
+
+    def drop_column(self, col_idx: int) -> None:
+        """Deletes a column from the sheet.
+
+        Args:
+            col_idx: Zero-based index of the column to drop.
+
+        Raises:
+            IndexError: If col_idx is out of bounds or negative.
+        """
+        ...
+
+    def copy(self) -> Sheet:
+        """Creates an independent copy (deep copy) of the worksheet.
+
+        Returns:
+            A new Sheet instance that is a deep copy of this sheet.
+        """
+        ...
+
+    def __copy__(self) -> Sheet:
+        """Shallow copy protocol support (returns a deep copy)."""
+        ...
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> Sheet:
+        """Deep copy protocol support.
+
+        Args:
+            memo: The memoization dictionary used by Python's copy module.
         """
         ...
 

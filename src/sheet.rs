@@ -68,24 +68,158 @@ impl Sheet {
         (rows, cols)
     }
 
-    pub fn cell(&self, py: Python<'_>, row: usize, col: usize) -> PyResult<Py<PyAny>> {
-        if row >= self.data.len() || (!self.data.is_empty() && col >= self.data[0].len()) {
+    #[allow(clippy::cast_sign_loss)]
+    pub fn get_cell_value(&self, py: Python<'_>, row: isize, col: isize) -> PyResult<Py<PyAny>> {
+        if row < 0 || col < 0 {
             return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
         }
-        let val = &self.data[row][col];
+        let r = row as usize;
+        let c = col as usize;
+        if r >= self.data.len() || (!self.data.is_empty() && c >= self.data[0].len()) {
+            return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
+        }
+        let val = &self.data[r][c];
         let bound = val.clone().into_pyobject(py)?;
         Ok(bound.into_any().unbind())
     }
 
-    pub fn to_svg(&self, path: &str) -> PyResult<()> {
-        self.to_svg_impl(path)
+    #[allow(clippy::cast_sign_loss)]
+    pub fn set_cell_value(&mut self, row: isize, col: isize, value: String) -> PyResult<()> {
+        if row < 0 || col < 0 {
+            return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
+        }
+        let r = row as usize;
+        let c = col as usize;
+        if r >= self.data.len() || (!self.data.is_empty() && c >= self.data[0].len()) {
+            return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
+        }
+        self.data[r][c] = CellValue::String(value);
+        Ok(())
+    }
+
+    pub fn copy(&self) -> Self {
+        self.clone()
+    }
+
+    pub fn __copy__(&self) -> Self {
+        self.clone()
+    }
+
+    pub fn __deepcopy__(&self, _memo: &Bound<'_, PyAny>) -> Self {
+        self.clone()
+    }
+
+    #[pyo3(signature = (path, zero_based_indices = true))]
+    pub fn to_svg(&self, path: &str, zero_based_indices: bool) -> PyResult<()> {
+        self.to_svg_impl(path, zero_based_indices)
             .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("Failed to write SVG: {e}")))
+    }
+
+    #[allow(clippy::cast_sign_loss, clippy::similar_names)]
+    pub fn drop_row(&mut self, row_idx: isize) -> PyResult<()> {
+        if row_idx < 0 {
+            return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
+        }
+        let target = row_idx as usize;
+        if target >= self.data.len() {
+            return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
+        }
+
+        // Remove row from grid data
+        self.data.remove(target);
+
+        // Adjust merged regions
+        let mut new_merged = Vec::new();
+        for &((s_row, s_col), (e_row, e_col)) in &self.merged_regions {
+            // Case 3: Completely contained in target -> Delete
+            if s_row == target && e_row == target {
+                continue;
+            }
+
+            let mut next_s_row = s_row;
+            let mut next_e_row = e_row;
+
+            // Case 1: Shift Up
+            if s_row > target {
+                next_s_row -= 1;
+                next_e_row -= 1;
+            }
+            // Case 2: Shrink
+            else if s_row <= target && e_row >= target {
+                next_e_row -= 1;
+            }
+
+            // Case 4: Cleanup (if 1x1 region, discard it)
+            if next_s_row == next_e_row && s_col == e_col {
+                continue;
+            }
+
+            new_merged.push(((next_s_row, s_col), (next_e_row, e_col)));
+        }
+        self.merged_regions = new_merged;
+
+        Ok(())
+    }
+
+    #[allow(clippy::cast_sign_loss, clippy::similar_names)]
+    pub fn drop_column(&mut self, col_idx: isize) -> PyResult<()> {
+        if col_idx < 0 {
+            return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
+        }
+        let target = col_idx as usize;
+        let cols = if self.data.is_empty() {
+            0
+        } else {
+            self.data[0].len()
+        };
+        if target >= cols {
+            return Err(pyo3::exceptions::PyIndexError::new_err("Out of bounds"));
+        }
+
+        // Remove column from grid data
+        for row in &mut self.data {
+            if target < row.len() {
+                row.remove(target);
+            }
+        }
+
+        // Adjust merged regions
+        let mut new_merged = Vec::new();
+        for &((s_row, s_col), (e_row, e_col)) in &self.merged_regions {
+            // Case 3: Completely contained in target -> Delete
+            if s_col == target && e_col == target {
+                continue;
+            }
+
+            let mut next_s_col = s_col;
+            let mut next_e_col = e_col;
+
+            // Case 1: Shift Left
+            if s_col > target {
+                next_s_col -= 1;
+                next_e_col -= 1;
+            }
+            // Case 2: Shrink
+            else if s_col <= target && e_col >= target {
+                next_e_col -= 1;
+            }
+
+            // Case 4: Cleanup (if 1x1 region, discard it)
+            if s_row == e_row && next_s_col == next_e_col {
+                continue;
+            }
+
+            new_merged.push(((s_row, next_s_col), (e_row, next_e_col)));
+        }
+        self.merged_regions = new_merged;
+
+        Ok(())
     }
 }
 
 impl Sheet {
     #[allow(clippy::too_many_lines)]
-    fn to_svg_impl(&self, path: &str) -> std::io::Result<()> {
+    fn to_svg_impl(&self, path: &str, zero_based_indices: bool) -> std::io::Result<()> {
         let (rows, cols) = self.shape();
 
         let cell_width = 120;
@@ -161,7 +295,7 @@ impl Sheet {
         if rows == 0 || cols == 0 {
             svg.push_str(r##"<rect width="100%" height="100%" fill="#f9fafb"/>"##);
             svg.push_str(r##"<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="14" fill="#9ca3af">Empty Sheet</text>"##);
-            svg.push_str("</svg>");
+            svg.push_str("</svg>\n");
             std::fs::write(path, svg)?;
             return Ok(());
         }
@@ -267,18 +401,20 @@ impl Sheet {
         for c in 0..cols {
             let cell_x = row_hdr_width + c * cell_width;
             let letters = index_to_col_letters(c);
+            let col_idx = if zero_based_indices { c } else { c + 1 };
+            let col_label = format!("{letters} ({col_idx})");
             let text_x = cell_x + cell_width / 2;
             let text_y = col_hdr_height / 2 + 4;
             let _ = writeln!(
                 svg,
                 r#"  <rect x="{cell_x}" y="0" width="{cell_width}" height="{col_hdr_height}" class="hdr-rect" />
-  <text x="{text_x}" y="{text_y}" class="hdr-text">{letters}</text>"#
+  <text x="{text_x}" y="{text_y}" class="hdr-text">{col_label}</text>"#
             );
         }
 
         for r in 0..rows {
             let cell_y = col_hdr_height + r * cell_height;
-            let label = r + 1;
+            let label = if zero_based_indices { r } else { r + 1 };
             let text_x = row_hdr_width / 2;
             let text_y = cell_y + cell_height / 2 + 4;
             let _ = writeln!(
@@ -293,7 +429,7 @@ impl Sheet {
             r#"  <rect x="0" y="0" width="{row_hdr_width}" height="{col_hdr_height}" class="hdr-rect" />"#
         );
 
-        svg.push_str("</svg>");
+        svg.push_str("</svg>\n");
 
         std::fs::write(path, svg)?;
         Ok(())
@@ -465,15 +601,18 @@ mod tests {
 
         let sheet = wb.get_sheet("simple").unwrap();
         assert_eq!(sheet.name, "simple");
-        assert_eq!(sheet.shape(), (5, 2)); // 5 rows, 2 cols (A1 to B5)
+        assert_eq!(sheet.shape(), (5, 3)); // 5 rows, 3 cols (A1 to C5)
 
         // Check cell values
-        assert_eq!(sheet.data[0][0], CellValue::String("Header1".to_string()));
-        assert_eq!(sheet.data[0][1], CellValue::String("Header2".to_string()));
+        assert_eq!(sheet.data[0][0], CellValue::String("Header #1".to_string()));
+        assert_eq!(sheet.data[0][1], CellValue::String("Header #2".to_string()));
+        assert_eq!(sheet.data[0][2], CellValue::String("Header #3".to_string()));
         assert_eq!(sheet.data[1][0], CellValue::String("ABC".to_string()));
         assert_eq!(sheet.data[1][1], CellValue::Float(123.45));
+        assert_eq!(sheet.data[1][2], CellValue::String("Alice".to_string()));
         assert_eq!(sheet.data[2][0], CellValue::String("DEF".to_string()));
         assert_eq!(sheet.data[2][1], CellValue::Float(678.0));
+        assert_eq!(sheet.data[2][2], CellValue::String("Bob".to_string()));
 
         // Merged cell A4 is "Merged value"
         assert_eq!(
@@ -484,6 +623,8 @@ mod tests {
         assert_eq!(sheet.data[3][1], CellValue::Empty);
         assert_eq!(sheet.data[4][0], CellValue::Empty);
         assert_eq!(sheet.data[4][1], CellValue::Empty);
+        assert_eq!(sheet.data[3][2], CellValue::String("Charlie".to_string()));
+        assert_eq!(sheet.data[4][2], CellValue::String("David".to_string()));
 
         // Merged regions check
         assert_eq!(sheet.merged_regions.len(), 1);
@@ -503,5 +644,113 @@ mod tests {
         );
         assert_eq!(complex_sheet.data[10][2], CellValue::Bool(true));
         assert_eq!(complex_sheet.merged_regions.len(), 2);
+
+        // Verify get_cell_value and set_cell_value
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
+            assert!(sheet.get_cell_value(py, 5, 0).is_err()); // Out of bounds
+            let val = sheet.get_cell_value(py, 0, 0).unwrap();
+            let s: String = val.extract(py).unwrap();
+            assert_eq!(s, "Header #1");
+
+            let mut mut_sheet = sheet.clone();
+            mut_sheet
+                .set_cell_value(0, 0, "NewHeader".to_string())
+                .unwrap();
+            let val = mut_sheet.get_cell_value(py, 0, 0).unwrap();
+            let s: String = val.extract(py).unwrap();
+            assert_eq!(s, "NewHeader");
+            assert!(mut_sheet.set_cell_value(5, 0, "Err".to_string()).is_err());
+            // Out of bounds
+        });
+
+        // Verify drop_row and drop_column
+        {
+            let mut test_sheet = sheet.clone();
+            // Drop row 1 (the second row, index 1)
+            test_sheet.drop_row(1).unwrap();
+            assert_eq!(test_sheet.shape(), (4, 3));
+            // Merged region ((3, 0), (4, 1)) should shift up by 1 to ((2, 0), (3, 1))
+            assert_eq!(test_sheet.merged_regions.len(), 1);
+            assert_eq!(test_sheet.merged_regions[0], ((2, 0), (3, 1)));
+
+            // Drop row 2 (which is index 2, now inside the merged region ((2, 0), (3, 1)))
+            test_sheet.drop_row(2).unwrap();
+            assert_eq!(test_sheet.shape(), (3, 3));
+            // Merged region should shrink from 2 rows to 1 row: ((2, 0), (2, 1))
+            assert_eq!(test_sheet.merged_regions.len(), 1);
+            assert_eq!(test_sheet.merged_regions[0], ((2, 0), (2, 1)));
+
+            // Drop column 1 (index 1, which is inside the merged region ((2, 0), (2, 1)))
+            test_sheet.drop_column(1).unwrap();
+            assert_eq!(test_sheet.shape(), (3, 2));
+            // Merged region ((2, 0), (2, 1)) should shrink in width to ((2, 0), (2, 0)),
+            // which becomes a 1x1 region, so it must be cleaned up (deleted).
+            assert_eq!(test_sheet.merged_regions.len(), 0);
+
+            // Test out of bounds drop
+            assert!(test_sheet.drop_row(-1).is_err());
+            assert!(test_sheet.drop_row(3).is_err());
+            assert!(test_sheet.drop_column(-1).is_err());
+            assert!(test_sheet.drop_column(2).is_err());
+
+            // Drop remaining rows until empty
+            test_sheet.drop_row(0).unwrap();
+            test_sheet.drop_row(0).unwrap();
+            test_sheet.drop_row(0).unwrap();
+            assert_eq!(test_sheet.shape(), (0, 0));
+        }
+    }
+
+    #[test]
+    fn test_sheet_copy() {
+        let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
+        let sheet = wb.get_sheet("simple").unwrap();
+
+        let cloned_sheet = sheet.copy();
+        assert_eq!(cloned_sheet.name, sheet.name);
+        assert_eq!(cloned_sheet.shape(), sheet.shape());
+        assert_eq!(cloned_sheet.merged_regions, sheet.merged_regions);
+
+        // Mutate clone and check that original is unchanged
+        let mut mut_clone = cloned_sheet;
+        mut_clone
+            .set_cell_value(0, 0, "Mutated".to_string())
+            .unwrap();
+
+        // Original has "Header #1"
+        assert_eq!(sheet.data[0][0], CellValue::String("Header #1".to_string()));
+        // Clone has "Mutated"
+        assert_eq!(
+            mut_clone.data[0][0],
+            CellValue::String("Mutated".to_string())
+        );
+
+        // Verify PyO3 bindings for copy, __copy__, __deepcopy__
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
+            let bound_sheet = sheet.clone().into_pyobject(py).unwrap();
+
+            // test copy
+            let copied: Sheet = bound_sheet.call_method0("copy").unwrap().extract().unwrap();
+            assert_eq!(copied.name, sheet.name);
+
+            // test __copy__
+            let copied_dunder: Sheet = bound_sheet
+                .call_method0("__copy__")
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert_eq!(copied_dunder.name, sheet.name);
+
+            // test __deepcopy__
+            let memo = pyo3::types::PyDict::new(py);
+            let deep_copied: Sheet = bound_sheet
+                .call_method1("__deepcopy__", (memo,))
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert_eq!(deep_copied.name, sheet.name);
+        });
     }
 }
