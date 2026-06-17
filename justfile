@@ -87,9 +87,9 @@ acceptance-test: build
 # Build the documentation site
 [group("docs")]
 docs-build:
-    uvx zensical build
+    uvx --with mkdocstrings-python zensical build
 
 # Serve the documentation site locally
 [group("docs")]
 docs-serve:
-    uvx zensical serve
+    uvx --with mkdocstrings-python zensical serve

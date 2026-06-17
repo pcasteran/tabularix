@@ -51,8 +51,11 @@ nav = [
   { "Development" = [
       { "Specification" = "spec.md" },
       { "Implementation Plan" = "implementation_plan.md" },
-      { "Tasks" = "tasks.md" },
-      { "Project Pitch" = "project_pitch.md" }
+      { "Tasks" = "tasks.md" }
+  ]},
+  { "Ideas" = [
+      { "Project Pitch" = "ideas/project_pitch.md" },
+      { "Core design" = "ideas/tabularix_core_design.md" }
   ]}
 ]
 
@@ -354,3 +357,12 @@ combine_header_slug = true
 [project.markdown_extensions.pymdownx.tasklist]
 custom_checkbox = true
 [project.markdown_extensions.pymdownx.tilde]
+
+[project.plugins.mkdocstrings.handlers.python]
+paths = ["python"]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+docstring_style = "google"
+show_root_heading = true
+show_symbol_type_heading = true
+show_symbol_type_toc = true
