@@ -64,9 +64,9 @@ pub fn extract_rows_between(start: usize, end: usize) -> Result<RowGroup, Tabula
 
 ```python
 # Example of expected Python style
-def search_and_crop_before(self, marker: str, direction: str = "TOP") -> "Sheet":
+def search_and_drop_before(self, marker: str, direction: str = "TOP") -> "Sheet":
     """Crops the sheet relative to a specified text marker."""
-    self._rust_engine.search_and_crop_before(marker, direction)
+    self._rust_engine.search_and_drop_before(marker, direction)
     return self
 ```
 

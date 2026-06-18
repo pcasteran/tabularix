@@ -30,6 +30,25 @@ impl From<calamine::Data> for CellValue {
     }
 }
 
+impl CellValue {
+    pub fn to_string_for_search(&self) -> String {
+        match self {
+            CellValue::Empty => String::new(),
+            CellValue::String(s) => s.clone(),
+            CellValue::Float(f) => f.to_string(),
+            CellValue::Int(i) => i.to_string(),
+            CellValue::Bool(b) => {
+                if *b {
+                    "TRUE".to_string()
+                } else {
+                    "FALSE".to_string()
+                }
+            }
+            CellValue::Error(e) => format!("ERROR: {e}"),
+        }
+    }
+}
+
 impl<'py> IntoPyObject<'py> for CellValue {
     type Target = PyAny;
     type Output = Bound<'py, Self::Target>;
@@ -107,6 +126,125 @@ impl Sheet {
 
     pub fn __deepcopy__(&self, _memo: &Bound<'_, PyAny>) -> Self {
         self.clone()
+    }
+
+    #[allow(clippy::cast_possible_wrap)]
+    pub fn search_and_drop(
+        &mut self,
+        _py: Python<'_>,
+        str_or_regex: &Bound<'_, PyAny>,
+        drop_direction: &str,
+    ) -> PyResult<((usize, usize), (usize, usize))> {
+        let (rows, cols) = self.shape();
+        if rows == 0 || cols == 0 {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "Cannot search an empty sheet",
+            ));
+        }
+
+        // Validate drop direction first
+        let valid_directions = [
+            "top",
+            "bottom",
+            "left",
+            "right",
+            "top_left",
+            "top_right",
+            "bottom_left",
+            "bottom_right",
+        ];
+        if !valid_directions.contains(&drop_direction) {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "Invalid drop direction '{drop_direction}'. Must be one of {valid_directions:?}"
+            )));
+        }
+
+        // Determine matching strategy
+        let mut matched_coords: Option<(usize, usize)> = None;
+
+        // Check if str_or_regex is a string
+        if let Ok(target_str) = str_or_regex.extract::<String>() {
+            'outer_str: for r in 0..rows {
+                for c in 0..cols {
+                    let cell_str = self.data[r][c].to_string_for_search();
+                    if cell_str == target_str {
+                        matched_coords = Some((r, c));
+                        break 'outer_str;
+                    }
+                }
+            }
+        } else if str_or_regex.hasattr("search").unwrap_or(false) {
+            // It has a search method, treat as compiled regex pattern
+            'outer_regex: for r in 0..rows {
+                for c in 0..cols {
+                    let cell_str = self.data[r][c].to_string_for_search();
+                    let match_obj = str_or_regex.call_method1("search", (cell_str,))?;
+                    if !match_obj.is_none() {
+                        matched_coords = Some((r, c));
+                        break 'outer_regex;
+                    }
+                }
+            }
+        } else {
+            return Err(pyo3::exceptions::PyTypeError::new_err(
+                "str_or_regex must be a string or a compiled regex pattern (from re.compile)",
+            ));
+        }
+
+        let Some((matched_row, matched_col)) = matched_coords else {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "Search term not found in sheet",
+            ));
+        };
+
+        // Perform the drop operations
+        let drop_top = drop_direction.contains("top") || drop_direction == "top";
+        let drop_bottom = drop_direction.contains("bottom") || drop_direction == "bottom";
+        let drop_left = drop_direction.contains("left") || drop_direction == "left";
+        let drop_right = drop_direction.contains("right") || drop_direction == "right";
+
+        if drop_top {
+            for _ in 0..matched_row {
+                self.drop_row(0)?;
+            }
+        }
+
+        if drop_bottom {
+            // After drop_top, the matched row is now at index 0 (if drop_top was true),
+            // or remains at matched_row (if drop_top was false).
+            let current_matched_row = if drop_top { 0 } else { matched_row };
+            let (current_rows, _) = self.shape();
+            if current_rows > current_matched_row + 1 {
+                let to_drop = current_rows - 1 - current_matched_row;
+                for _ in 0..to_drop {
+                    self.drop_row((current_matched_row + 1) as isize)?;
+                }
+            }
+        }
+
+        if drop_left {
+            for _ in 0..matched_col {
+                self.drop_column(0)?;
+            }
+        }
+
+        if drop_right {
+            // After drop_left, the matched col is now at index 0 (if drop_left was true),
+            // or remains at matched_col (if drop_left was false).
+            let current_matched_col = if drop_left { 0 } else { matched_col };
+            let (_, current_cols) = self.shape();
+            if current_cols > current_matched_col + 1 {
+                let to_drop = current_cols - 1 - current_matched_col;
+                for _ in 0..to_drop {
+                    self.drop_column((current_matched_col + 1) as isize)?;
+                }
+            }
+        }
+
+        let new_row = if drop_top { 0 } else { matched_row };
+        let new_col = if drop_left { 0 } else { matched_col };
+
+        Ok(((matched_row, matched_col), (new_row, new_col)))
     }
 
     #[pyo3(signature = (path, zero_based_indices = true))]
@@ -751,6 +889,85 @@ mod tests {
                 .extract()
                 .unwrap();
             assert_eq!(deep_copied.name, sheet.name);
+        });
+    }
+
+    #[test]
+    fn test_search_and_drop() {
+        let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
+        let sheet = wb.get_sheet("simple").unwrap();
+
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
+            // Test 1: exact match with plain string, drop direction "top"
+            let mut test_sheet = sheet.clone();
+            let query = "DEF".into_pyobject(py).unwrap().into_any();
+            let coords = test_sheet.search_and_drop(py, &query, "top").unwrap();
+            assert_eq!(coords, ((2, 0), (0, 0)));
+            assert_eq!(test_sheet.shape(), (3, 3));
+            assert_eq!(test_sheet.data[0][0], CellValue::String("DEF".to_string()));
+
+            // Test 2: exact match with plain string, drop direction "bottom"
+            let mut test_sheet = sheet.clone();
+            let query = "DEF".into_pyobject(py).unwrap().into_any();
+            let coords = test_sheet.search_and_drop(py, &query, "bottom").unwrap();
+            assert_eq!(coords, ((2, 0), (2, 0)));
+            assert_eq!(test_sheet.shape(), (3, 3));
+            assert_eq!(test_sheet.data[2][0], CellValue::String("DEF".to_string()));
+
+            // Test 3: exact match with plain string, drop direction "left"
+            let mut test_sheet = sheet.clone();
+            let query = "Header #2".into_pyobject(py).unwrap().into_any();
+            let coords = test_sheet.search_and_drop(py, &query, "left").unwrap();
+            assert_eq!(coords, ((0, 1), (0, 0)));
+            assert_eq!(test_sheet.shape(), (5, 2));
+            assert_eq!(
+                test_sheet.data[0][0],
+                CellValue::String("Header #2".to_string())
+            );
+
+            // Test 4: exact match with plain string, drop direction "right"
+            let mut test_sheet = sheet.clone();
+            let query = "Header #2".into_pyobject(py).unwrap().into_any();
+            let coords = test_sheet.search_and_drop(py, &query, "right").unwrap();
+            assert_eq!(coords, ((0, 1), (0, 1)));
+            assert_eq!(test_sheet.shape(), (5, 2));
+            assert_eq!(
+                test_sheet.data[0][1],
+                CellValue::String("Header #2".to_string())
+            );
+
+            // Test 5: diagonal direction "top_left"
+            let mut test_sheet = sheet.clone();
+            let query = "Alice".into_pyobject(py).unwrap().into_any();
+            let coords = test_sheet.search_and_drop(py, &query, "top_left").unwrap();
+            assert_eq!(coords, ((1, 2), (0, 0)));
+            assert_eq!(test_sheet.shape(), (4, 1));
+            assert_eq!(
+                test_sheet.data[0][0],
+                CellValue::String("Alice".to_string())
+            );
+
+            // Test 6: Python regex match (using re.compile)
+            let re = py.import("re").unwrap();
+            let pattern = re.call_method1("compile", ("^[D-F]{3}$",)).unwrap();
+            let mut test_sheet = sheet.clone();
+            let coords = test_sheet.search_and_drop(py, &pattern, "top").unwrap();
+            assert_eq!(coords, ((2, 0), (0, 0)));
+            assert_eq!(test_sheet.shape(), (3, 3));
+            assert_eq!(test_sheet.data[0][0], CellValue::String("DEF".to_string()));
+
+            // Test 7: invalid direction error
+            let mut test_sheet = sheet.clone();
+            let query = "DEF".into_pyobject(py).unwrap().into_any();
+            let res = test_sheet.search_and_drop(py, &query, "invalid_dir");
+            assert!(res.is_err());
+
+            // Test 8: search term not found error
+            let mut test_sheet = sheet.clone();
+            let query = "NOT_FOUND".into_pyobject(py).unwrap().into_any();
+            let res = test_sheet.search_and_drop(py, &query, "top");
+            assert!(res.is_err());
         });
     }
 }
