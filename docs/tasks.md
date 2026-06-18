@@ -53,10 +53,10 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/unmerge.robot`, `docs/api.md`.
 
-- [ ] **Task 3.2: Implement and Expose `search_and_crop_before`**
-    - **Acceptance:** `Sheet` has a `search_and_crop_before` method to crop rows before a marker text. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated with the new signatures, types, and docstrings. Add Rust unit tests and Robot acceptance tests.
+- [x] **Task 3.2: Implement and Expose `search_and_drop`**
+    - **Acceptance:** `Sheet` has a `search_and_drop(str_or_regex, drop_direction)` method to drop rows/columns in a specified direction starting from a matched cell value (exact string) or a compiled regex pattern (from `re.compile`). The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
-    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/crop.robot`, `docs/api.md`.
+    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/drop_search.robot`, `docs/api.md`.
 
 - [x] **Task 3.3: Implement and Expose `get_cell_value` / `set_cell_value`**
     - **Acceptance:** `Sheet` has `get_cell_value(row, col)` and `set_cell_value(row, col, value)` methods to read and write cell values. The methods are exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated with signatures and docstrings. Add Rust unit tests and Robot acceptance tests.

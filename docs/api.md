@@ -59,7 +59,7 @@ This page describes the public API exposed by the Tabularix library.
 
         | Before | After |
         | :---: | :---: |
-        | ![Original Excel Sheet](assets/sheet_simple.svg) | ![Rendered SVG Output](assets/drop_row_non_merged_after.svg) |
+        | [![Original Excel Sheet](assets/sheet_simple.svg)](assets/sheet_simple.svg) | [![Rendered SVG Output](assets/drop_row_non_merged.svg)](assets/drop_row_non_merged.svg) |
 
     === "Merged (non-first)"
 
@@ -69,7 +69,7 @@ This page describes the public API exposed by the Tabularix library.
 
         | Before | After |
         | :---: | :---: |
-        | ![Original Excel Sheet](assets/sheet_simple.svg) | ![Rendered SVG Output](assets/drop_row_merged_non_first_after.svg) |
+        | [![Original Excel Sheet](assets/sheet_simple.svg)](assets/sheet_simple.svg) | [![Rendered SVG Output](assets/drop_row_merged_non_first.svg)](assets/drop_row_merged_non_first.svg) |
 
     === "Merged (first)"
 
@@ -79,7 +79,7 @@ This page describes the public API exposed by the Tabularix library.
 
         | Before | After |
         | :---: | :---: |
-        | ![Original Excel Sheet](assets/sheet_simple.svg) | ![Rendered SVG Output](assets/drop_row_merged_first_after.svg) |
+        | [![Original Excel Sheet](assets/sheet_simple.svg)](assets/sheet_simple.svg) | [![Rendered SVG Output](assets/drop_row_merged_first.svg)](assets/drop_row_merged_first.svg) |
 
 <!-- drop_column() -->
 
@@ -100,7 +100,7 @@ This page describes the public API exposed by the Tabularix library.
 
         | Before | After |
         | :---: | :---: |
-        | ![Original Excel Sheet](assets/sheet_simple.svg) | ![Rendered SVG Output](assets/drop_column_non_merged_after.svg) |
+        | [![Original Excel Sheet](assets/sheet_simple.svg)](assets/sheet_simple.svg) | [![Rendered SVG Output](assets/drop_column_non_merged.svg)](assets/drop_column_non_merged.svg) |
 
     === "Merged (non-first)"
 
@@ -110,7 +110,7 @@ This page describes the public API exposed by the Tabularix library.
 
         | Before | After |
         | :---: | :---: |
-        | ![Original Excel Sheet](assets/sheet_simple.svg) | ![Rendered SVG Output](assets/drop_column_merged_non_first_after.svg) |
+        | [![Original Excel Sheet](assets/sheet_simple.svg)](assets/sheet_simple.svg) | [![Rendered SVG Output](assets/drop_column_merged_non_first.svg)](assets/drop_column_merged_non_first.svg) |
 
     === "Merged (first)"
 
@@ -120,4 +120,37 @@ This page describes the public API exposed by the Tabularix library.
 
         | Before | After |
         | :---: | :---: |
-        | ![Original Excel Sheet](assets/sheet_simple.svg) | ![Rendered SVG Output](assets/drop_column_merged_first_after.svg) |
+        | [![Original Excel Sheet](assets/sheet_simple.svg)](assets/sheet_simple.svg) | [![Rendered SVG Output](assets/drop_column_merged_first.svg)](assets/drop_column_merged_first.svg) |
+
+<!-- search_and_drop() -->
+
+<!-- prettier-ignore -->
+::: tabularix.Sheet.search_and_drop
+    options:
+      heading_level: 4
+      show_root_full_path: false
+
+<!-- prettier-ignore -->
+!!! example "Example"
+
+    === "String Match (Drop Top)"
+
+        ```python title="Search string and drop top" linenums="1"
+        sheet.search_and_drop("Name", "top")
+        ```
+
+        | Before | After |
+        | :---: | :---: |
+        | [![Original Excel Sheet](assets/sheet_complex.svg)](assets/sheet_complex.svg) | [![Rendered SVG Output](assets/search_and_drop_str_top.svg)](assets/search_and_drop_str_top.svg) |
+
+    === "Regex Match (Drop Bottom)"
+
+        ```python title="Search regex and drop bottom" linenums="1"
+        import re
+
+        sheet.search_and_drop(re.compile(r"Total \d{4}"), "bottom")
+        ```
+
+        | Before | After |
+        | :---: | :---: |
+        | [![Original Excel Sheet](assets/sheet_complex.svg)](assets/sheet_complex.svg) | [![Rendered SVG Output](assets/search_and_drop_regex_bottom.svg)](assets/search_and_drop_regex_bottom.svg) |
