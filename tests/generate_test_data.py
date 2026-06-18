@@ -57,7 +57,7 @@ def create_sheet_comple(wb):
             ws.cell(row=row_idx, column=col_idx, value=value)
 
     # Total row
-    ws["A8"] = "Total"
+    ws["A8"] = "Total 2026"
     ws["B8"] = "=SUM(B4:B7)"
     ws["C8"] = "=SUM(C4:C7)"
     ws["D8"] = "=SUM(D4:D7)"

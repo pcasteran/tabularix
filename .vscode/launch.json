@@ -13,10 +13,18 @@
       "justMyCode": false
     },
     {
-      "name": "Docs screenshots",
+      "name": "Generate test data",
       "type": "debugpy",
       "request": "launch",
-      "program": "docs/assets/generate_api_screenshots.py",
+      "program": "tests/generate_test_data.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Docs renders",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "docs/assets/generate_api_renders.py",
       "console": "integratedTerminal",
       "justMyCode": false
     }
