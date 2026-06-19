@@ -46,6 +46,11 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/sheet.rs`, `python/tabularix/__init__.pyi`, `tests/clone.robot`, `docs/api.md`.
 
+- [ ] **Task 2.5: Implement and Expose `to_excel`**
+    - **Acceptance:** `Sheet` has a `to_excel(file_path: str, sheet_name: str = None)` method to export the sheet content to an Excel file. If `sheet_name` is not provided (or is `None`), the sheet's original name (`self.name`) is used. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/to_excel.robot`, `docs/api.md`.
+
 ## Step 3: Active Mutator API
 
 - [ ] **Task 3.1: Implement and Expose `unmerge_cells`**
@@ -102,11 +107,6 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Acceptance:** `Sheet` has `insert_row(row_idx)` and `insert_column(col_idx)` methods to insert a new empty row or column at the specified index. The methods are exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/insert.robot`, `docs/api.md`.
-
-- [ ] **Task 3.12: Implement and Expose `to_excel`**
-    - **Acceptance:** `Sheet` has a `to_excel(file_path: str, sheet_name: str = None)` method to export the sheet content to an Excel file. If `sheet_name` is not provided (or is `None`), the sheet's original name (`self.name`) is used. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
-    - **Verify:** `cargo test` and `just acceptance-test` both pass.
-    - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/to_excel.robot`, `docs/api.md`.
 
 ## Step 4: Layex Engine MVP (Builder & DSL)
 
