@@ -168,3 +168,227 @@ class Workbook:
             KeyError: If no worksheet with the given name exists.
         """
         ...
+
+def value(val: str) -> RowPattern:
+    """Starts a row pattern with an exact cell value.
+
+    Args:
+        val: The exact string value to match.
+
+    Returns:
+        A new RowPattern instance containing the cell rule.
+    """
+    ...
+
+def regex(pattern: Union[str, Pattern[str]]) -> RowPattern:
+    """Starts a row pattern with a regex cell match.
+
+    Args:
+        pattern: A regex string or a compiled regex pattern.
+
+    Returns:
+        A new RowPattern instance containing the cell rule.
+    """
+    ...
+
+def empty() -> RowPattern:
+    """Starts a row pattern with an empty cell match.
+
+    Returns:
+        A new RowPattern instance containing the cell rule.
+    """
+    ...
+
+def non_empty() -> RowPattern:
+    """Starts a row pattern with a non-empty cell match.
+
+    Returns:
+        A new RowPattern instance containing the cell rule.
+    """
+    ...
+
+def any() -> RowPattern:
+    """Starts a row pattern with a wildcard cell match.
+
+    Returns:
+        A new RowPattern instance containing the cell rule.
+    """
+    ...
+
+class RowPattern:
+    """Represents a matching pattern for a single row containing multiple cell patterns and a repetition cardinality."""
+
+    def __init__(self) -> None:
+        """Initializes an empty row pattern."""
+        ...
+
+    def value(self, val: str) -> RowPattern:
+        """Appends an exact cell value match to the row pattern.
+
+        Args:
+            val: The exact string value to match.
+
+        Returns:
+            This RowPattern instance for chaining.
+        """
+        ...
+
+    def regex(self, pattern: Union[str, Pattern[str]]) -> RowPattern:
+        """Appends a regex cell match to the row pattern.
+
+        Args:
+            pattern: A regex string or a compiled regex pattern.
+
+        Returns:
+            This RowPattern instance for chaining.
+        """
+        ...
+
+    def empty(self) -> RowPattern:
+        """Appends an empty cell match to the row pattern.
+
+        Returns:
+            This RowPattern instance for chaining.
+        """
+        ...
+
+    def non_empty(self) -> RowPattern:
+        """Appends a non-empty cell match to the row pattern.
+
+        Returns:
+            This RowPattern instance for chaining.
+        """
+        ...
+
+    def any(self) -> RowPattern:
+        """Appends a wildcard cell match to the row pattern.
+
+        Returns:
+            This RowPattern instance for chaining.
+        """
+        ...
+
+    def one_or_more(self) -> RowPattern:
+        """Sets the cardinality of the last cell pattern to one-or-more (+).
+
+        Returns:
+            This RowPattern instance for chaining.
+
+        Raises:
+            ValueError: If a cardinality has already been configured on the last cell pattern.
+        """
+        ...
+
+    def zero_or_more(self) -> RowPattern:
+        """Sets the cardinality of the last cell pattern to zero-or-more (*).
+
+        Returns:
+            This RowPattern instance for chaining.
+
+        Raises:
+            ValueError: If a cardinality has already been configured on the last cell pattern.
+        """
+        ...
+
+    def optional(self) -> RowPattern:
+        """Sets the cardinality of the last cell pattern to optional (?).
+
+        Returns:
+            This RowPattern instance for chaining.
+
+        Raises:
+            ValueError: If a cardinality has already been configured on the last cell pattern.
+        """
+        ...
+
+    def repeat(self, min: int, max: int | None = None) -> RowPattern:
+        """Sets the cardinality of the last cell pattern to repeat a custom number of times or range.
+
+        Args:
+            min: Minimum number of repetitions.
+            max: Optional maximum number of repetitions. If None, matches min or more.
+
+        Returns:
+            This RowPattern instance for chaining.
+
+        Raises:
+            ValueError: If a cardinality has already been configured on the last cell pattern.
+        """
+        ...
+
+class RowGroupMatcher:
+    """Represents a pattern matcher for a group of rows defined programmatically."""
+
+    def __init__(self) -> None:
+        """Initializes an empty row group matcher."""
+        ...
+
+    def row(self, pattern: RowPattern) -> RowGroupMatcher:
+        """Appends a row pattern to the matcher.
+
+        Args:
+            pattern: The RowPattern instance to append.
+
+        Returns:
+            This RowGroupMatcher instance for chaining.
+        """
+        ...
+
+    def one_or_more(self) -> RowGroupMatcher:
+        """Sets the repetition cardinality of the last row pattern to one-or-more (+).
+
+        Returns:
+            This RowGroupMatcher instance for chaining.
+
+        Raises:
+            ValueError: If a cardinality has already been configured on the last row pattern.
+        """
+        ...
+
+    def zero_or_more(self) -> RowGroupMatcher:
+        """Sets the repetition cardinality of the last row pattern to zero-or-more (*).
+
+        Returns:
+            This RowGroupMatcher instance for chaining.
+
+        Raises:
+            ValueError: If a cardinality has already been configured on the last row pattern.
+        """
+        ...
+
+    def optional(self) -> RowGroupMatcher:
+        """Sets the repetition cardinality of the last row pattern to optional (?).
+
+        Returns:
+            This RowGroupMatcher instance for chaining.
+
+        Raises:
+            ValueError: If a cardinality has already been configured on the last row pattern.
+        """
+        ...
+
+    def repeat(self, min: int, max: int | None = None) -> RowGroupMatcher:
+        """Sets the repetition cardinality of the last row pattern to repeat a custom number of times or range.
+
+        Args:
+            min: Minimum number of repetitions.
+            max: Optional maximum number of repetitions. If None, matches min or more.
+
+        Returns:
+            This RowGroupMatcher instance for chaining.
+
+        Raises:
+            ValueError: If a cardinality has already been configured on the last row pattern.
+        """
+        ...
+
+    def matches_row_group(self, rows: list[list[Any]]) -> bool:
+        """Checks if a sequence of rows matches the row group patterns.
+
+        Args:
+            rows: A list of rows, where each row is a list of cell values.
+
+        Returns:
+            True if all row patterns match the sequence of rows; False otherwise.
+        """
+        ...

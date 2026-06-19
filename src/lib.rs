@@ -1,3 +1,4 @@
+mod matcher;
 mod sheet;
 
 use pyo3::prelude::*;
@@ -12,5 +13,7 @@ fn _tabularix(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(load_workbook, m)?)?;
     m.add_class::<sheet::Sheet>()?;
     m.add_class::<sheet::Workbook>()?;
+    m.add_class::<matcher::RowPattern>()?;
+    m.add_class::<matcher::RowGroupMatcher>()?;
     Ok(())
 }

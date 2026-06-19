@@ -110,7 +110,7 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
 
 ## Step 4: Layex Engine MVP (Builder & DSL)
 
-- [ ] **Task 4.1: Implement `RowGroupMatcher` Python Builder API**
+- [x] **Task 4.1: Implement `RowGroupMatcher` Python Builder API**
     - **Acceptance:** `RowGroupMatcher` class is exposed to Python via PyO3. The Python Builder API allows defining row group matching rules by cell value (exact content, regex, non-empty cells) and cell-level cardinalities. Type stubs in `python/tabularix/__init__.pyi` and the new `docs/matching_row_groups.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/matcher.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/matcher_builder.robot`, `docs/matching_row_groups.md`, `docs/api.md`.
