@@ -83,8 +83,8 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/swap.robot`, `docs/api.md`.
 
-- [ ] **Task 3.8: Implement and Expose `repeat_row_cell` / `repeat_column_cell`**
-    - **Acceptance:** `Sheet` has methods to fill adjacent empty cells in a row/column with the value of the nearest preceding non-empty cell. The methods are exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+- [ ] **Task 3.8: Implement and Expose `fill_empty_cells`**
+    - **Acceptance:** `Sheet` has method fill_empty_cells(repeat_direction) to fill adjacent empty cells in a row/column with the value of the nearest preceding non-empty cell. The methods are exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/sheet.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/repeat.robot`, `docs/api.md`.
 
@@ -111,14 +111,19 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
 ## Step 4: Layex Engine MVP (Builder & DSL)
 
 - [ ] **Task 4.1: Implement `RowGroupMatcher` Python Builder API**
-    - **Acceptance:** `RowGroupMatcher` class is exposed to Python via PyO3. The Python Builder API allows defining row group matching rules programmatically (e.g. `.string()`, `.numeric()`, `.entity("date")`, `.one_or_more()`). Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Acceptance:** `RowGroupMatcher` class is exposed to Python via PyO3. The Python Builder API allows defining row group matching rules by cell value (exact content, regex, non-empty cells) and cell-level cardinalities. Type stubs in `python/tabularix/__init__.pyi` and the new `docs/matching_row_groups.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
-    - **Files:** `src/matcher.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/matcher_builder.robot`, `docs/api.md`.
+    - **Files:** `src/matcher.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/matcher_builder.robot`, `docs/matching_row_groups.md`, `docs/api.md`.
 
 - [ ] **Task 4.2: Implement `RowGroupMatcher` String DSL (Layex)**
     - **Acceptance:** `RowGroupMatcher.from_layex(dsl_str)` is exposed to Python via PyO3. It parses a string DSL representing row patterns (e.g., `'[entity:date] [type:numeric]+'`). Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/layex.rs`, `src/matcher.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/matcher_dsl.robot`, `docs/api.md`.
+
+- [ ] **Task 4.3: Implement `RowGroupMatcher` Type Matching Rules**
+    - **Acceptance:** Expose programmatic cell type-matching methods (e.g. `.string()`, `.numeric()`, `.boolean()`, `.empty()`, `.type()`) to Python via PyO3. Update `python/tabularix/__init__.pyi`, `docs/matching_row_groups.md`, and `docs/api.md`. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/matcher.rs`, `python/tabularix/__init__.pyi`, `tests/matcher_types.robot`, `docs/api.md`, `docs/matching_row_groups.md`.
 
 ## Step 5: Advanced Layex & Search
 
