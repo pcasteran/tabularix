@@ -1,3 +1,4 @@
+use crate::matcher::{match_row_group, RowGroup, RowGroupMatcher};
 use calamine::{open_workbook, Data, Reader, Xlsx};
 use pyo3::prelude::*;
 use pyo3::types::PyAny;
@@ -352,6 +353,112 @@ impl Sheet {
         self.merged_regions = new_merged;
 
         Ok(())
+    }
+
+    #[allow(clippy::cast_sign_loss)]
+    #[pyo3(signature = (matcher, start_row = None, end_row = None, start_col = None, end_col = None))]
+    pub fn search_row_group(
+        &self,
+        py: Python<'_>,
+        matcher: &RowGroupMatcher,
+        start_row: Option<isize>,
+        end_row: Option<isize>,
+        start_col: Option<isize>,
+        end_col: Option<isize>,
+    ) -> PyResult<Option<RowGroup>> {
+        let rows_count = self.data.len();
+        let cols_count = if rows_count > 0 {
+            self.data[0].len()
+        } else {
+            0
+        };
+
+        if rows_count == 0 || cols_count == 0 {
+            return Ok(None);
+        }
+
+        let resolved_start_row = match start_row {
+            Some(r) => {
+                if r < 0 || r as usize >= rows_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "start_row out of bounds",
+                    ));
+                }
+                r as usize
+            }
+            None => 0,
+        };
+
+        let resolved_end_row = match end_row {
+            Some(r) => {
+                if r < 0 || r as usize >= rows_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "end_row out of bounds",
+                    ));
+                }
+                r as usize
+            }
+            None => rows_count - 1,
+        };
+
+        let resolved_start_col = match start_col {
+            Some(c) => {
+                if c < 0 || c as usize >= cols_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "start_col out of bounds",
+                    ));
+                }
+                c as usize
+            }
+            None => 0,
+        };
+
+        let resolved_end_col = match end_col {
+            Some(c) => {
+                if c < 0 || c as usize >= cols_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "end_col out of bounds",
+                    ));
+                }
+                c as usize
+            }
+            None => cols_count - 1,
+        };
+
+        if resolved_start_row > resolved_end_row {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "start_row ({resolved_start_row}) cannot be greater than end_row ({resolved_end_row})"
+            )));
+        }
+        if resolved_start_col > resolved_end_col {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "start_col ({resolved_start_col}) cannot be greater than end_col ({resolved_end_col})"
+            )));
+        }
+
+        // Construct the sliced subgrid
+        let mut sliced_data: Vec<Vec<CellValue>> = Vec::new();
+        for r in resolved_start_row..=resolved_end_row {
+            let row_slice = self.data[r][resolved_start_col..=resolved_end_col].to_vec();
+            sliced_data.push(row_slice);
+        }
+
+        // Scan row-by-row
+        for i in 0..sliced_data.len() {
+            if let Some(end_idx) = match_row_group(py, &matcher.row_patterns, &sliced_data, 0, i)? {
+                // Ensure the match actually consumed at least one row
+                if end_idx > i {
+                    return Ok(Some(RowGroup {
+                        start_row: resolved_start_row + i,
+                        end_row: resolved_start_row + end_idx - 1,
+                        start_col: resolved_start_col,
+                        end_col: resolved_end_col,
+                    }));
+                }
+            }
+        }
+
+        Ok(None)
     }
 }
 
@@ -968,6 +1075,89 @@ mod tests {
             let query = "NOT_FOUND".into_pyobject(py).unwrap().into_any();
             let res = test_sheet.search_and_drop(py, &query, "top");
             assert!(res.is_err());
+        });
+    }
+
+    #[test]
+    fn test_search_row_group() {
+        use crate::matcher::{CellMatchRule, CellPattern, RowGroupMatcher, RowPattern};
+
+        let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
+        let sheet = wb.get_sheet("simple").unwrap();
+
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
+            // Build a matcher for:
+            // RowPattern: non_empty, any, any (matches header rows)
+            // RowPattern: "ABC", any, any (matches ABC data row)
+
+            let mut pattern1 = RowPattern::new();
+            pattern1.cell_patterns.push(CellPattern {
+                rule: CellMatchRule::NonEmpty,
+                min: 1,
+                max: Some(1),
+            });
+            pattern1.cell_patterns.push(CellPattern {
+                rule: CellMatchRule::Any,
+                min: 1,
+                max: Some(1),
+            });
+            pattern1.cell_patterns.push(CellPattern {
+                rule: CellMatchRule::Any,
+                min: 1,
+                max: Some(1),
+            });
+
+            let mut pattern2 = RowPattern::new();
+            pattern2.cell_patterns.push(CellPattern {
+                rule: CellMatchRule::Exact("ABC".to_string()),
+                min: 1,
+                max: Some(1),
+            });
+            pattern2.cell_patterns.push(CellPattern {
+                rule: CellMatchRule::Any,
+                min: 1,
+                max: Some(1),
+            });
+            pattern2.cell_patterns.push(CellPattern {
+                rule: CellMatchRule::Any,
+                min: 1,
+                max: Some(1),
+            });
+
+            let mut matcher = RowGroupMatcher::new();
+            matcher.row_patterns.push(pattern1);
+            matcher.row_patterns.push(pattern2);
+
+            // Test search on entire sheet
+            let group = sheet
+                .search_row_group(py, &matcher, None, None, None, None)
+                .unwrap()
+                .unwrap();
+            assert_eq!(group.start_row, 0);
+            assert_eq!(group.end_row, 1);
+            assert_eq!(group.start_col, 0);
+            assert_eq!(group.end_col, 2);
+
+            // Test search with start_row boundary that excludes the header row
+            let group_opt = sheet
+                .search_row_group(py, &matcher, Some(1), None, None, None)
+                .unwrap();
+            assert!(group_opt.is_none());
+
+            // Test search out of bounds
+            let err = sheet.search_row_group(py, &matcher, Some(-1), None, None, None);
+            assert!(err.is_err());
+
+            let err2 = sheet.search_row_group(py, &matcher, Some(10), None, None, None);
+            assert!(err2.is_err());
+
+            // This slice restricts column width to 2 cols (0 and 1).
+            // But pattern1 expects 3 cell patterns. So it shouldn't match.
+            let group_col_restricted = sheet
+                .search_row_group(py, &matcher, None, None, Some(0), Some(1))
+                .unwrap();
+            assert!(group_col_restricted.is_none());
         });
     }
 }

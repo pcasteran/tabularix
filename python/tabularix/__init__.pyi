@@ -133,6 +133,58 @@ class Sheet:
         """
         ...
 
+    def search_row_group(
+        self,
+        matcher: RowGroupMatcher,
+        start_row: int | None = None,
+        end_row: int | None = None,
+        start_col: int | None = None,
+        end_col: int | None = None,
+    ) -> RowGroup | None:
+        """Searches the worksheet (or a sub-grid of it) for the first matching sequence of rows.
+
+        Args:
+            matcher: The RowGroupMatcher pattern to search for.
+            start_row: Optional 0-based row to start searching from (defaults to 0).
+            end_row: Optional 0-based row to stop searching at (inclusive, defaults to last row).
+            start_col: Optional 0-based column limit (inclusive, defaults to 0).
+            end_col: Optional 0-based column limit (inclusive, defaults to last column).
+
+        Returns:
+            A RowGroup enclosing the matched boundaries, or None if no match is found.
+
+        Raises:
+            ValueError: If start_row > end_row or start_col > end_col.
+            IndexError: If any of the indices are out of bounds.
+        """
+        ...
+
+    def search_row_group_relative(
+        self,
+        matcher: RowGroupMatcher,
+        *,
+        below: RowGroup | None = None,
+        above: RowGroup | None = None,
+        left: RowGroup | None = None,
+        right: RowGroup | None = None,
+    ) -> RowGroup | None:
+        """Searches for a row group relative to one or more previously matched row groups.
+
+        Args:
+            matcher: The RowGroupMatcher pattern to search for.
+            below: Optional RowGroup boundary.
+            above: Optional RowGroup boundary.
+            left: Optional RowGroup boundary.
+            right: Optional RowGroup boundary.
+
+        Returns:
+            A RowGroup enclosing the matched boundaries, or None if no match is found.
+
+        Raises:
+            ValueError: If relational boundaries conflict or if opposing spans do not align.
+        """
+        ...
+
 class Workbook:
     """Represents an Excel workbook containing multiple worksheets."""
 
@@ -314,6 +366,33 @@ class RowPattern:
         Raises:
             ValueError: If a cardinality has already been configured on the last cell pattern.
         """
+        ...
+
+class RowGroup:
+    """Represents a matched region inside a worksheet enclosing absolute coordinate boundaries."""
+
+    @property
+    def start_row(self) -> int:
+        """The 0-based index of the first matched row (inclusive)."""
+        ...
+
+    @property
+    def end_row(self) -> int:
+        """The 0-based index of the last matched row (inclusive)."""
+        ...
+
+    @property
+    def start_col(self) -> int:
+        """The 0-based index of the first matched column (inclusive)."""
+        ...
+
+    @property
+    def end_col(self) -> int:
+        """The 0-based index of the last matched column (inclusive)."""
+        ...
+
+    def __init__(self, start_row: int, end_row: int, start_col: int, end_col: int) -> None:
+        """Initializes a new RowGroup instance with absolute bounds."""
         ...
 
 class RowGroupMatcher:

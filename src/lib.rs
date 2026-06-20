@@ -15,5 +15,6 @@ fn _tabularix(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<sheet::Workbook>()?;
     m.add_class::<matcher::RowPattern>()?;
     m.add_class::<matcher::RowGroupMatcher>()?;
+    m.add_class::<matcher::RowGroup>()?;
     Ok(())
 }

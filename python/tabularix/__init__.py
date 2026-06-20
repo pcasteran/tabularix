@@ -1,6 +1,7 @@
 from typing import Any
 
 from ._tabularix import (  # ty: ignore[unresolved-import]
+    RowGroup,
     RowGroupMatcher,
     RowPattern,
     Sheet,
@@ -60,12 +61,84 @@ def any() -> RowPattern:
     return RowPattern().any()
 
 
+def search_row_group_relative(
+    self: Sheet,
+    matcher: RowGroupMatcher,
+    *,
+    below: RowGroup | None = None,
+    above: RowGroup | None = None,
+    left: RowGroup | None = None,
+    right: RowGroup | None = None,
+) -> RowGroup | None:
+    """Searches for a row group relative to other matched groups.
+
+    Args:
+        self: The worksheet instance.
+        matcher: The RowGroupMatcher pattern to search for.
+        below: Optional RowGroup boundary.
+        above: Optional RowGroup boundary.
+        left: Optional RowGroup boundary.
+        right: Optional RowGroup boundary.
+
+    Returns:
+        A RowGroup if matched, or None.
+    """
+    if left is not None and right is not None:
+        if right.end_col + 1 > left.start_col - 1:
+            raise ValueError("Relational bounds conflict: right boundary is to the left of left boundary.")
+    if above is not None and below is not None:
+        if below.end_row + 1 > above.start_row - 1:
+            raise ValueError("Relational bounds conflict: above boundary is below below boundary.")
+
+    start_row = None
+    end_row = None
+    start_col = None
+    end_col = None
+
+    if below is not None:
+        start_row = below.end_row + 1
+        start_col = below.start_col
+        end_col = below.end_col
+
+    if above is not None:
+        end_row = above.start_row - 1
+        if start_col is None:
+            start_col = above.start_col
+            end_col = above.end_col
+        elif start_col != above.start_col or end_col != above.end_col:
+            raise ValueError("Column spans of 'below' and 'above' boundaries do not align.")
+
+    if right is not None:
+        start_col = right.end_col + 1
+        start_row = right.start_row
+        end_row = right.end_row
+
+    if left is not None:
+        end_col = left.start_col - 1
+        if start_row is None:
+            start_row = left.start_row
+            end_row = left.end_row
+        elif start_row != left.start_row or end_row != left.end_row:
+            raise ValueError("Row spans of 'right' and 'left' boundaries do not align.")
+
+    return self.search_row_group(
+        matcher,
+        start_row=start_row,
+        end_row=end_row,
+        start_col=start_col,
+        end_col=end_col,
+    )
+
+
+Sheet.search_row_group_relative = search_row_group_relative
+
 __all__ = [
     "load_workbook",
     "Sheet",
     "Workbook",
     "RowPattern",
     "RowGroupMatcher",
+    "RowGroup",
     "value",
     "regex",
     "empty",

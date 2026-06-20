@@ -173,6 +173,39 @@ fn enforce_cell_exclusivity(cell_patterns: &mut [CellPattern]) -> PyResult<()> {
 
 #[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
+pub struct RowGroup {
+    #[pyo3(get)]
+    pub start_row: usize,
+    #[pyo3(get)]
+    pub end_row: usize,
+    #[pyo3(get)]
+    pub start_col: usize,
+    #[pyo3(get)]
+    pub end_col: usize,
+}
+
+#[pymethods]
+impl RowGroup {
+    #[new]
+    pub fn new(start_row: usize, end_row: usize, start_col: usize, end_col: usize) -> Self {
+        RowGroup {
+            start_row,
+            end_row,
+            start_col,
+            end_col,
+        }
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "<RowGroup rows={}..{}, cols={}..{}>",
+            self.start_row, self.end_row, self.start_col, self.end_col
+        )
+    }
+}
+
+#[pyclass(from_py_object)]
+#[derive(Debug, Clone)]
 pub struct RowGroupMatcher {
     pub row_patterns: Vec<RowPattern>,
 }
@@ -373,7 +406,7 @@ fn matches_row_pattern(py: Python<'_>, pattern: &RowPattern, row: &[CellValue]) 
     match_cells(py, &pattern.cell_patterns, row, 0, 0)
 }
 
-fn match_row_group(
+pub fn match_row_group(
     py: Python<'_>,
     patterns: &[RowPattern],
     sheet_data: &[Vec<CellValue>],

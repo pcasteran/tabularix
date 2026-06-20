@@ -124,3 +124,80 @@ print(matcher.matches_row_group([["Category", "A", "B", "C"]]))
 # Returns False (does not match Category)
 print(matcher.matches_row_group([["Total", 123]]))
 ```
+
+---
+
+## 🔍 Searching Worksheets
+
+Once you have defined your `RowGroupMatcher` pattern, you can use it to search for matched regions within a `Sheet`. Tabularix supports two main methods for searching: absolute coordinate search and relative layout search. Both return a `RowGroup` object enclosing the matched region boundaries, or `None` if no match is found.
+
+### 📐 The `RowGroup` Class
+
+A successful search returns a `RowGroup` object that represents the matched region:
+
+- **Properties (All Inclusive)**:
+    - `start_row`: The 0-based index of the first matched row.
+    - `end_row`: The 0-based index of the last matched row.
+    - `start_col`: The 0-based index of the first matched column.
+    - `end_col`: The 0-based index of the last matched column.
+- **String Representation**: `<RowGroup rows=start_row..end_row, cols=start_col..end_col>`
+
+---
+
+### 📍 Absolute Search
+
+Use `search_row_group` when you want to search the entire sheet or restrict the scanning area to a specific sub-grid using absolute indices:
+
+```python
+# Search the entire sheet
+matched_group = sheet.search_row_group(matcher)
+
+# Search within a specific sub-grid (all bounds are inclusive)
+matched_group = sheet.search_row_group(
+    matcher,
+    start_row=10,   # Start scanning from row 10
+    end_row=100,    # Stop scanning at row 100
+    start_col=2,    # Start scanning from column 2
+    end_col=8,      # Stop scanning at column 8
+)
+```
+
+<!-- prettier-ignore -->
+!!! note "Bounds Checking"
+    If any indices are out of bounds, an `IndexError` is raised. If `start_row > end_row` or `start_col > end_col`, a `ValueError` is raised.
+
+---
+
+### 🔗 Relational Search
+
+In many layout structures, tables are located relative to other landmarks (such as headers or footers) rather than at fixed indices. `search_row_group_relative` dynamically resolves coordinates and inherits boundaries from previously matched `RowGroup` objects:
+
+- `below=group`: Restricts the search vertically below `group.end_row + 1` and automatically inherits its column span (`start_col`, `end_col`).
+- `above=group`: Restricts the search vertically above `group.start_row - 1` and inherits its column span.
+- `right=group`: Restricts the search horizontally to the right of `group.end_col + 1` and inherits its row span (`start_row`, `end_row`).
+- `left=group`: Restricts the search horizontally to the left of `group.start_col - 1` and inherits its row span.
+
+#### Combining Boundaries
+
+You can combine opposing boundaries (e.g. `below` and `above` to search in between, or `left` and `right`) to restrict the search region:
+
+```python
+# 1. Match the header first
+header_group = sheet.search_row_group(header_matcher)
+
+# 2. Match the footer
+footer_group = sheet.search_row_group(footer_matcher)
+
+# 3. Search for the data rows in between the header and footer,
+# inheriting the column span of the header/footer
+data_group = sheet.search_row_group_relative(
+    data_matcher,
+    below=header_group,
+    above=footer_group,
+)
+```
+
+<!-- prettier-ignore -->
+!!! important "Boundary Rules"
+    - If opposing bounds cross (e.g. `below` is set to a group that is physically below the `above` group), a `ValueError` is raised.
+    - If opposing bounds are specified, their spans must align (e.g. `below` and `above` must share the same column spans), otherwise a `ValueError` is raised.
