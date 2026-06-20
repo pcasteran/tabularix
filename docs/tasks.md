@@ -139,12 +139,19 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
 
 ## Step 6: Table API & Data Export
 
-- [ ] **Task 6.1: Implement `build_table_from_ranges`**
-    - **Acceptance:** `build_table_from_ranges(header, data, footer=None)` is exposed to Python via PyO3, which converts the matched row regions into an internal `Table` object representing structured tabular data. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+- [x] **Task 6.1: Implement `Sheet.extract_table`**
+    - **Acceptance:** `extract_table(data, header=None)` is exposed to Python via PyO3, which converts the matched row regions into an internal `Table` object representing structured tabular data. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
-    - **Files:** `src/table.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/build_table.robot`, `docs/api.md`.
+    - **Files:** `src/table.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/extract_table.robot`, `docs/api.md`.
 
-- [ ] **Task 6.2: Implement `Table.to_arrow` / `Table.to_pandas` / `Table.to_polars`**
-    - **Acceptance:** The `Table` class supports `to_arrow()`, `to_pandas()`, and `to_polars()` methods to export structured data respectively into a PyArrow Table, a Pandas DataFrame, and a Polars DataFrame using optimized or zero-copy memory conversions where possible. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+- [x] **Task 6.2: Implement `Table.to_arrow`**
+    - **Acceptance:** The `Table` class supports the `to_arrow()` method to export structured data into a PyArrow Table. (Note: Separate wrappers for `to_pandas` and `to_polars` are omitted since these DataFrames can be built directly from the PyArrow Table). Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/table.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/export.robot`, `docs/api.md`.
+
+## Step 7: Cell Auditability & Coordinate Traceability
+
+- [ ] **Task 7.1: Implement Cell Coordinate Traceability**
+    - **Acceptance:** The `Table` supports retrieving for every cell the coordinates of the original cell in the original loaded spreadsheet document (before any layout mutations or range extractions occurred). The functionality is exposed to Python. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/sheet.rs`, `src/table.rs`, `python/tabularix/__init__.pyi`, `tests/auditability.robot`, `docs/api.md`.

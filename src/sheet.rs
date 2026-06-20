@@ -532,9 +532,37 @@ impl Sheet {
             ))
         }
     }
+
+    #[pyo3(signature = (data, header=None, clean_names=false, flatten_header=false, header_separator="_"))]
+    pub fn extract_table(
+        &self,
+        data: &Range,
+        header: Option<&Range>,
+        clean_names: bool,
+        flatten_header: bool,
+        header_separator: &str,
+    ) -> PyResult<crate::table::Table> {
+        crate::table::Table::extract_from_sheet(
+            self,
+            data,
+            header,
+            clean_names,
+            flatten_header,
+            header_separator,
+        )
+    }
 }
 
 impl Sheet {
+    pub fn get_merged_cell_value(&self, row: usize, col: usize) -> &CellValue {
+        for &((s_row, s_col), (e_row, e_col)) in &self.merged_regions {
+            if row >= s_row && row <= e_row && col >= s_col && col <= e_col {
+                return &self.data[s_row][s_col];
+            }
+        }
+        &self.data[row][col]
+    }
+
     #[allow(clippy::too_many_lines)]
     fn to_svg_impl(&self, path: &str, zero_based_indices: bool) -> std::io::Result<()> {
         let (rows, cols) = self.shape();
