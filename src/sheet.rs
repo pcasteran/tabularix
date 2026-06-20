@@ -1159,6 +1159,5 @@ mod tests {
                 .unwrap();
             assert!(range_col_restricted.is_none());
         });
-        });
     }
 }
