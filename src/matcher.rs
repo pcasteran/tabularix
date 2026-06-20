@@ -197,9 +197,24 @@ impl Range {
     }
 
     fn __repr__(&self) -> String {
+        let a1_notation = if self.start_row == self.end_row && self.start_col == self.end_col {
+            format!(
+                "{}{}",
+                crate::sheet::index_to_col_letters(self.start_col),
+                self.start_row + 1
+            )
+        } else {
+            format!(
+                "{}{}:{}{}",
+                crate::sheet::index_to_col_letters(self.start_col),
+                self.start_row + 1,
+                crate::sheet::index_to_col_letters(self.end_col),
+                self.end_row + 1
+            )
+        };
         format!(
-            "<Range rows={}..{}, cols={}..{}>",
-            self.start_row, self.end_row, self.start_col, self.end_col
+            "Range({}, cols={}..{}, rows={}..{})",
+            a1_notation, self.start_col, self.end_col, self.start_row, self.end_row
         )
     }
 }

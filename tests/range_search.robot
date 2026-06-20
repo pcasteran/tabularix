@@ -16,7 +16,7 @@ Verify Absolute Range Search Basic
     Verify Range Coordinates    ${range}    0    0    0    2
 
     ${repr}=    Evaluate    repr($range)
-    Should Be Equal    ${repr}    <Range rows=0..0, cols=0..2>
+    Should Be Equal    ${repr}    Range(A1:C1, cols=0..2, rows=0..0)
 
 Verify Absolute Range Search Sliced
     [Documentation]    Test Sheet.search_range within a sliced window.

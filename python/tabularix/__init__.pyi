@@ -185,6 +185,24 @@ class Sheet:
         """
         ...
 
+    def get_range_between(self, start: Range, end: Range) -> Range:
+        """Calculates the Range coordinates situated between two non-overlapping ranges.
+
+        Supports ranges separated either vertically or horizontally.
+
+        Args:
+            start: The boundary Range positioned first (above or to the left).
+            end: The boundary Range positioned second (below or to the right).
+
+        Returns:
+            A new Range object representing the coordinates between the start and end ranges.
+
+        Raises:
+            ValueError: If the ranges overlap, are separated diagonally, or if their
+                        respective aligning spans (columns/rows) do not match.
+        """
+        ...
+
 class Workbook:
     """Represents an Excel workbook containing multiple worksheets."""
 

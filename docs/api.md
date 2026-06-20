@@ -65,6 +65,7 @@ This page describes the public API exposed by the Tabularix library.
         - set_cell_value
         - search_range
         - search_range_relative
+        - get_range_between
         - to_svg
 
 <!-- drow_row() -->

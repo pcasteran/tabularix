@@ -140,7 +140,7 @@ A successful search returns a `Range` object that represents the matched region:
     - `end_row`: The 0-based index of the last matched row.
     - `start_col`: The 0-based index of the first matched column.
     - `end_col`: The 0-based index of the last matched column.
-- **String Representation**: `<Range rows=start_row..end_row, cols=start_col..end_col>`
+- **String Representation**: `Range(A2:C4, cols=start_col..end_col, rows=start_row..end_row)` (e.g. `Range(A1:C1, cols=0..2, rows=0..0)`)
 
 ---
 

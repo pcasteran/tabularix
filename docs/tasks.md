@@ -132,10 +132,10 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/sheet.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/range_search.robot`, `docs/api.md`.
 
-- [ ] **Task 5.2: Implement `Sheet.extract_range_between`**
-    - **Acceptance:** `Sheet` has an `extract_range_between(start, end)` method to slice and extract a range of rows between two indices/ranges. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+- [x] **Task 5.2: Implement `Sheet.get_range_between`**
+    - **Acceptance:** `Sheet` has a `get_range_between(start: Range, end: Range) -> Range` method to compute the range coordinates between two ranges. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
-    - **Files:** `src/sheet.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/extract_range.robot`, `docs/api.md`.
+    - **Files:** `src/sheet.rs`, `python/tabularix/__init__.pyi`, `tests/get_range.robot`, `docs/api.md`.
 
 ## Step 6: Table API & Data Export
 
