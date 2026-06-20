@@ -52,7 +52,7 @@ _These will be encapsulated in the `justfile`, but the raw commands are:_
 
 ```rust
 // Example of expected Rust style
-pub fn extract_rows_between(start: usize, end: usize) -> Result<RowGroup, TabularixError> {
+pub fn extract_rows_between(start: usize, end: usize) -> Result<Range, TabularixError> {
     if start >= end {
         return Err(TabularixError::InvalidBounds("start must be before end".into()));
     }
