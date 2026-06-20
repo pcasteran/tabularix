@@ -47,7 +47,7 @@ Copyright &copy; 2026 The authors
 nav = [
   { "Home" = "index.md" },
   { "Quickstart" = "quickstart.md" },
-  { "Row Group Matching" = "matching_row_groups.md" },
+  { "Range Matching" = "matching_ranges.md" },
   { "API Reference" = "api.md" },
   { "Development" = [
       { "Specification" = "spec.md" },

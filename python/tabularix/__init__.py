@@ -1,8 +1,8 @@
 from typing import Any
 
 from ._tabularix import (  # ty: ignore[unresolved-import]
-    RowGroup,
-    RowGroupMatcher,
+    Range,
+    RangeMatcher,
     RowPattern,
     Sheet,
     Workbook,
@@ -61,27 +61,27 @@ def any() -> RowPattern:
     return RowPattern().any()
 
 
-def search_row_group_relative(
+def search_range_relative(
     self: Sheet,
-    matcher: RowGroupMatcher,
+    matcher: RangeMatcher,
     *,
-    below: RowGroup | None = None,
-    above: RowGroup | None = None,
-    left: RowGroup | None = None,
-    right: RowGroup | None = None,
-) -> RowGroup | None:
-    """Searches for a row group relative to other matched groups.
+    below: Range | None = None,
+    above: Range | None = None,
+    left: Range | None = None,
+    right: Range | None = None,
+) -> Range | None:
+    """Searches for a range relative to other matched ranges.
 
     Args:
         self: The worksheet instance.
-        matcher: The RowGroupMatcher pattern to search for.
-        below: Optional RowGroup boundary.
-        above: Optional RowGroup boundary.
-        left: Optional RowGroup boundary.
-        right: Optional RowGroup boundary.
+        matcher: The RangeMatcher pattern to search for.
+        below: Optional Range boundary.
+        above: Optional Range boundary.
+        left: Optional Range boundary.
+        right: Optional Range boundary.
 
     Returns:
-        A RowGroup if matched, or None.
+        A Range if matched, or None.
     """
     if left is not None and right is not None:
         if right.end_col + 1 > left.start_col - 1:
@@ -121,7 +121,7 @@ def search_row_group_relative(
         elif start_row != left.start_row or end_row != left.end_row:
             raise ValueError("Row spans of 'right' and 'left' boundaries do not align.")
 
-    return self.search_row_group(
+    return self.search_range(
         matcher,
         start_row=start_row,
         end_row=end_row,
@@ -130,15 +130,15 @@ def search_row_group_relative(
     )
 
 
-Sheet.search_row_group_relative = search_row_group_relative
+Sheet.search_range_relative = search_range_relative
 
 __all__ = [
     "load_workbook",
     "Sheet",
     "Workbook",
     "RowPattern",
-    "RowGroupMatcher",
-    "RowGroup",
+    "RangeMatcher",
+    "Range",
     "value",
     "regex",
     "empty",

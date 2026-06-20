@@ -1,5 +1,5 @@
 *** Settings ***
-Documentation       Acceptance tests for multiline headers matching using RowGroupMatcher.
+Documentation       Acceptance tests for multiline headers matching using RangeMatcher.
 
 Library             Collections
 
@@ -15,7 +15,7 @@ Verify Multiline Header Matching - Success Case
     ...    [None, "Actual", "Forecast", "Actual", "Forecast"]
     ...    ]
     ${rows}=    Evaluate    ${expr}
-    ${res}=    Evaluate    $matcher.matches_row_group($rows)
+    ${res}=    Evaluate    $matcher.matches_range($rows)
     Should Be True    ${res}
 
 Verify Multiline Header Matching - Incorrect Title
@@ -28,7 +28,7 @@ Verify Multiline Header Matching - Incorrect Title
     ...    [None, "Actual", "Forecast", "Actual", "Forecast"]
     ...    ]
     ${rows}=    Evaluate    ${expr}
-    ${res}=    Evaluate    $matcher.matches_row_group($rows)
+    ${res}=    Evaluate    $matcher.matches_range($rows)
     Should Be Equal    ${res}    ${False}
 
 Verify Multiline Header Matching - Incorrect Subheaders Count
@@ -41,17 +41,17 @@ Verify Multiline Header Matching - Incorrect Subheaders Count
     ...    [None, "Actual", "Forecast"]
     ...    ]
     ${rows}=    Evaluate    ${expr}
-    ${res}=    Evaluate    $matcher.matches_row_group($rows)
+    ${res}=    Evaluate    $matcher.matches_range($rows)
     Should Be Equal    ${res}    ${False}
 
 
 *** Keywords ***
 Get Multiline Header Matcher
-    [Documentation]    Returns a RowGroupMatcher configured for multiline headers.
+    [Documentation]    Returns a RangeMatcher configured for multiline headers.
     ${r1}=    Evaluate    tabularix.value("Sales Report 2026").empty().zero_or_more()    modules=tabularix
     ${r2}=    Evaluate
     ...    tabularix.value("Product").regex("^Q[1-4]$").repeat(2).empty().zero_or_more()
     ...    modules=tabularix
     ${r3}=    Evaluate    tabularix.empty().regex("^(Actual|Forecast)$").repeat(4)    modules=tabularix
-    ${matcher}=    Evaluate    tabularix.RowGroupMatcher().row($r1).row($r2).row($r3)    modules=tabularix
+    ${matcher}=    Evaluate    tabularix.RangeMatcher().row($r1).row($r2).row($r3)    modules=tabularix
     RETURN    ${matcher}

@@ -1,5 +1,5 @@
 *** Settings ***
-Documentation       Acceptance tests for RowGroupMatcher builder API and chaining.
+Documentation       Acceptance tests for RangeMatcher builder API and chaining.
 
 Library             Collections
 
@@ -11,10 +11,10 @@ Verify RowPattern Builder Chaining
     ${res}=    Evaluate    $pattern.value("Date").empty().non_empty().any()
     Should Be Equal    ${res}    ${pattern}
 
-Verify RowGroupMatcher Builder Chaining
-    [Documentation]    Verify RowGroupMatcher methods return the self instance to support chaining.
+Verify RangeMatcher Builder Chaining
+    [Documentation]    Verify RangeMatcher methods return the self instance to support chaining.
     ${pattern}=    Evaluate    tabularix.RowPattern()    modules=tabularix
-    ${matcher}=    Evaluate    tabularix.RowGroupMatcher()    modules=tabularix
+    ${matcher}=    Evaluate    tabularix.RangeMatcher()    modules=tabularix
     ${res}=    Evaluate    $matcher.row($pattern).one_or_more()
     Should Be Equal    ${res}    ${matcher}
 
@@ -27,6 +27,6 @@ Verify Cell Cardinality Exclusivity Error
 Verify Row Cardinality Exclusivity Error
     [Documentation]    Verify calling multiple cardinality methods on a row pattern raises ValueError.
     ${pattern}=    Evaluate    tabularix.RowPattern().value("Header")    modules=tabularix
-    ${matcher}=    Evaluate    tabularix.RowGroupMatcher().row($pattern)    modules=tabularix
+    ${matcher}=    Evaluate    tabularix.RangeMatcher().row($pattern)    modules=tabularix
     Evaluate    $matcher.optional()
     Run Keyword And Expect Error    *Cannot set multiple cardinalities*    Evaluate    $matcher.one_or_more()

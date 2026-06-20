@@ -133,25 +133,25 @@ class Sheet:
         """
         ...
 
-    def search_row_group(
+    def search_range(
         self,
-        matcher: RowGroupMatcher,
+        matcher: RangeMatcher,
         start_row: int | None = None,
         end_row: int | None = None,
         start_col: int | None = None,
         end_col: int | None = None,
-    ) -> RowGroup | None:
+    ) -> Range | None:
         """Searches the worksheet (or a sub-grid of it) for the first matching sequence of rows.
 
         Args:
-            matcher: The RowGroupMatcher pattern to search for.
+            matcher: The RangeMatcher pattern to search for.
             start_row: Optional 0-based row to start searching from (defaults to 0).
             end_row: Optional 0-based row to stop searching at (inclusive, defaults to last row).
             start_col: Optional 0-based column limit (inclusive, defaults to 0).
             end_col: Optional 0-based column limit (inclusive, defaults to last column).
 
         Returns:
-            A RowGroup enclosing the matched boundaries, or None if no match is found.
+            A Range enclosing the matched boundaries, or None if no match is found.
 
         Raises:
             ValueError: If start_row > end_row or start_col > end_col.
@@ -159,26 +159,26 @@ class Sheet:
         """
         ...
 
-    def search_row_group_relative(
+    def search_range_relative(
         self,
-        matcher: RowGroupMatcher,
+        matcher: RangeMatcher,
         *,
-        below: RowGroup | None = None,
-        above: RowGroup | None = None,
-        left: RowGroup | None = None,
-        right: RowGroup | None = None,
-    ) -> RowGroup | None:
-        """Searches for a row group relative to one or more previously matched row groups.
+        below: Range | None = None,
+        above: Range | None = None,
+        left: Range | None = None,
+        right: Range | None = None,
+    ) -> Range | None:
+        """Searches for a range relative to one or more previously matched ranges.
 
         Args:
-            matcher: The RowGroupMatcher pattern to search for.
-            below: Optional RowGroup boundary.
-            above: Optional RowGroup boundary.
-            left: Optional RowGroup boundary.
-            right: Optional RowGroup boundary.
+            matcher: The RangeMatcher pattern to search for.
+            below: Optional Range boundary.
+            above: Optional Range boundary.
+            left: Optional Range boundary.
+            right: Optional Range boundary.
 
         Returns:
-            A RowGroup enclosing the matched boundaries, or None if no match is found.
+            A Range enclosing the matched boundaries, or None if no match is found.
 
         Raises:
             ValueError: If relational boundaries conflict or if opposing spans do not align.
@@ -368,85 +368,85 @@ class RowPattern:
         """
         ...
 
-class RowGroup:
-    """Represents a matched region inside a worksheet enclosing absolute coordinate boundaries."""
+class Range:
+    """Represents a region inside a worksheet enclosing absolute coordinate boundaries."""
 
     @property
     def start_row(self) -> int:
-        """The 0-based index of the first matched row (inclusive)."""
+        """The 0-based index of the first row (inclusive)."""
         ...
 
     @property
     def end_row(self) -> int:
-        """The 0-based index of the last matched row (inclusive)."""
+        """The 0-based index of the last row (inclusive)."""
         ...
 
     @property
     def start_col(self) -> int:
-        """The 0-based index of the first matched column (inclusive)."""
+        """The 0-based index of the first column (inclusive)."""
         ...
 
     @property
     def end_col(self) -> int:
-        """The 0-based index of the last matched column (inclusive)."""
+        """The 0-based index of the last column (inclusive)."""
         ...
 
     def __init__(self, start_row: int, end_row: int, start_col: int, end_col: int) -> None:
-        """Initializes a new RowGroup instance with absolute bounds."""
+        """Initializes a new Range instance with absolute bounds."""
         ...
 
-class RowGroupMatcher:
-    """Represents a pattern matcher for a group of rows defined programmatically."""
+class RangeMatcher:
+    """Represents a pattern matcher for a range defined programmatically."""
 
     def __init__(self) -> None:
-        """Initializes an empty row group matcher."""
+        """Initializes an empty range matcher."""
         ...
 
-    def row(self, pattern: RowPattern) -> RowGroupMatcher:
+    def row(self, pattern: RowPattern) -> RangeMatcher:
         """Appends a row pattern to the matcher.
 
         Args:
             pattern: The RowPattern instance to append.
 
         Returns:
-            This RowGroupMatcher instance for chaining.
+            This RangeMatcher instance for chaining.
         """
         ...
 
-    def one_or_more(self) -> RowGroupMatcher:
+    def one_or_more(self) -> RangeMatcher:
         """Sets the repetition cardinality of the last row pattern to one-or-more (+).
 
         Returns:
-            This RowGroupMatcher instance for chaining.
+            This RangeMatcher instance for chaining.
 
         Raises:
             ValueError: If a cardinality has already been configured on the last row pattern.
         """
         ...
 
-    def zero_or_more(self) -> RowGroupMatcher:
+    def zero_or_more(self) -> RangeMatcher:
         """Sets the repetition cardinality of the last row pattern to zero-or-more (*).
 
         Returns:
-            This RowGroupMatcher instance for chaining.
+            This RangeMatcher instance for chaining.
 
         Raises:
             ValueError: If a cardinality has already been configured on the last row pattern.
         """
         ...
 
-    def optional(self) -> RowGroupMatcher:
+    def optional(self) -> RangeMatcher:
         """Sets the repetition cardinality of the last row pattern to optional (?).
 
         Returns:
-            This RowGroupMatcher instance for chaining.
+            This RangeMatcher instance for chaining.
 
         Raises:
             ValueError: If a cardinality has already been configured on the last row pattern.
         """
         ...
 
-    def repeat(self, min: int, max: int | None = None) -> RowGroupMatcher:
+    def repeat(self, min: int, max: int | None = None) -> RangeMatcher:
         """Sets the repetition cardinality of the last row pattern to repeat a custom number of times or range.
 
         Args:
@@ -454,15 +454,15 @@ class RowGroupMatcher:
             max: Optional maximum number of repetitions. If None, matches min or more.
 
         Returns:
-            This RowGroupMatcher instance for chaining.
+            This RangeMatcher instance for chaining.
 
         Raises:
             ValueError: If a cardinality has already been configured on the last row pattern.
         """
         ...
 
-    def matches_row_group(self, rows: list[list[Any]]) -> bool:
-        """Checks if a sequence of rows matches the row group patterns.
+    def matches_range(self, rows: list[list[Any]]) -> bool:
+        """Checks if a sequence of rows matches the range patterns.
 
         Args:
             rows: A list of rows, where each row is a list of cell values.

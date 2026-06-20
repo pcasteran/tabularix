@@ -1,5 +1,5 @@
 *** Settings ***
-Documentation       Acceptance tests for RowGroupMatcher cell matching rules.
+Documentation       Acceptance tests for RangeMatcher cell matching rules.
 
 Library             Collections
 
@@ -8,55 +8,55 @@ Library             Collections
 Verify Match Exact Values
     [Documentation]    Verify exact string match value rule.
     ${pattern}=    Evaluate    tabularix.value("Total")    modules=tabularix
-    ${matcher}=    Evaluate    tabularix.RowGroupMatcher().row($pattern)    modules=tabularix
+    ${matcher}=    Evaluate    tabularix.RangeMatcher().row($pattern)    modules=tabularix
 
-    ${res1}=    Evaluate    $matcher.matches_row_group([["Total"]])
+    ${res1}=    Evaluate    $matcher.matches_range([["Total"]])
     Should Be True    ${res1}
 
-    ${res2}=    Evaluate    $matcher.matches_row_group([["Subtotal"]])
+    ${res2}=    Evaluate    $matcher.matches_range([["Subtotal"]])
     Should Be Equal    ${res2}    ${False}
 
 Verify Match Non Empty
     [Documentation]    Verify non_empty matches any non-empty cell.
     ${pattern}=    Evaluate    tabularix.non_empty()    modules=tabularix
-    ${matcher}=    Evaluate    tabularix.RowGroupMatcher().row($pattern)    modules=tabularix
+    ${matcher}=    Evaluate    tabularix.RangeMatcher().row($pattern)    modules=tabularix
 
-    ${res1}=    Evaluate    $matcher.matches_row_group([["Anything"]])
+    ${res1}=    Evaluate    $matcher.matches_range([["Anything"]])
     Should Be True    ${res1}
 
-    ${res2}=    Evaluate    $matcher.matches_row_group([[None]])
+    ${res2}=    Evaluate    $matcher.matches_range([[None]])
     Should Be Equal    ${res2}    ${False}
 
 Verify Match Empty
     [Documentation]    Verify empty matches blank cells.
     ${pattern}=    Evaluate    tabularix.empty()    modules=tabularix
-    ${matcher}=    Evaluate    tabularix.RowGroupMatcher().row($pattern)    modules=tabularix
+    ${matcher}=    Evaluate    tabularix.RangeMatcher().row($pattern)    modules=tabularix
 
-    ${res1}=    Evaluate    $matcher.matches_row_group([[None]])
+    ${res1}=    Evaluate    $matcher.matches_range([[None]])
     Should Be True    ${res1}
 
-    ${res2}=    Evaluate    $matcher.matches_row_group([["Something"]])
+    ${res2}=    Evaluate    $matcher.matches_range([["Something"]])
     Should Be Equal    ${res2}    ${False}
 
 Verify Match Regex String
     [Documentation]    Verify regex matching using a plain string regex pattern.
     ${pattern}=    Evaluate    tabularix.regex("^Q[1-4]$")    modules=tabularix
-    ${matcher}=    Evaluate    tabularix.RowGroupMatcher().row($pattern)    modules=tabularix
+    ${matcher}=    Evaluate    tabularix.RangeMatcher().row($pattern)    modules=tabularix
 
-    ${res1}=    Evaluate    $matcher.matches_row_group([["Q3"]])
+    ${res1}=    Evaluate    $matcher.matches_range([["Q3"]])
     Should Be True    ${res1}
 
-    ${res2}=    Evaluate    $matcher.matches_row_group([["Q5"]])
+    ${res2}=    Evaluate    $matcher.matches_range([["Q5"]])
     Should Be Equal    ${res2}    ${False}
 
 Verify Match Regex Compiled
     [Documentation]    Verify regex matching using a compiled Python regex object (re.compile).
     ${re}=    Evaluate    re.compile("^\\\\d{4}$")    modules=re
     ${pattern}=    Evaluate    tabularix.regex($re)    modules=tabularix
-    ${matcher}=    Evaluate    tabularix.RowGroupMatcher().row($pattern)    modules=tabularix
+    ${matcher}=    Evaluate    tabularix.RangeMatcher().row($pattern)    modules=tabularix
 
-    ${res1}=    Evaluate    $matcher.matches_row_group([["2026"]])
+    ${res1}=    Evaluate    $matcher.matches_range([["2026"]])
     Should Be True    ${res1}
 
-    ${res2}=    Evaluate    $matcher.matches_row_group([["abc"]])
+    ${res2}=    Evaluate    $matcher.matches_range([["abc"]])
     Should Be Equal    ${res2}    ${False}

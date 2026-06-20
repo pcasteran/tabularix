@@ -173,7 +173,7 @@ fn enforce_cell_exclusivity(cell_patterns: &mut [CellPattern]) -> PyResult<()> {
 
 #[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
-pub struct RowGroup {
+pub struct Range {
     #[pyo3(get)]
     pub start_row: usize,
     #[pyo3(get)]
@@ -185,10 +185,10 @@ pub struct RowGroup {
 }
 
 #[pymethods]
-impl RowGroup {
+impl Range {
     #[new]
     pub fn new(start_row: usize, end_row: usize, start_col: usize, end_col: usize) -> Self {
-        RowGroup {
+        Range {
             start_row,
             end_row,
             start_col,
@@ -198,7 +198,7 @@ impl RowGroup {
 
     fn __repr__(&self) -> String {
         format!(
-            "<RowGroup rows={}..{}, cols={}..{}>",
+            "<Range rows={}..{}, cols={}..{}>",
             self.start_row, self.end_row, self.start_col, self.end_col
         )
     }
@@ -206,15 +206,15 @@ impl RowGroup {
 
 #[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
-pub struct RowGroupMatcher {
+pub struct RangeMatcher {
     pub row_patterns: Vec<RowPattern>,
 }
 
 #[pymethods]
-impl RowGroupMatcher {
+impl RangeMatcher {
     #[new]
     pub fn new() -> Self {
-        RowGroupMatcher {
+        RangeMatcher {
             row_patterns: Vec::new(),
         }
     }
@@ -266,7 +266,7 @@ impl RowGroupMatcher {
         Ok(slf)
     }
 
-    pub fn matches_row_group(
+    pub fn matches_range(
         &self,
         py: Python<'_>,
         rows: Vec<Vec<Bound<'_, PyAny>>>,
@@ -276,7 +276,7 @@ impl RowGroupMatcher {
             .map(|r| r.into_iter().map(|c| py_any_to_cell_value(&c)).collect())
             .collect();
 
-        let matched_end = match_row_group(py, &self.row_patterns, &sheet_data, 0, 0)?;
+        let matched_end = match_range(py, &self.row_patterns, &sheet_data, 0, 0)?;
         Ok(matched_end.is_some() && matched_end.unwrap() == sheet_data.len())
     }
 }
@@ -406,7 +406,7 @@ fn matches_row_pattern(py: Python<'_>, pattern: &RowPattern, row: &[CellValue]) 
     match_cells(py, &pattern.cell_patterns, row, 0, 0)
 }
 
-pub fn match_row_group(
+pub fn match_range(
     py: Python<'_>,
     patterns: &[RowPattern],
     sheet_data: &[Vec<CellValue>],
@@ -444,7 +444,7 @@ pub fn match_row_group(
 
     for k in (min_rows..=matchable).rev() {
         if let Some(end_idx) =
-            match_row_group(py, patterns, sheet_data, pattern_idx + 1, sheet_row_idx + k)?
+            match_range(py, patterns, sheet_data, pattern_idx + 1, sheet_row_idx + k)?
         {
             return Ok(Some(end_idx));
         }

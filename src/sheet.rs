@@ -1,4 +1,4 @@
-use crate::matcher::{match_row_group, RowGroup, RowGroupMatcher};
+use crate::matcher::{match_range, Range, RangeMatcher};
 use calamine::{open_workbook, Data, Reader, Xlsx};
 use pyo3::prelude::*;
 use pyo3::types::PyAny;
@@ -357,15 +357,15 @@ impl Sheet {
 
     #[allow(clippy::cast_sign_loss)]
     #[pyo3(signature = (matcher, start_row = None, end_row = None, start_col = None, end_col = None))]
-    pub fn search_row_group(
+    pub fn search_range(
         &self,
         py: Python<'_>,
-        matcher: &RowGroupMatcher,
+        matcher: &RangeMatcher,
         start_row: Option<isize>,
         end_row: Option<isize>,
         start_col: Option<isize>,
         end_col: Option<isize>,
-    ) -> PyResult<Option<RowGroup>> {
+    ) -> PyResult<Option<Range>> {
         let rows_count = self.data.len();
         let cols_count = if rows_count > 0 {
             self.data[0].len()
@@ -445,10 +445,10 @@ impl Sheet {
 
         // Scan row-by-row
         for i in 0..sliced_data.len() {
-            if let Some(end_idx) = match_row_group(py, &matcher.row_patterns, &sliced_data, 0, i)? {
+            if let Some(end_idx) = match_range(py, &matcher.row_patterns, &sliced_data, 0, i)? {
                 // Ensure the match actually consumed at least one row
                 if end_idx > i {
-                    return Ok(Some(RowGroup {
+                    return Ok(Some(Range {
                         start_row: resolved_start_row + i,
                         end_row: resolved_start_row + end_idx - 1,
                         start_col: resolved_start_col,
@@ -1079,8 +1079,8 @@ mod tests {
     }
 
     #[test]
-    fn test_search_row_group() {
-        use crate::matcher::{CellMatchRule, CellPattern, RowGroupMatcher, RowPattern};
+    fn test_search_range() {
+        use crate::matcher::{CellMatchRule, CellPattern, RangeMatcher, RowPattern};
 
         let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
         let sheet = wb.get_sheet("simple").unwrap();
@@ -1125,39 +1125,40 @@ mod tests {
                 max: Some(1),
             });
 
-            let mut matcher = RowGroupMatcher::new();
+            let mut matcher = RangeMatcher::new();
             matcher.row_patterns.push(pattern1);
             matcher.row_patterns.push(pattern2);
 
             // Test search on entire sheet
-            let group = sheet
-                .search_row_group(py, &matcher, None, None, None, None)
+            let range = sheet
+                .search_range(py, &matcher, None, None, None, None)
                 .unwrap()
                 .unwrap();
-            assert_eq!(group.start_row, 0);
-            assert_eq!(group.end_row, 1);
-            assert_eq!(group.start_col, 0);
-            assert_eq!(group.end_col, 2);
+            assert_eq!(range.start_row, 0);
+            assert_eq!(range.end_row, 1);
+            assert_eq!(range.start_col, 0);
+            assert_eq!(range.end_col, 2);
 
             // Test search with start_row boundary that excludes the header row
-            let group_opt = sheet
-                .search_row_group(py, &matcher, Some(1), None, None, None)
+            let range_opt = sheet
+                .search_range(py, &matcher, Some(1), None, None, None)
                 .unwrap();
-            assert!(group_opt.is_none());
+            assert!(range_opt.is_none());
 
             // Test search out of bounds
-            let err = sheet.search_row_group(py, &matcher, Some(-1), None, None, None);
+            let err = sheet.search_range(py, &matcher, Some(-1), None, None, None);
             assert!(err.is_err());
 
-            let err2 = sheet.search_row_group(py, &matcher, Some(10), None, None, None);
+            let err2 = sheet.search_range(py, &matcher, Some(10), None, None, None);
             assert!(err2.is_err());
 
             // This slice restricts column width to 2 cols (0 and 1).
             // But pattern1 expects 3 cell patterns. So it shouldn't match.
-            let group_col_restricted = sheet
-                .search_row_group(py, &matcher, None, None, Some(0), Some(1))
+            let range_col_restricted = sheet
+                .search_range(py, &matcher, None, None, Some(0), Some(1))
                 .unwrap();
-            assert!(group_col_restricted.is_none());
+            assert!(range_col_restricted.is_none());
+        });
         });
     }
 }

@@ -110,37 +110,37 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
 
 ## Step 4: Layex Engine MVP (Builder & DSL)
 
-- [x] **Task 4.1: Implement `RowGroupMatcher` Python Builder API**
-    - **Acceptance:** `RowGroupMatcher` class is exposed to Python via PyO3. The Python Builder API allows defining row group matching rules by cell value (exact content, regex, non-empty cells) and cell-level cardinalities. Type stubs in `python/tabularix/__init__.pyi` and the new `docs/matching_row_groups.md` are updated. Add Rust unit tests and Robot acceptance tests.
+- [x] **Task 4.1: Implement `RangeMatcher` Python Builder API**
+    - **Acceptance:** `RangeMatcher` class is exposed to Python via PyO3. The Python Builder API allows defining range matching rules by cell value (exact content, regex, non-empty cells) and cell-level cardinalities. Type stubs in `python/tabularix/__init__.pyi` and the new `docs/matching_ranges.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
-    - **Files:** `src/matcher.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/matcher_builder.robot`, `docs/matching_row_groups.md`, `docs/api.md`.
+    - **Files:** `src/matcher.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/range_matcher_builder.robot`, `docs/matching_ranges.md`, `docs/api.md`.
 
-- [ ] **Task 4.2: Implement `RowGroupMatcher` String DSL (Layex)**
-    - **Acceptance:** `RowGroupMatcher.from_layex(dsl_str)` is exposed to Python via PyO3. It parses a string DSL representing row patterns (e.g., `'[entity:date] [type:numeric]+'`). Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+- [ ] **Task 4.2: Implement `RangeMatcher` String DSL (Layex)**
+    - **Acceptance:** `RangeMatcher.from_layex(dsl_str)` is exposed to Python via PyO3. It parses a string DSL representing row patterns (e.g., `'[entity:date] [type:numeric]+'`). Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
-    - **Files:** `src/layex.rs`, `src/matcher.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/matcher_dsl.robot`, `docs/api.md`.
+    - **Files:** `src/layex.rs`, `src/matcher.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/range_matcher_dsl.robot`, `docs/api.md`.
 
-- [ ] **Task 4.3: Implement `RowGroupMatcher` Type Matching Rules**
-    - **Acceptance:** Expose programmatic cell type-matching methods (e.g. `.string()`, `.numeric()`, `.boolean()`, `.empty()`, `.type()`) to Python via PyO3. Update `python/tabularix/__init__.pyi`, `docs/matching_row_groups.md`, and `docs/api.md`. Add Rust unit tests and Robot acceptance tests.
+- [ ] **Task 4.3: Implement `RangeMatcher` Type Matching Rules**
+    - **Acceptance:** Expose programmatic cell type-matching methods (e.g. `.string()`, `.numeric()`, `.boolean()`, `.empty()`, `.type()`) to Python via PyO3. Update `python/tabularix/__init__.pyi`, `docs/matching_ranges.md`, and `docs/api.md`. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
-    - **Files:** `src/matcher.rs`, `python/tabularix/__init__.pyi`, `tests/matcher_types.robot`, `docs/api.md`, `docs/matching_row_groups.md`.
+    - **Files:** `src/matcher.rs`, `python/tabularix/__init__.pyi`, `tests/range_matcher_types.robot`, `docs/api.md`, `docs/matching_ranges.md`.
 
 ## Step 5: Advanced Layex & Search
 
-- [ ] **Task 5.1: Implement `Sheet.search_row_group`**
-    - **Acceptance:** `Sheet` has a `search_row_group(matcher: RowGroupMatcher)` method that searches the sheet rows using the pattern matcher rules and returns the matched row index or range. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+- [x] **Task 5.1: Implement `Sheet.search_range`**
+    - **Acceptance:** `Sheet` has a `search_range(matcher: RangeMatcher)` method that searches the sheet rows using the pattern matcher rules and returns the matched row index or range. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
-    - **Files:** `src/sheet.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/search_row_group.robot`, `docs/api.md`.
+    - **Files:** `src/sheet.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/range_search.robot`, `docs/api.md`.
 
-- [ ] **Task 5.2: Implement `Sheet.extract_row_group_between`**
-    - **Acceptance:** `Sheet` has an `extract_row_group_between(start_row, end_row)` method to slice and extract a range of rows between two indices. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+- [ ] **Task 5.2: Implement `Sheet.extract_range_between`**
+    - **Acceptance:** `Sheet` has an `extract_range_between(start, end)` method to slice and extract a range of rows between two indices/ranges. The method is exposed to Python via PyO3. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
-    - **Files:** `src/sheet.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/extract_row_group.robot`, `docs/api.md`.
+    - **Files:** `src/sheet.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/extract_range.robot`, `docs/api.md`.
 
 ## Step 6: Table API & Data Export
 
-- [ ] **Task 6.1: Implement `build_table_from_row_groups`**
-    - **Acceptance:** `build_table_from_row_groups(header, data, footer=None)` is exposed to Python via PyO3, which converts the matched row regions into an internal `Table` object representing structured tabular data. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+- [ ] **Task 6.1: Implement `build_table_from_ranges`**
+    - **Acceptance:** `build_table_from_ranges(header, data, footer=None)` is exposed to Python via PyO3, which converts the matched row regions into an internal `Table` object representing structured tabular data. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/table.rs`, `src/lib.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/build_table.robot`, `docs/api.md`.
 

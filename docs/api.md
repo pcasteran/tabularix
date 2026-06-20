@@ -63,8 +63,8 @@ This page describes the public API exposed by the Tabularix library.
         - copy
         - get_cell_value
         - set_cell_value
-        - search_row_group
-        - search_row_group_relative
+        - search_range
+        - search_range_relative
         - to_svg
 
 <!-- drow_row() -->
@@ -192,13 +192,13 @@ This page describes the public API exposed by the Tabularix library.
 ---
 
 <!-- prettier-ignore -->
-::: tabularix.RowGroupMatcher
+::: tabularix.RangeMatcher
     options:
       heading_level: 3
 
 ---
 
 <!-- prettier-ignore -->
-::: tabularix.RowGroup
+::: tabularix.Range
     options:
       heading_level: 3
