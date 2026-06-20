@@ -17,6 +17,31 @@ This page describes the public API exposed by the Tabularix library.
     options:
       heading_level: 3
 
+<!-- prettier-ignore -->
+::: tabularix.value
+    options:
+      heading_level: 3
+
+<!-- prettier-ignore -->
+::: tabularix.regex
+    options:
+      heading_level: 3
+
+<!-- prettier-ignore -->
+::: tabularix.empty
+    options:
+      heading_level: 3
+
+<!-- prettier-ignore -->
+::: tabularix.non_empty
+    options:
+      heading_level: 3
+
+<!-- prettier-ignore -->
+::: tabularix.any
+    options:
+      heading_level: 3
+
 ---
 
 ## Classes
@@ -38,6 +63,9 @@ This page describes the public API exposed by the Tabularix library.
         - copy
         - get_cell_value
         - set_cell_value
+        - search_range
+        - search_range_relative
+        - get_range_between
         - to_svg
 
 <!-- drow_row() -->
@@ -154,3 +182,24 @@ This page describes the public API exposed by the Tabularix library.
         | Before | After |
         | :---: | :---: |
         | [![Original Excel Sheet](assets/sheet_complex.svg)](assets/sheet_complex.svg) | [![Rendered SVG Output](assets/search_and_drop_regex_bottom.svg)](assets/search_and_drop_regex_bottom.svg) |
+
+---
+
+<!-- prettier-ignore -->
+::: tabularix.RowPattern
+    options:
+      heading_level: 3
+
+---
+
+<!-- prettier-ignore -->
+::: tabularix.RangeMatcher
+    options:
+      heading_level: 3
+
+---
+
+<!-- prettier-ignore -->
+::: tabularix.Range
+    options:
+      heading_level: 3

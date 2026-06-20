@@ -84,14 +84,15 @@ def create_sheet_comple(wb):
 
 def generate():
     """Generate sample Excel test data for acceptance testing."""
-    os.makedirs("tests/data", exist_ok=True)
+    dir_path = os.path.dirname(os.path.abspath(__file__))
 
     wb = openpyxl.Workbook()
     create_sheet_simple(wb)
     create_sheet_comple(wb)
 
-    wb.save("tests/data/sample.xlsx")
-    print("Sample Excel created at tests/data/sample.xlsx")
+    output_path = os.path.join(dir_path, "sample.xlsx")
+    wb.save(output_path)
+    print(f"Sample Excel created at {output_path}")
 
 
 if __name__ == "__main__":

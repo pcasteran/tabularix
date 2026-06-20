@@ -7,7 +7,7 @@
 3. **Active Mutator API (Rust)**: `Sheet` manipulation algorithms (`unmerge_cells`, `search_and_drop_before`).
 4. **Layex Pattern Engine (Rust)**: Parser for the String DSL and matching logic (entities, types, regex cardinality).
 5. **Table Assembler (Rust)**: Converts `Sheet` blocks into an internal `Table` type, which supports exporting to Arrow, Parquet, Polars, and Pandas.
-6. **Python Frontend (Python)**: Ergonomic classes (`Sheet`, `RowGroupMatcher`, `Table`, `TabularixError`) that wrap the PyO3 extensions with PEP8 style and type hints.
+6. **Python Frontend (Python)**: Ergonomic classes (`Sheet`, `RangeMatcher`, `Table`, `TabularixError`) that wrap the PyO3 extensions with PEP8 style and type hints.
 7. **Acceptance Testing Suite (Python/Robot)**: Robot Framework setup for the Product Owner to define behavior.
 
 ## 2. Implementation Order
@@ -15,9 +15,9 @@
 - **Step 1: Scaffolding & CI Pipeline**: Initialize `maturin` project, `Cargo.toml`, `pyproject.toml`, and `justfile`. Set up basic PyO3 bindings and Robot framework.
 - **Step 2: Excel Parsing & Sheet Core**: Implement Rust `calamine` wrapper to load an Excel sheet into a custom `Sheet` struct. Expose `load_workbook` to Python.
 - **Step 3: Active Mutator API**: Implement `unmerge_cells` and `search_and_drop_before` on the `Sheet`. Expose to Python.
-- **Step 4: Layex Engine MVP**: Build the pattern matching core (matching simple types and strings without complex cardinality yet). Expose `RowGroupMatcher`.
-- **Step 5: Advanced Layex & Search**: Add cardinality (`*`, `+`) to the engine. Implement `search_row_group` and `extract_rows_between`.
-- **Step 6: Table API & Data Export**: Implement `build_table_from_row_groups` returning an internal `Table` instance. Add methods to the `Table` to export to Parquet files, Arrow tables, Pandas, and Polars DataFrames.
+- **Step 4: Layex Engine MVP**: Build the pattern matching core (matching simple types and strings without complex cardinality yet). Expose `RangeMatcher`.
+- **Step 5: Advanced Layex & Search**: Add cardinality (`*`, `+`) to the engine. Implement `search_range` and `extract_range_between`.
+- **Step 6: Table API & Data Export**: Implement `build_table_from_ranges` returning an internal `Table` instance. Add methods to the `Table` to export to Parquet files, Arrow tables, Pandas, and Polars DataFrames.
 
 ## 3. General Implementation Rules
 

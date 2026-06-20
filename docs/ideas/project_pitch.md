@@ -43,18 +43,18 @@ sheet.drop_columns_when_fill_ratio_less_than(0.2)
 sheet.crop_all()
 
 # Extract the sub-components of the table we are interested in.
-# Match one row group at a time using a dedicated SINGLE layex and then assemble these row groups into a table.
-header = sheet.search_matching_row_group(layex="...")
-data = sheet.search_matching_row_group(layex="...")
+# Match one range at a time using a dedicated SINGLE layex and then assemble these ranges into a table.
+header = sheet.search_matching_range(layex="...")
+data = sheet.search_matching_range(layex="...")
 
-table = sheet.build_table_from_row_groups(header=header, data=data)
+table = sheet.build_table_from_ranges(header=header, data=data)
 
 # Or, another possible strategy:
-header = sheet.search_matching_row_group(layex="...")
-footer = sheet.search_matching_row_group(layex="...")
-data = sheet.extract_row_group_between(begin=header, end=footer)
+header = sheet.search_matching_range(layex="...")
+footer = sheet.search_matching_range(layex="...")
+data = sheet.extract_range_between(begin=header, end=footer)
 
-table = sheet.build_table_from_row_groups(header=header, data=data, footer=footer)
+table = sheet.build_table_from_ranges(header=header, data=data, footer=footer)
 
 # Finally, output the table to Parquet files.
 table.write("table_1.parquet")

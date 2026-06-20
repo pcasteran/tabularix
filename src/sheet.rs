@@ -1,3 +1,4 @@
+use crate::matcher::{match_range, Range, RangeMatcher};
 use calamine::{open_workbook, Data, Reader, Xlsx};
 use pyo3::prelude::*;
 use pyo3::types::PyAny;
@@ -352,6 +353,184 @@ impl Sheet {
         self.merged_regions = new_merged;
 
         Ok(())
+    }
+
+    #[allow(clippy::cast_sign_loss)]
+    #[pyo3(signature = (matcher, start_row = None, end_row = None, start_col = None, end_col = None))]
+    pub fn search_range(
+        &self,
+        py: Python<'_>,
+        matcher: &RangeMatcher,
+        start_row: Option<isize>,
+        end_row: Option<isize>,
+        start_col: Option<isize>,
+        end_col: Option<isize>,
+    ) -> PyResult<Option<Range>> {
+        let rows_count = self.data.len();
+        let cols_count = if rows_count > 0 {
+            self.data[0].len()
+        } else {
+            0
+        };
+
+        if rows_count == 0 || cols_count == 0 {
+            return Ok(None);
+        }
+
+        let resolved_start_row = match start_row {
+            Some(r) => {
+                if r < 0 || r as usize >= rows_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "start_row out of bounds",
+                    ));
+                }
+                r as usize
+            }
+            None => 0,
+        };
+
+        let resolved_end_row = match end_row {
+            Some(r) => {
+                if r < 0 || r as usize >= rows_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "end_row out of bounds",
+                    ));
+                }
+                r as usize
+            }
+            None => rows_count - 1,
+        };
+
+        let resolved_start_col = match start_col {
+            Some(c) => {
+                if c < 0 || c as usize >= cols_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "start_col out of bounds",
+                    ));
+                }
+                c as usize
+            }
+            None => 0,
+        };
+
+        let resolved_end_col = match end_col {
+            Some(c) => {
+                if c < 0 || c as usize >= cols_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "end_col out of bounds",
+                    ));
+                }
+                c as usize
+            }
+            None => cols_count - 1,
+        };
+
+        if resolved_start_row > resolved_end_row {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "start_row ({resolved_start_row}) cannot be greater than end_row ({resolved_end_row})"
+            )));
+        }
+        if resolved_start_col > resolved_end_col {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "start_col ({resolved_start_col}) cannot be greater than end_col ({resolved_end_col})"
+            )));
+        }
+
+        // Construct the sliced subgrid
+        let mut sliced_data: Vec<Vec<CellValue>> = Vec::new();
+        for r in resolved_start_row..=resolved_end_row {
+            let row_slice = self.data[r][resolved_start_col..=resolved_end_col].to_vec();
+            sliced_data.push(row_slice);
+        }
+
+        // Scan row-by-row
+        for i in 0..sliced_data.len() {
+            if let Some(end_idx) = match_range(py, &matcher.row_patterns, &sliced_data, 0, i)? {
+                // Ensure the match actually consumed at least one row
+                if end_idx > i {
+                    return Ok(Some(Range {
+                        start_row: resolved_start_row + i,
+                        end_row: resolved_start_row + end_idx - 1,
+                        start_col: resolved_start_col,
+                        end_col: resolved_end_col,
+                    }));
+                }
+            }
+        }
+
+        Ok(None)
+    }
+
+    pub fn get_range_between(&self, start: &Range, end: &Range) -> PyResult<Range> {
+        let rows_count = self.data.len();
+
+        let is_vertical = start.end_row < end.start_row;
+        let is_horizontal = start.end_col < end.start_col;
+
+        if is_vertical && !is_horizontal {
+            // Vertical separation
+            if start.start_col != end.start_col || start.end_col != end.end_col {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    "Column spans of start and end ranges do not align for vertical separation.",
+                ));
+            }
+            let start_row = start.end_row + 1;
+            let end_row = end.start_row - 1;
+            if start_row > end_row {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    "No rows exist between start and end ranges.",
+                ));
+            }
+            if end_row >= rows_count {
+                return Err(pyo3::exceptions::PyIndexError::new_err(
+                    "Resolved end row index is out of sheet bounds.",
+                ));
+            }
+            Ok(Range {
+                start_row,
+                end_row,
+                start_col: start.start_col,
+                end_col: start.end_col,
+            })
+        } else if is_horizontal && !is_vertical {
+            // Horizontal separation
+            if start.start_row != end.start_row || start.end_row != end.end_row {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    "Row spans of start and end ranges do not align for horizontal separation.",
+                ));
+            }
+            let start_col = start.end_col + 1;
+            let end_col = end.start_col - 1;
+            if start_col > end_col {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    "No columns exist between start and end ranges.",
+                ));
+            }
+            let cols_count = if rows_count > 0 {
+                self.data[0].len()
+            } else {
+                0
+            };
+            if end_col >= cols_count {
+                return Err(pyo3::exceptions::PyIndexError::new_err(
+                    "Resolved end col index is out of sheet bounds.",
+                ));
+            }
+            Ok(Range {
+                start_row: start.start_row,
+                end_row: start.end_row,
+                start_col,
+                end_col,
+            })
+        } else if is_vertical && is_horizontal {
+            Err(pyo3::exceptions::PyValueError::new_err(
+                "Ranges are separated diagonally. They must be aligned either vertically or horizontally.",
+            ))
+        } else {
+            Err(pyo3::exceptions::PyValueError::new_err(
+                "Ranges overlap or the start range is positioned after the end range.",
+            ))
+        }
     }
 }
 
@@ -968,6 +1147,174 @@ mod tests {
             let query = "NOT_FOUND".into_pyobject(py).unwrap().into_any();
             let res = test_sheet.search_and_drop(py, &query, "top");
             assert!(res.is_err());
+        });
+    }
+
+    #[test]
+    fn test_search_range() {
+        use crate::matcher::{CellMatchRule, CellPattern, RangeMatcher, RowPattern};
+
+        let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
+        let sheet = wb.get_sheet("simple").unwrap();
+
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
+            // Build a matcher for:
+            // RowPattern: non_empty, any, any (matches header rows)
+            // RowPattern: "ABC", any, any (matches ABC data row)
+
+            let mut pattern1 = RowPattern::new();
+            pattern1.cell_patterns.push(CellPattern {
+                rule: CellMatchRule::NonEmpty,
+                min: 1,
+                max: Some(1),
+            });
+            pattern1.cell_patterns.push(CellPattern {
+                rule: CellMatchRule::Any,
+                min: 1,
+                max: Some(1),
+            });
+            pattern1.cell_patterns.push(CellPattern {
+                rule: CellMatchRule::Any,
+                min: 1,
+                max: Some(1),
+            });
+
+            let mut pattern2 = RowPattern::new();
+            pattern2.cell_patterns.push(CellPattern {
+                rule: CellMatchRule::Exact("ABC".to_string()),
+                min: 1,
+                max: Some(1),
+            });
+            pattern2.cell_patterns.push(CellPattern {
+                rule: CellMatchRule::Any,
+                min: 1,
+                max: Some(1),
+            });
+            pattern2.cell_patterns.push(CellPattern {
+                rule: CellMatchRule::Any,
+                min: 1,
+                max: Some(1),
+            });
+
+            let mut matcher = RangeMatcher::new();
+            matcher.row_patterns.push(pattern1);
+            matcher.row_patterns.push(pattern2);
+
+            // Test search on entire sheet
+            let range = sheet
+                .search_range(py, &matcher, None, None, None, None)
+                .unwrap()
+                .unwrap();
+            assert_eq!(range.start_row, 0);
+            assert_eq!(range.end_row, 1);
+            assert_eq!(range.start_col, 0);
+            assert_eq!(range.end_col, 2);
+
+            // Test search with start_row boundary that excludes the header row
+            let range_opt = sheet
+                .search_range(py, &matcher, Some(1), None, None, None)
+                .unwrap();
+            assert!(range_opt.is_none());
+
+            // Test search out of bounds
+            let err = sheet.search_range(py, &matcher, Some(-1), None, None, None);
+            assert!(err.is_err());
+
+            let err2 = sheet.search_range(py, &matcher, Some(10), None, None, None);
+            assert!(err2.is_err());
+
+            // This slice restricts column width to 2 cols (0 and 1).
+            // But pattern1 expects 3 cell patterns. So it shouldn't match.
+            let range_col_restricted = sheet
+                .search_range(py, &matcher, None, None, Some(0), Some(1))
+                .unwrap();
+            assert!(range_col_restricted.is_none());
+        });
+    }
+
+    #[test]
+    fn test_get_range_between() {
+        use crate::matcher::Range;
+
+        let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
+        let sheet = wb.get_sheet("simple").unwrap();
+
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|_py| {
+            // 1. Vertical separation test
+            let r1 = Range {
+                start_row: 0,
+                end_row: 0,
+                start_col: 0,
+                end_col: 2,
+            };
+            let r2 = Range {
+                start_row: 4,
+                end_row: 4,
+                start_col: 0,
+                end_col: 2,
+            };
+            let res = sheet.get_range_between(&r1, &r2).unwrap();
+            assert_eq!(res.start_row, 1);
+            assert_eq!(res.end_row, 3);
+            assert_eq!(res.start_col, 0);
+            assert_eq!(res.end_col, 2);
+
+            // 2. Vertical separation mismatch column span error
+            let r1_mismatch = Range {
+                start_row: 0,
+                end_row: 0,
+                start_col: 0,
+                end_col: 1,
+            };
+            assert!(sheet.get_range_between(&r1_mismatch, &r2).is_err());
+
+            // 3. Horizontal separation test
+            let rh1 = Range {
+                start_row: 1,
+                end_row: 3,
+                start_col: 0,
+                end_col: 0,
+            };
+            let rh2 = Range {
+                start_row: 1,
+                end_row: 3,
+                start_col: 2,
+                end_col: 2,
+            };
+            let res_h = sheet.get_range_between(&rh1, &rh2).unwrap();
+            assert_eq!(res_h.start_row, 1);
+            assert_eq!(res_h.end_row, 3);
+            assert_eq!(res_h.start_col, 1);
+            assert_eq!(res_h.end_col, 1);
+
+            // 4. Horizontal separation mismatch row span error
+            let mismatched_row_span = Range {
+                start_row: 1,
+                end_row: 2,
+                start_col: 0,
+                end_col: 0,
+            };
+            assert!(sheet.get_range_between(&mismatched_row_span, &rh2).is_err());
+
+            // 5. Diagonal separation error
+            let r_diag1 = Range {
+                start_row: 0,
+                end_row: 0,
+                start_col: 0,
+                end_col: 0,
+            };
+            let r_diag2 = Range {
+                start_row: 2,
+                end_row: 2,
+                start_col: 2,
+                end_col: 2,
+            };
+            assert!(sheet.get_range_between(&r_diag1, &r_diag2).is_err());
+
+            // 6. Overlap error
+            assert!(sheet.get_range_between(&r1, &r1).is_err());
         });
     }
 }
