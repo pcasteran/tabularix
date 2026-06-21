@@ -11,6 +11,9 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dynamic = ["version"]
+dependencies = [
+    "pyarrow>=24.0.0",
+]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
@@ -24,11 +27,13 @@ exclude-newer = "7 days"
 [dependency-groups]
 dev = [
     "openpyxl>=3.1.5",
+    "pandas>=3.0.3",
+    "polars>=1.41.2",
     "robotframework>=7.4.2",
 ]
 
 [tool.fawltydeps]
-ignore_unused = ["robotframework"]
+ignore_unused = ["robotframework", "pandas", "polars"] # TODO: to remove on code samples are written
 
 [tool.ruff]
 line-length = 120

@@ -2,6 +2,7 @@
 Documentation       Acceptance tests for Sheet.search_range and Sheet.search_range_relative.
 
 Library             Collections
+Resource            common.resource
 
 
 *** Test Cases ***
@@ -91,8 +92,8 @@ Verify Relative Range Search Vertical Conflicts
     ...    Evaluate
     ...    $sheet.search_range_relative($abc_m, below=$def_range, above=$header_range)
 
-    ${rg1}=    Evaluate    tabularix.Range(1, 1, 0, 2)    modules=tabularix
-    ${rg2}=    Evaluate    tabularix.Range(3, 3, 0, 1)    modules=tabularix
+    ${rg1}=    Evaluate    tabularix.Range.from_a1("A2:C2")    modules=tabularix
+    ${rg2}=    Evaluate    tabularix.Range.from_a1("A4:B4")    modules=tabularix
     Run Keyword And Expect Error
     ...    *ValueError*
     ...    Evaluate
@@ -101,8 +102,8 @@ Verify Relative Range Search Vertical Conflicts
 Verify Relative Range Search Horizontal Bounds
     [Documentation]    Test search_range_relative with horizontal boundaries (left, right).
     ${sheet}=    Load Simple Sheet
-    ${right_rg}=    Evaluate    tabularix.Range(1, 2, 0, 0)    modules=tabularix
-    ${left_rg}=    Evaluate    tabularix.Range(1, 2, 2, 2)    modules=tabularix
+    ${right_rg}=    Evaluate    tabularix.Range.from_a1("A2:A3")    modules=tabularix
+    ${left_rg}=    Evaluate    tabularix.Range.from_a1("C2:C3")    modules=tabularix
 
     ${val_p}=    Evaluate    tabularix.non_empty()    modules=tabularix
     ${val_m}=    Evaluate    tabularix.RangeMatcher().row($val_p)    modules=tabularix
@@ -114,8 +115,8 @@ Verify Relative Range Search Horizontal Bounds
 Verify Relative Range Search Horizontal Conflicts
     [Documentation]    Test horizontal boundary conflicts.
     ${sheet}=    Load Simple Sheet
-    ${right_rg}=    Evaluate    tabularix.Range(1, 2, 0, 0)    modules=tabularix
-    ${left_rg}=    Evaluate    tabularix.Range(1, 2, 2, 2)    modules=tabularix
+    ${right_rg}=    Evaluate    tabularix.Range.from_a1("A2:A3")    modules=tabularix
+    ${left_rg}=    Evaluate    tabularix.Range.from_a1("C2:C3")    modules=tabularix
 
     ${val_p}=    Evaluate    tabularix.non_empty()    modules=tabularix
     ${val_m}=    Evaluate    tabularix.RangeMatcher().row($val_p)    modules=tabularix
@@ -125,37 +126,9 @@ Verify Relative Range Search Horizontal Conflicts
     ...    Evaluate
     ...    $sheet.search_range_relative($val_m, right=$left_rg, left=$right_rg)
 
-    ${rg_row1}=    Evaluate    tabularix.Range(1, 1, 0, 0)    modules=tabularix
-    ${rg_row2}=    Evaluate    tabularix.Range(2, 2, 2, 2)    modules=tabularix
+    ${rg_row1}=    Evaluate    tabularix.Range.from_a1("A2")    modules=tabularix
+    ${rg_row2}=    Evaluate    tabularix.Range.from_a1("C3")    modules=tabularix
     Run Keyword And Expect Error
     ...    *ValueError*
     ...    Evaluate
     ...    $sheet.search_range_relative($val_m, right=$rg_row1, left=$rg_row2)
-
-
-*** Keywords ***
-Load Simple Sheet
-    [Documentation]    Loads the 'simple' worksheet from the test data sample workbook.
-    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
-    ${sheet}=    Evaluate    $wb.get_sheet("simple")
-    RETURN    ${sheet}
-
-Verify Range Coordinates
-    [Documentation]    Verifies that the given Range matches the expected start/end row/col coordinates.
-    [Arguments]    ${range}    ${s_row}    ${e_row}    ${s_col}    ${e_col}
-    ${start_row}=    Evaluate    $range.start_row
-    ${end_row}=    Evaluate    $range.end_row
-    ${start_col}=    Evaluate    $range.start_col
-    ${end_col}=    Evaluate    $range.end_col
-    Should Be Equal As Integers    ${start_row}    ${s_row}
-    Should Be Equal As Integers    ${end_row}    ${e_row}
-    Should Be Equal As Integers    ${start_col}    ${s_col}
-    Should Be Equal As Integers    ${end_col}    ${e_col}
-
-Find Range By Value
-    [Documentation]    Searches for a row pattern starting with the cell value.
-    [Arguments]    ${sheet}    ${val}
-    ${p}=    Evaluate    tabularix.value($val).any().any()    modules=tabularix
-    ${m}=    Evaluate    tabularix.RangeMatcher().row($p)    modules=tabularix
-    ${range}=    Evaluate    $sheet.search_range($m)
-    RETURN    ${range}

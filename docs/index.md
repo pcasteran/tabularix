@@ -1,7 +1,7 @@
 ---
 title: Welcome to Tabularix
 description: A high-performance Excel parser and evaluator built in Rust with Python bindings designed to solve the hidden data problem.
-icon: lucide/table-2
+icon: lucide/house
 ---
 
 # ✨ Welcome to Tabularix
