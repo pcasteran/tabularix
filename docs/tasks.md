@@ -155,3 +155,15 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
     - **Acceptance:** The `Table` supports retrieving for every cell the coordinates of the original cell in the original loaded spreadsheet document (before any layout mutations or range extractions occurred). The functionality is exposed to Python. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/sheet.rs`, `src/table.rs`, `python/tabularix/__init__.pyi`, `tests/auditability.robot`, `docs/api.md`.
+
+## Step 8: Advanced Range Utilities & Excel Export
+
+- [ ] **Task 8.1: Implement A1 Notation Range Builder**
+    - **Acceptance:** Expose a way to build a `Range` object from an A1 notation string (e.g. `Range.from_a1("B2:D6")` or `Sheet.get_range("B2:D6")`). The functionality is exposed to Python. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/matcher.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/range_a1.robot`, `docs/api.md`.
+
+- [ ] **Task 8.2: Implement `Table.to_excel`**
+    - **Acceptance:** Expose a `to_excel(path)` method on the `Table` class to write the extracted tabular structure back into a standard `.xlsx` workbook. The functionality is exposed to Python. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
+    - **Verify:** `cargo test` and `just acceptance-test` both pass.
+    - **Files:** `src/table.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/export_excel.robot`, `docs/api.md`.

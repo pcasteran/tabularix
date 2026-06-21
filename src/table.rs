@@ -181,6 +181,7 @@ impl Table {
                     header: h,
                     data_start_row: data.start_row,
                     data_end_row: data.end_row,
+                    data_start_col: data.start_col,
                     clean_names,
                 };
                 build_nested_fields_and_arrays(&ctx, h.start_row, data.start_col, data.end_col)?
@@ -327,6 +328,7 @@ struct ExtractionContext<'a> {
     header: &'a Range,
     data_start_row: usize,
     data_end_row: usize,
+    data_start_col: usize,
     clean_names: bool,
 }
 
@@ -353,7 +355,7 @@ fn build_nested_fields_and_arrays(
             };
 
             if base_name.is_empty() {
-                base_name = format!("column_{}", c - ctx.header.start_col + 1);
+                base_name = format!("column_{}", c - ctx.data_start_col + 1);
             }
 
             let mut name = base_name.clone();
@@ -401,7 +403,7 @@ fn build_nested_fields_and_arrays(
             };
 
             if base_name.is_empty() {
-                base_name = format!("group_{}", c_start - ctx.header.start_col + 1);
+                base_name = format!("group_{}", c_start - ctx.data_start_col + 1);
             }
 
             let mut name = base_name.clone();

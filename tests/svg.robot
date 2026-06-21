@@ -36,3 +36,19 @@ Export Sheet To SVG One-Based
     Should Contain    ${content}    class="hdr-text">A (1)</text>
     # 1-based row header starts at 1, so the 0-based row header must NOT be present
     Should Not Contain    ${content}    class="hdr-text">0</text>
+
+Export Sheet To SVG With Multi-Byte UTF-8 String
+    [Documentation]    Verify multi-byte UTF-8 string SVG export.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.active_sheet()
+
+    # Set a cell value to a long multi-byte string
+    Evaluate    $sheet.set_cell_value(0, 0, "中文测试Emojis🌟🔥🚀" * 5)
+
+    # Export to SVG (should not panic)
+    Evaluate    $sheet.to_svg("results/sample_unicode.svg")
+
+    # Verify file exists and has content
+    File Should Exist    results/sample_unicode.svg
+    ${content}=    Get File    results/sample_unicode.svg
+    Should Contain    ${content}    ...

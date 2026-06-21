@@ -721,8 +721,10 @@ impl Sheet {
 
                 if !val_str.is_empty() {
                     let max_chars = c_width * 2 / 13;
-                    let display_str = if val_str.len() > max_chars && max_chars > 3 {
-                        format!("{}...", &val_str[..max_chars - 3])
+                    let display_str = if val_str.chars().count() > max_chars && max_chars > 3 {
+                        let mut truncated: String = val_str.chars().take(max_chars - 3).collect();
+                        truncated.push_str("...");
+                        truncated
                     } else {
                         val_str
                     };
