@@ -33,7 +33,7 @@ dev = [
 ]
 
 [tool.fawltydeps]
-ignore_unused = ["robotframework"]
+ignore_unused = ["robotframework", "pandas", "polars"] # TODO: to remove on code samples are written
 
 [tool.ruff]
 line-length = 120
