@@ -1,5 +1,6 @@
 mod matcher;
 mod sheet;
+mod table;
 
 use pyo3::prelude::*;
 
@@ -16,5 +17,6 @@ fn _tabularix(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<matcher::RowPattern>()?;
     m.add_class::<matcher::RangeMatcher>()?;
     m.add_class::<matcher::Range>()?;
+    m.add_class::<table::Table>()?;
     Ok(())
 }

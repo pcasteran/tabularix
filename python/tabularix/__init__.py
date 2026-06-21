@@ -1,10 +1,15 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import pyarrow
+
 
 from ._tabularix import (  # ty: ignore[unresolved-import]
     Range,
     RangeMatcher,
     RowPattern,
     Sheet,
+    Table,
     Workbook,
     load_workbook,
 )
@@ -132,6 +137,17 @@ def search_range_relative(
 
 Sheet.search_range_relative = search_range_relative
 
+
+def to_arrow(self: Table) -> "pyarrow.Table":
+    """Converts the Table to a PyArrow Table."""
+    import pyarrow as pa
+
+    reader = pa.RecordBatchReader.from_stream(self)
+    return reader.read_all()
+
+
+Table.to_arrow = to_arrow
+
 __all__ = [
     "load_workbook",
     "Sheet",
@@ -139,6 +155,7 @@ __all__ = [
     "RowPattern",
     "RangeMatcher",
     "Range",
+    "Table",
     "value",
     "regex",
     "empty",

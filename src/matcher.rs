@@ -217,6 +217,85 @@ impl Range {
             a1_notation, self.start_col, self.end_col, self.start_row, self.end_row
         )
     }
+
+    #[staticmethod]
+    pub fn from_a1(a1_str: &str) -> PyResult<Self> {
+        fn col_letters_to_index(col_str: &str) -> Option<usize> {
+            if col_str.is_empty() {
+                return None;
+            }
+            let mut index: usize = 0;
+            for c in col_str.chars() {
+                if !c.is_ascii_alphabetic() {
+                    return None;
+                }
+                let val = (c.to_ascii_uppercase() as u8 - b'A') as usize;
+                index = index.checked_mul(26)?.checked_add(val + 1)?;
+            }
+            index.checked_sub(1)
+        }
+
+        fn parse_a1_cell(cell_str: &str) -> Option<(usize, usize)> {
+            let letters: String = cell_str
+                .chars()
+                .take_while(char::is_ascii_alphabetic)
+                .collect();
+            let numbers: String = cell_str.chars().skip(letters.len()).collect();
+
+            if letters.is_empty() || numbers.is_empty() {
+                return None;
+            }
+
+            let col = col_letters_to_index(&letters)?;
+            let row = numbers.parse::<usize>().ok()?.checked_sub(1)?;
+            Some((row, col))
+        }
+
+        let parts: Vec<&str> = a1_str.split(':').collect();
+        if parts.is_empty() || parts.len() > 2 {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "Invalid A1 range format: '{a1_str}'"
+            )));
+        }
+
+        if parts.len() == 1 {
+            let cell = parts[0].trim();
+            if let Some((row, col)) = parse_a1_cell(cell) {
+                Ok(Range {
+                    start_row: row,
+                    end_row: row,
+                    start_col: col,
+                    end_col: col,
+                })
+            } else {
+                Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "Invalid A1 cell format: '{cell}'"
+                )))
+            }
+        } else {
+            let start = parts[0].trim();
+            let end = parts[1].trim();
+            if let (Some((s_row, s_col)), Some((e_row, e_col))) =
+                (parse_a1_cell(start), parse_a1_cell(end))
+            {
+                let start_row = std::cmp::min(s_row, e_row);
+                let end_row = std::cmp::max(s_row, e_row);
+                let start_col = std::cmp::min(s_col, e_col);
+                let end_col = std::cmp::max(s_col, e_col);
+
+                Ok(Range {
+                    start_row,
+                    end_row,
+                    start_col,
+                    end_col,
+                })
+            } else {
+                Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "Invalid A1 range format: '{start}:{end}'"
+                )))
+            }
+        }
+    }
 }
 
 #[pyclass(from_py_object)]
@@ -579,5 +658,58 @@ mod tests {
             let err_msg = res.err().unwrap().to_string();
             assert!(err_msg.contains("Cannot set multiple cardinalities"));
         });
+    }
+
+    #[test]
+    fn test_range_from_a1() {
+        // Valid single cell
+        let r = Range::from_a1("B2").unwrap();
+        assert_eq!(r.start_row, 1);
+        assert_eq!(r.end_row, 1);
+        assert_eq!(r.start_col, 1);
+        assert_eq!(r.end_col, 1);
+
+        // Valid multi-cell range
+        let r = Range::from_a1("B2:D6").unwrap();
+        assert_eq!(r.start_row, 1);
+        assert_eq!(r.end_row, 5);
+        assert_eq!(r.start_col, 1);
+        assert_eq!(r.end_col, 3);
+
+        // Reverse row/col range is normalized
+        let r = Range::from_a1("D6:B2").unwrap();
+        assert_eq!(r.start_row, 1);
+        assert_eq!(r.end_row, 5);
+        assert_eq!(r.start_col, 1);
+        assert_eq!(r.end_col, 3);
+
+        // Whitespace trimming
+        let r = Range::from_a1(" B2 : D6 ").unwrap();
+        assert_eq!(r.start_row, 1);
+        assert_eq!(r.end_row, 5);
+        assert_eq!(r.start_col, 1);
+        assert_eq!(r.end_col, 3);
+
+        // Large column letters
+        let r = Range::from_a1("AA1").unwrap();
+        assert_eq!(r.start_col, 26);
+        assert_eq!(r.start_row, 0);
+
+        // Unbounded formats should fail (unbounded columns, unbounded rows)
+        assert!(Range::from_a1("A:B").is_err());
+        assert!(Range::from_a1("1:2").is_err());
+        assert!(Range::from_a1("A").is_err());
+        assert!(Range::from_a1("1").is_err());
+        assert!(Range::from_a1("A1:B").is_err());
+        assert!(Range::from_a1("A:B2").is_err());
+
+        // Zero-row, negative or invalid format should fail
+        assert!(Range::from_a1("A0").is_err());
+        assert!(Range::from_a1("").is_err());
+        assert!(Range::from_a1("A-1").is_err());
+        assert!(Range::from_a1("A1:").is_err());
+        assert!(Range::from_a1(":A1").is_err());
+        assert!(Range::from_a1("A1:B2:C3").is_err());
+        assert!(Range::from_a1("A 1").is_err());
     }
 }

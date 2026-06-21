@@ -1,5 +1,7 @@
 from typing import Any, Literal, Pattern, Union
 
+import pyarrow as pa
+
 def load_workbook(path: str) -> Workbook:
     """Loads an Excel workbook from the specified file path.
 
@@ -200,6 +202,36 @@ class Sheet:
         Raises:
             ValueError: If the ranges overlap, are separated diagonally, or if their
                         respective aligning spans (columns/rows) do not match.
+        """
+        ...
+
+    def extract_table(
+        self,
+        data: Range,
+        header: Range | None = None,
+        clean_names: bool = False,
+        flatten_header: bool = False,
+        header_separator: str = "_",
+    ) -> Table:
+        """Extracts a structured Table from the specified data and header ranges.
+
+        Args:
+            data: The Range defining the rows and columns containing the table's data.
+            header: An optional Range defining the column headers.
+            clean_names: If True, cleans header column names to lower snake_case.
+            flatten_header: If True, flattens multi-row headers into single strings
+                            joined by header_separator. If False (default), represents
+                            multi-row headers as nested structures.
+            header_separator: Delimiter used to join multi-row headers when flatten_header
+                              is True. Defaults to "_".
+
+        Returns:
+            A Table object wrapping the structured data.
+
+        Raises:
+            ValueError: If the header and data ranges do not align horizontally,
+                        if they overlap, or if their column counts differ.
+            IndexError: If the ranges exceed the current dimensions of the sheet.
         """
         ...
 
@@ -413,6 +445,21 @@ class Range:
         """Initializes a new Range instance with absolute bounds."""
         ...
 
+    @staticmethod
+    def from_a1(a1_str: str) -> Range:
+        """Creates a Range from an A1 notation string (e.g. "B2:D6" or "B2").
+
+        Args:
+            a1_str: The A1 notation range string.
+
+        Returns:
+            A Range instance enclosing the parsed coordinates.
+
+        Raises:
+            ValueError: If the A1 string is invalid or has unbounded formats (e.g. "A:B", "1:2").
+        """
+        ...
+
 class RangeMatcher:
     """Represents a pattern matcher for a range defined programmatically."""
 
@@ -487,5 +534,39 @@ class RangeMatcher:
 
         Returns:
             True if all row patterns match the sequence of rows; False otherwise.
+        """
+        ...
+
+class Table:
+    """Represents a structured table extracted from a worksheet."""
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        """Returns the dimensions (num_rows, num_cols) of the table."""
+        ...
+
+    @property
+    def columns(self) -> list[str]:
+        """Returns the column names of the table."""
+        ...
+
+    def to_arrow(self) -> pa.Table:
+        """Converts the Table to a PyArrow Table.
+
+        Returns:
+            A PyArrow Table.
+        """
+        ...
+
+    def __arrow_c_stream__(self, requested_schema: Any = None) -> Any:
+        """Exports the table data as an Arrow C stream pointer wrapped in a PyCapsule.
+
+        This method implements the standard Arrow PyCapsule Interface for streams.
+
+        Args:
+            requested_schema: An optional capsule containing an Arrow C Schema structure.
+
+        Returns:
+            A PyCapsule object named "arrow_array_stream".
         """
         ...

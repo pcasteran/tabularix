@@ -66,6 +66,7 @@ This page describes the public API exposed by the Tabularix library.
         - search_range
         - search_range_relative
         - get_range_between
+        - extract_table
         - to_svg
 
 <!-- drow_row() -->
@@ -201,5 +202,12 @@ This page describes the public API exposed by the Tabularix library.
 
 <!-- prettier-ignore -->
 ::: tabularix.Range
+    options:
+      heading_level: 3
+
+---
+
+<!-- prettier-ignore -->
+::: tabularix.Table
     options:
       heading_level: 3
