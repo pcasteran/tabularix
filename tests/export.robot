@@ -9,8 +9,8 @@ Resource            common.resource
 Verify Export to PyArrow Table
     [Documentation]    Test exporting the custom Table to a PyArrow Table.
     ${sheet}=    Load Simple Sheet
-    ${data}=    Evaluate    tabularix.Range(1, 2, 0, 2)    modules=tabularix
-    ${header}=    Evaluate    tabularix.Range(0, 0, 0, 2)    modules=tabularix
+    ${data}=    Evaluate    tabularix.Range.from_a1("A2:C3")    modules=tabularix
+    ${header}=    Evaluate    tabularix.Range.from_a1("A1:C1")    modules=tabularix
     ${table}=    Evaluate    $sheet.extract_table($data, $header, clean_names=True)
     ${arrow_table}=    Evaluate    $table.to_arrow()
     ${shape}=    Evaluate    ($arrow_table.num_rows, $arrow_table.num_columns)
@@ -21,8 +21,8 @@ Verify Export to PyArrow Table
 Verify Export to Pandas DataFrame
     [Documentation]    Test exporting the custom Table to a Pandas DataFrame via Arrow.
     ${sheet}=    Load Simple Sheet
-    ${data}=    Evaluate    tabularix.Range(1, 2, 0, 2)    modules=tabularix
-    ${header}=    Evaluate    tabularix.Range(0, 0, 0, 2)    modules=tabularix
+    ${data}=    Evaluate    tabularix.Range.from_a1("A2:C3")    modules=tabularix
+    ${header}=    Evaluate    tabularix.Range.from_a1("A1:C1")    modules=tabularix
     ${table}=    Evaluate    $sheet.extract_table($data, $header, clean_names=True)
     ${arrow_table}=    Evaluate    $table.to_arrow()
     ${df}=    Evaluate    $arrow_table.to_pandas()
@@ -34,8 +34,8 @@ Verify Export to Pandas DataFrame
 Verify Export to Polars DataFrame
     [Documentation]    Test exporting the custom Table to a Polars DataFrame via Arrow.
     ${sheet}=    Load Simple Sheet
-    ${data}=    Evaluate    tabularix.Range(1, 2, 0, 2)    modules=tabularix
-    ${header}=    Evaluate    tabularix.Range(0, 0, 0, 2)    modules=tabularix
+    ${data}=    Evaluate    tabularix.Range.from_a1("A2:C3")    modules=tabularix
+    ${header}=    Evaluate    tabularix.Range.from_a1("A1:C1")    modules=tabularix
     ${table}=    Evaluate    $sheet.extract_table($data, $header, clean_names=True)
     ${arrow_table}=    Evaluate    $table.to_arrow()
     ${df}=    Evaluate    polars.from_arrow($arrow_table)    modules=polars

@@ -17,21 +17,21 @@ Verify Range Between Vertically
 Verify Range Between Horizontally
     [Documentation]    Test computing range between two horizontally separated ranges.
     ${sheet}=    Load Simple Sheet
-    ${left}=    Evaluate    tabularix.Range(1, 3, 0, 0)    modules=tabularix
-    ${right}=    Evaluate    tabularix.Range(1, 3, 2, 2)    modules=tabularix
+    ${left}=    Evaluate    tabularix.Range.from_a1("A2:A4")    modules=tabularix
+    ${right}=    Evaluate    tabularix.Range.from_a1("C2:C4")    modules=tabularix
     ${res}=    Evaluate    $sheet.get_range_between($left, $right)
     Verify Range Coordinates    ${res}    1    3    1    1
 
 Verify Range Between Errors
     [Documentation]    Test that invalid separation orientations and alignments raise ValueError.
     ${sheet}=    Load Simple Sheet
-    ${r1}=    Evaluate    tabularix.Range(0, 0, 0, 2)    modules=tabularix
-    ${r2_mismatch}=    Evaluate    tabularix.Range(4, 4, 0, 1)    modules=tabularix
+    ${r1}=    Evaluate    tabularix.Range.from_a1("A1:C1")    modules=tabularix
+    ${r2_mismatch}=    Evaluate    tabularix.Range.from_a1("A5:B5")    modules=tabularix
     # Vertical mismatch
     Run Keyword And Expect Error    *ValueError*    Evaluate    $sheet.get_range_between($r1, $r2_mismatch)
     # Diagonal separation
-    ${diag1}=    Evaluate    tabularix.Range(0, 0, 0, 0)    modules=tabularix
-    ${diag2}=    Evaluate    tabularix.Range(2, 2, 2, 2)    modules=tabularix
+    ${diag1}=    Evaluate    tabularix.Range.from_a1("A1")    modules=tabularix
+    ${diag2}=    Evaluate    tabularix.Range.from_a1("C3")    modules=tabularix
     Run Keyword And Expect Error    *ValueError*    Evaluate    $sheet.get_range_between($diag1, $diag2)
     # Overlap
     Run Keyword And Expect Error    *ValueError*    Evaluate    $sheet.get_range_between($r1, $r1)

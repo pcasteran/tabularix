@@ -158,7 +158,7 @@ These tasks follow the phased Implementation Plan. Each task is designed to be c
 
 ## Step 8: Advanced Range Utilities & Excel Export
 
-- [ ] **Task 8.1: Implement A1 Notation Range Builder**
+- [x] **Task 8.1: Implement A1 Notation Range Builder**
     - **Acceptance:** Expose a way to build a `Range` object from an A1 notation string (e.g. `Range.from_a1("B2:D6")` or `Sheet.get_range("B2:D6")`). The functionality is exposed to Python. Type stubs in `python/tabularix/__init__.pyi` and public API documentation in `docs/api.md` are updated. Add Rust unit tests and Robot acceptance tests.
     - **Verify:** `cargo test` and `just acceptance-test` both pass.
     - **Files:** `src/matcher.rs`, `python/tabularix/__init__.py`, `python/tabularix/__init__.pyi`, `tests/range_a1.robot`, `docs/api.md`.

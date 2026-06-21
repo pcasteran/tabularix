@@ -92,8 +92,8 @@ Verify Relative Range Search Vertical Conflicts
     ...    Evaluate
     ...    $sheet.search_range_relative($abc_m, below=$def_range, above=$header_range)
 
-    ${rg1}=    Evaluate    tabularix.Range(1, 1, 0, 2)    modules=tabularix
-    ${rg2}=    Evaluate    tabularix.Range(3, 3, 0, 1)    modules=tabularix
+    ${rg1}=    Evaluate    tabularix.Range.from_a1("A2:C2")    modules=tabularix
+    ${rg2}=    Evaluate    tabularix.Range.from_a1("A4:B4")    modules=tabularix
     Run Keyword And Expect Error
     ...    *ValueError*
     ...    Evaluate
@@ -102,8 +102,8 @@ Verify Relative Range Search Vertical Conflicts
 Verify Relative Range Search Horizontal Bounds
     [Documentation]    Test search_range_relative with horizontal boundaries (left, right).
     ${sheet}=    Load Simple Sheet
-    ${right_rg}=    Evaluate    tabularix.Range(1, 2, 0, 0)    modules=tabularix
-    ${left_rg}=    Evaluate    tabularix.Range(1, 2, 2, 2)    modules=tabularix
+    ${right_rg}=    Evaluate    tabularix.Range.from_a1("A2:A3")    modules=tabularix
+    ${left_rg}=    Evaluate    tabularix.Range.from_a1("C2:C3")    modules=tabularix
 
     ${val_p}=    Evaluate    tabularix.non_empty()    modules=tabularix
     ${val_m}=    Evaluate    tabularix.RangeMatcher().row($val_p)    modules=tabularix
@@ -115,8 +115,8 @@ Verify Relative Range Search Horizontal Bounds
 Verify Relative Range Search Horizontal Conflicts
     [Documentation]    Test horizontal boundary conflicts.
     ${sheet}=    Load Simple Sheet
-    ${right_rg}=    Evaluate    tabularix.Range(1, 2, 0, 0)    modules=tabularix
-    ${left_rg}=    Evaluate    tabularix.Range(1, 2, 2, 2)    modules=tabularix
+    ${right_rg}=    Evaluate    tabularix.Range.from_a1("A2:A3")    modules=tabularix
+    ${left_rg}=    Evaluate    tabularix.Range.from_a1("C2:C3")    modules=tabularix
 
     ${val_p}=    Evaluate    tabularix.non_empty()    modules=tabularix
     ${val_m}=    Evaluate    tabularix.RangeMatcher().row($val_p)    modules=tabularix
@@ -126,8 +126,8 @@ Verify Relative Range Search Horizontal Conflicts
     ...    Evaluate
     ...    $sheet.search_range_relative($val_m, right=$left_rg, left=$right_rg)
 
-    ${rg_row1}=    Evaluate    tabularix.Range(1, 1, 0, 0)    modules=tabularix
-    ${rg_row2}=    Evaluate    tabularix.Range(2, 2, 2, 2)    modules=tabularix
+    ${rg_row1}=    Evaluate    tabularix.Range.from_a1("A2")    modules=tabularix
+    ${rg_row2}=    Evaluate    tabularix.Range.from_a1("C3")    modules=tabularix
     Run Keyword And Expect Error
     ...    *ValueError*
     ...    Evaluate

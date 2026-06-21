@@ -445,6 +445,21 @@ class Range:
         """Initializes a new Range instance with absolute bounds."""
         ...
 
+    @staticmethod
+    def from_a1(a1_str: str) -> Range:
+        """Creates a Range from an A1 notation string (e.g. "B2:D6" or "B2").
+
+        Args:
+            a1_str: The A1 notation range string.
+
+        Returns:
+            A Range instance enclosing the parsed coordinates.
+
+        Raises:
+            ValueError: If the A1 string is invalid or has unbounded formats (e.g. "A:B", "1:2").
+        """
+        ...
+
 class RangeMatcher:
     """Represents a pattern matcher for a range defined programmatically."""
 
