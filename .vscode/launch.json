@@ -5,10 +5,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Test",
+      "name": "Extract sales",
       "type": "debugpy",
       "request": "launch",
-      "program": "examples/test.py",
+      "program": "examples/extract_sales_table.py",
       "console": "integratedTerminal",
       "justMyCode": false
     },
