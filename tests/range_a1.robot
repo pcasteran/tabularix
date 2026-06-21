@@ -33,5 +33,9 @@ Verify Range Parsing Errors
     # Empty parts or invalid syntax
     Run Keyword And Expect Error    *ValueError*    Evaluate    tabularix.Range.from_a1("")    modules=tabularix
     Run Keyword And Expect Error    *ValueError*    Evaluate    tabularix.Range.from_a1("A0")    modules=tabularix
-    Run Keyword And Expect Error    *ValueError*    Evaluate    tabularix.Range.from_a1("A1:B2:C3")    modules=tabularix
+    Run Keyword And Expect Error
+    ...    *ValueError*
+    ...    Evaluate
+    ...    tabularix.Range.from_a1("A1:B2:C3")
+    ...    modules=tabularix
     Run Keyword And Expect Error    *ValueError*    Evaluate    tabularix.Range.from_a1("A 1")    modules=tabularix
