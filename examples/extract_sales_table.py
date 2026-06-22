@@ -47,7 +47,7 @@ def extract_table_below_header(sheet: Sheet) -> Table:
     print(f"Table data found: {data_range}")
 
     # Extract the table from the sheet.
-    table = sheet.extract_table(data_range, header_range)
+    table = sheet.extract_table(data_range, header_range, clean_names=True)
 
     return table
 
@@ -97,7 +97,7 @@ def extract_table_between_header_and_footer(sheet: Sheet) -> Table:
     print(f"Table data found: {data_range}")
 
     # Extract the table from the sheet.
-    table = sheet.extract_table(data_range, header_range)
+    table = sheet.extract_table(data_range, header_range, clean_names=True)
 
     return table
 
@@ -144,13 +144,13 @@ def use_with_duckdb(table: Table) -> duckdb.DuckDBPyRelation:
 
 def main() -> None:
     """Demonstrates loading workbooks, creating visual renders, and extracting tables using different strategies."""
-    # Load the workbook
+    # Load the workbook.
     workbook = tx.load_workbook("tests/data/sample.xlsx")
 
-    # Get the target worksheet
+    # Get the target worksheet.
     sheet = workbook.get_sheet("complex")
 
-    # Save a structural layout SVG
+    # Export the sheet to SVG.
     sheet.to_svg("sheet.svg")
 
     # Extract table using strategy #1.

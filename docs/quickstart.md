@@ -41,14 +41,14 @@ The first step in extracting tables from a spreadsheet is understanding its layo
 ```python
 import tabularix as tx
 
-# Load the workbook
+# Load the workbook.
 workbook = tx.load_workbook("tests/data/sample.xlsx")
 
-# Get the target worksheet
+# Get the target worksheet.
 sheet = workbook.get_sheet("complex")
 
-# Save a structural layout SVG
-sheet.to_svg("layout_structure.svg")
+# Export the sheet to SVG.
+sheet.to_svg("sheet.svg")
 ```
 
 The resulting structural layout is shown below:
@@ -63,77 +63,70 @@ It highlights cell borders, merged regions, empty rows, and cell types (numeric,
 
 In this example, we need to extract the sales table located at the top of the sheet. Instead of hardcoding cell ranges like `A3:E8` (which break if a row is added or deleted at the top), Tabularix uses **Range Matchers** to find your table's boundaries dynamically.
 
-Let's define a match pattern for a table that has a header row (with columns `Region` and four quarters) and variable-length data rows:
+Let's define a match pattern for the header row and a match pattern for the data rows:
 
 ```python
-# 1. Define the pattern of the header row.
-# It starts with "Region", followed by 4 Quarter columns matching a regex pattern (e.g. Q1, Q2, etc.)
+from tabularix import RangeMatcher, regex, value
+
+# Define the pattern and matcher for the header row.
+# It starts with "Region", followed by 4 Quarter columns matching
+#  a regex pattern (e.g. Q1, Q2, etc.).
 header_pattern = (
-    tx.value("Region")
-    .regex("^Q[1-4]$").repeat(4)
+    # Static string
+    value("Region")
+    # Quarter header: Q1, Q2, Q3, Q4
+    .regex(r"^Q[1-4]$")
+    .repeat(4, max=4)
 )
 
-# 2. Define the pattern of the data rows.
-# The row must:
-#   - start with a region name, i.e. a string different than `Total` (which is the table footer)
+header_matcher = RangeMatcher().row(header_pattern)
+
+# Define the pattern and matcher for the data rows. The rows must:
+#   - start with a region name, i.e. a string different than `Total` (which
+#     is the marker of the table footer)
 #   - end by 4 non-empty data cells
 data_pattern = (
-    tx.regex(r"^(?!Total).*$")
-    .non_empty().repeat(4)
+    # Match any string except "Total"
+    regex(r"^(?!Total).*$")
+    # Quarters amount
+    .non_empty()
+    .repeat(4, max=4)
 )
 
-# 3. Create the RangeMatcher.
-# We expect one header row, followed by one-or-more data rows
-matcher = (
-    tx.RangeMatcher()
-    .row(header_pattern)
-    .row(data_pattern).one_or_more()
-)
+data_matcher = RangeMatcher().row(data_pattern).one_or_more()
 ```
 
 ---
 
-### Step 3: Scan and Locate the Table
+### Step 3: Scan and Locate the Table Ranges
 
-Now, scan the worksheet to find the exact boundaries matching your matcher. Tabularix executes this scan in Rust for high performance:
+Now, scan the worksheet to locate the header row, and then scan for the data rows relative to it (using the `below` constraint). Tabularix executes this scan in Rust for high performance:
 
 ```python
-# Search the worksheet for the matching table pattern
-found_range = sheet.search_range(matcher)
+# Search for the header row anywhere in the sheet (no location constraint).
+header_range = sheet.search_range(header_matcher)
+if header_range is None:
+    raise ValueError("Header not found")
 
-if found_range:
-    print(f"Table located successfully!")
-    print(f"Rows: {found_range.start_row} to {found_range.end_row}")
-    print(f"Columns: {found_range.start_col} to {found_range.end_col}")
-else:
-    print("Table pattern not found in sheet.")
+print(f"Table header found: {header_range}")
+
+# Search for the data rows located below the header.
+data_range = sheet.search_range_relative(data_matcher, below=header_range)
+if data_range is None:
+    raise ValueError("Data not found")
+
+print(f"Table data found: {data_range}")
 ```
 
 ---
 
 ### Step 4: Extract the Structured Table
 
-Using the coordinates returned by our search, we can define the separate header and data ranges and extract a structured `Table` object. We will also enable `clean_names` to clean our headers into standard Python identifiers:
+Using the coordinates returned by our search, we extract the structured `Table` object. We will also enable `clean_names` to clean our headers into standard Python identifiers:
 
 ```python
-# The first row of the matched block is the header
-header_range = tx.Range(
-    start_row=found_range.start_row,
-    end_row=found_range.start_row,
-    start_col=found_range.start_col,
-    end_col=found_range.end_col
-)
-
-# The subsequent rows are the data block
-data_range = tx.Range(
-    start_row=found_range.start_row + 1,
-    end_row=found_range.end_row,
-    start_col=found_range.start_col,
-    end_col=found_range.end_col
-)
-
-# Extract and clean the table
-table = sheet.extract_table(data_range, header=header_range, clean_names=True)
+# Extract the table from the sheet
+table = sheet.extract_table(data_range, header_range, clean_names=True)
 
 print("Columns:", table.columns)
 # Output: ['region', 'q1', 'q2', 'q3', 'q4']
@@ -147,17 +140,23 @@ print("Table Shape:", table.shape)
 Tabularix fully supports the standard **Arrow PyCapsule Interface**, allowing you to export your parsed table to modern data science frameworks with zero-copy overhead.
 
 ```python
-# Convert to a PyArrow Table
-arrow_table = table.to_arrow()
+# Zero-copy load into a Pandas dataframe.
+df_pandas = table.to_arrow().to_pandas()
+print("Pandas dataframe created:")
+print(df_pandas.head())
 
-# 1. Zero-copy load into Polars
+# Zero-copy load into a Polars dataframe.
 import polars as pl
-df_polars = pl.from_arrow(arrow_table)
+df_polars = pl.from_arrow(table.to_arrow())
+print("Polars dataframe created:")
 print(df_polars)
 
-# 2. Zero-copy load into Pandas
-df_pandas = arrow_table.to_pandas()
-print(df_pandas.head())
+# Zero-copy load and query in DuckDB (directly consumes the Table instance).
+import duckdb
+rel_duckdb = duckdb.from_arrow(table)
+res_duckdb = rel_duckdb.query("sales_table", "SELECT * FROM sales_table WHERE Q1 > 12000")
+print("DuckDB query result:")
+print(res_duckdb)
 ```
 
 ---
