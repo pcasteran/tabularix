@@ -44,6 +44,7 @@ impl Table {
         )
     }
 
+    #[pyo3(signature = (_requested_schema = None))]
     fn __arrow_c_stream__<'py>(
         &self,
         py: Python<'py>,

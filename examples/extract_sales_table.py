@@ -1,3 +1,4 @@
+import duckdb
 import pandas as pd
 import polars as pl
 import tabularix as tx
@@ -128,6 +129,19 @@ def use_with_polars(table: Table) -> pl.DataFrame:
     return df
 
 
+def use_with_duckdb(table: Table) -> duckdb.DuckDBPyRelation:
+    """Converts the extracted Table to a DuckDB relation and queries it."""
+    # Zero-copy load into a DuckDB relation.
+    rel = duckdb.from_arrow(table)
+    print("DuckDB relation created")
+
+    # Execute a query and print the result.
+    res = rel.query("sales_table", "SELECT * FROM sales_table WHERE Q1 > 12000")
+    print(res)
+
+    return rel
+
+
 def main() -> None:
     """Demonstrates loading workbooks, creating visual renders, and extracting tables using different strategies."""
     # Load the workbook
@@ -137,19 +151,25 @@ def main() -> None:
     sheet = workbook.get_sheet("complex")
 
     # Save a structural layout SVG
-    sheet.to_svg("layout_structure.svg")
+    sheet.to_svg("sheet.svg")
 
     # Extract table using strategy #1.
+    print("-----")
     table_1 = extract_table_below_header(sheet)
     print(f"Table extracted with strategy #1; shape: {table_1.shape}, columns: {table_1.columns}")
 
     # Extract table using strategy #2.
+    print("-----")
     table_2 = extract_table_between_header_and_footer(sheet)
     print(f"Table extracted with strategy #2; shape: {table_2.shape}, columns: {table_2.columns}")
 
     # Use the table.
+    print("-----")
     use_with_pandas(table_2)
+    print("-----")
     use_with_polars(table_2)
+    print("-----")
+    use_with_duckdb(table_2)
 
 
 if __name__ == "__main__":
