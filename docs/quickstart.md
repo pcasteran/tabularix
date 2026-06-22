@@ -32,7 +32,7 @@ uv run maturin develop
 
 Excel spreadsheets are often structured for humans to read, not for computers to parse. They frequently contain header titles, metadata rows, empty spacing rows, and multiple tables nested in a single worksheet.
 
-In this tutorial, we will take a messy spreadsheet and programmatically locate, extract, and clean a table, then load it into a Polars DataFrame for data science.
+In this tutorial, we will take a messy spreadsheet and programmatically locate, extract and clean a table. We will then use it with modern data frameworks (Pandas, Polars, DuckDB).
 
 ### Step 1: Visual Structure Analysis
 
@@ -137,7 +137,7 @@ print("Table Shape:", table.shape)
 
 ### Step 5: Zero-Copy Integration (Arrow, Polars, Pandas, DuckDB)
 
-Tabularix fully supports the standard **Arrow PyCapsule Interface**, allowing you to export your parsed table to modern data science frameworks with zero-copy overhead.
+Tabularix fully supports the standard **Arrow PyCapsule Interface**, allowing you to export your parsed table to modern data frameworks with zero-copy overhead.
 
 ```python
 # Zero-copy load into a Pandas dataframe.
