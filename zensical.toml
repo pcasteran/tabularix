@@ -50,14 +50,8 @@ nav = [
   { "Range Matching" = "matching_ranges.md" },
   { "Table Extraction" = "table_extraction.md" },
   { "API Reference" = "api.md" },
-  { "Development" = [
-      { "Specification" = "spec.md" },
-      { "Implementation Plan" = "implementation_plan.md" },
-      { "Tasks" = "tasks.md" }
-  ]},
-  { "Ideas" = [
-      { "Project Pitch" = "ideas/project_pitch.md" },
-      { "Core design" = "ideas/tabularix_core_design.md" }
+  { "Tutorials" = [
+      { "Extract and Combine Multiple Tables" = "tutorials/extract_multiple_tables.md" }
   ]}
 ]
 
