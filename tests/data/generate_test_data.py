@@ -130,9 +130,9 @@ def create_sheet_multi_tables(wb):
     # Seed the random number generator to ensure static values across runs
     random.seed(42)
 
-    territories = ["territory #1", "territory #2", "territory #3"]
+    territories = ["North", "South", "East", "West"]
     # We can assign different counts of data rows to each territory:
-    data_row_counts = {"territory #1": 3, "territory #2": 4, "territory #3": 2}
+    data_row_counts = {"North": 3, "South": 4, "East": 2, "West": 3}
 
     current_row = 12
     header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
