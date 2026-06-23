@@ -140,3 +140,8 @@ repos:
     rev: v1.25.2
     hooks:
       - id: zizmor
+
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.14.0
+    hooks:
+      - id: hadolint
