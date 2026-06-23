@@ -132,3 +132,13 @@ Verify Relative Range Search Horizontal Conflicts
     ...    *ValueError*
     ...    Evaluate
     ...    $sheet.search_range_relative($val_m, right=$rg_row1, left=$rg_row2)
+
+Verify Partial Column Range Search
+    [Documentation]    Test that RangeMatcher can match a subset of columns in a wider sheet.
+    ${sheet}=    Load Simple Sheet
+    # Match Header #2 and Header #3 (columns 1 and 2)
+    ${p}=    Evaluate    tabularix.value("Header #2").value("Header #3")    modules=tabularix
+    ${matcher}=    Evaluate    tabularix.RangeMatcher().row($p)    modules=tabularix
+    ${range}=    Evaluate    $sheet.search_range($matcher)
+    Should Not Be Equal    ${range}    ${None}
+    Verify Range Coordinates    ${range}    0    0    1    2

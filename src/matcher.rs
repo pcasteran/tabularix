@@ -44,6 +44,22 @@ pub struct RowPattern {
     pub cardinality: String,
 }
 
+impl RowPattern {
+    pub fn width_bounds(&self) -> (usize, Option<usize>) {
+        let mut min_w = 0;
+        let mut max_w = Some(0);
+        for cp in &self.cell_patterns {
+            min_w += cp.min;
+            if let (Some(total), Some(cp_max)) = (max_w, cp.max) {
+                max_w = Some(total + cp_max);
+            } else {
+                max_w = None;
+            }
+        }
+        (min_w, max_w)
+    }
+}
+
 #[pymethods]
 impl RowPattern {
     #[new]
@@ -370,7 +386,13 @@ impl RangeMatcher {
             .map(|r| r.into_iter().map(|c| py_any_to_cell_value(&c)).collect())
             .collect();
 
-        let matched_end = match_range(py, &self.row_patterns, &sheet_data, 0, 0)?;
+        let cols_count = if sheet_data.is_empty() {
+            0
+        } else {
+            sheet_data[0].len()
+        };
+        let col_end = if cols_count > 0 { cols_count - 1 } else { 0 };
+        let matched_end = match_range(py, &self.row_patterns, &sheet_data, 0, col_end, 0, 0)?;
         Ok(matched_end.is_some() && matched_end.unwrap() == sheet_data.len())
     }
 }
@@ -496,14 +518,25 @@ fn parse_cardinality(card: &str) -> (usize, Option<usize>) {
     }
 }
 
-fn matches_row_pattern(py: Python<'_>, pattern: &RowPattern, row: &[CellValue]) -> PyResult<bool> {
-    match_cells(py, &pattern.cell_patterns, row, 0, 0)
+fn matches_row_pattern(
+    py: Python<'_>,
+    pattern: &RowPattern,
+    row: &[CellValue],
+    col_start: usize,
+    col_end: usize,
+) -> PyResult<bool> {
+    if col_start > col_end || col_end >= row.len() {
+        return Ok(false);
+    }
+    match_cells(py, &pattern.cell_patterns, &row[col_start..=col_end], 0, 0)
 }
 
 pub fn match_range(
     py: Python<'_>,
     patterns: &[RowPattern],
     sheet_data: &[Vec<CellValue>],
+    col_start: usize,
+    col_end: usize,
     pattern_idx: usize,
     sheet_row_idx: usize,
 ) -> PyResult<Option<usize>> {
@@ -525,7 +558,13 @@ pub fn match_range(
 
     let mut matchable = 0;
     while matchable < max_limit {
-        if matches_row_pattern(py, pattern, &sheet_data[sheet_row_idx + matchable])? {
+        if matches_row_pattern(
+            py,
+            pattern,
+            &sheet_data[sheet_row_idx + matchable],
+            col_start,
+            col_end,
+        )? {
             matchable += 1;
         } else {
             break;
@@ -537,9 +576,15 @@ pub fn match_range(
     }
 
     for k in (min_rows..=matchable).rev() {
-        if let Some(end_idx) =
-            match_range(py, patterns, sheet_data, pattern_idx + 1, sheet_row_idx + k)?
-        {
+        if let Some(end_idx) = match_range(
+            py,
+            patterns,
+            sheet_data,
+            col_start,
+            col_end,
+            pattern_idx + 1,
+            sheet_row_idx + k,
+        )? {
             return Ok(Some(end_idx));
         }
     }
@@ -584,14 +629,14 @@ mod tests {
                 CellValue::Int(123),
                 CellValue::String("Total".to_string()),
             ];
-            assert!(matches_row_pattern(py, &pattern_ref, &row1).unwrap());
+            assert!(matches_row_pattern(py, &pattern_ref, &row1, 0, row1.len() - 1).unwrap());
 
             // Match failure (no non-empty cells)
             let row2 = vec![
                 CellValue::String("Date".to_string()),
                 CellValue::String("Total".to_string()),
             ];
-            assert!(!matches_row_pattern(py, &pattern_ref, &row2).unwrap());
+            assert!(!matches_row_pattern(py, &pattern_ref, &row2, 0, row2.len() - 1).unwrap());
 
             // Match failure (wrong value at end)
             let row3 = vec![
@@ -599,7 +644,7 @@ mod tests {
                 CellValue::String("Description".to_string()),
                 CellValue::Int(123),
             ];
-            assert!(!matches_row_pattern(py, &pattern_ref, &row3).unwrap());
+            assert!(!matches_row_pattern(py, &pattern_ref, &row3, 0, row3.len() - 1).unwrap());
         });
     }
 
@@ -626,7 +671,7 @@ mod tests {
                 CellValue::String("Q1".to_string()),
                 CellValue::String("Q2".to_string()),
             ];
-            assert!(matches_row_pattern(py, &pattern_ref, &row1).unwrap());
+            assert!(matches_row_pattern(py, &pattern_ref, &row1, 0, row1.len() - 1).unwrap());
 
             // Match success: exactly 2 Q1-4, followed by 2 empty
             let row2 = vec![
@@ -635,11 +680,11 @@ mod tests {
                 CellValue::Empty,
                 CellValue::Empty,
             ];
-            assert!(matches_row_pattern(py, &pattern_ref, &row2).unwrap());
+            assert!(matches_row_pattern(py, &pattern_ref, &row2, 0, row2.len() - 1).unwrap());
 
             // Match failure: only 1 Q1-4
             let row3 = vec![CellValue::String("Q1".to_string()), CellValue::Empty];
-            assert!(!matches_row_pattern(py, &pattern_ref, &row3).unwrap());
+            assert!(!matches_row_pattern(py, &pattern_ref, &row3, 0, row3.len() - 1).unwrap());
         });
     }
 
@@ -711,5 +756,39 @@ mod tests {
         assert!(Range::from_a1(":A1").is_err());
         assert!(Range::from_a1("A1:B2:C3").is_err());
         assert!(Range::from_a1("A 1").is_err());
+    }
+
+    #[test]
+    fn test_row_pattern_width_bounds() {
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
+            let pattern = pyo3::Bound::new(py, RowPattern::new()).unwrap();
+            {
+                let mut p = pattern.borrow_mut();
+                p = RowPattern::value(p, "Header".to_string());
+                p = RowPattern::non_empty(p);
+                p = RowPattern::one_or_more(p).unwrap();
+                p = RowPattern::any(p);
+                let _ = RowPattern::optional(p).unwrap();
+            }
+            let pattern_ref = pattern.borrow();
+            let (min, max) = pattern_ref.width_bounds();
+            assert_eq!(min, 2); // 1 for "Header", 1 for non_empty (+ is min 1), 0 for any (optional)
+            assert_eq!(max, None);
+        });
+
+        pyo3::Python::attach(|py| {
+            let pattern = pyo3::Bound::new(py, RowPattern::new()).unwrap();
+            {
+                let mut p = pattern.borrow_mut();
+                p = RowPattern::value(p, "Header".to_string());
+                let p = RowPattern::non_empty(p);
+                let _ = RowPattern::repeat(p, 2, Some(4)).unwrap();
+            }
+            let pattern_ref = pattern.borrow();
+            let (min, max) = pattern_ref.width_bounds();
+            assert_eq!(min, 3); // 1 + 2 = 3
+            assert_eq!(max, Some(5)); // 1 + 4 = 5
+        });
     }
 }

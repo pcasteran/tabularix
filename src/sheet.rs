@@ -355,7 +355,6 @@ impl Sheet {
         Ok(())
     }
 
-    #[allow(clippy::cast_sign_loss)]
     #[pyo3(signature = (matcher, start_row = None, end_row = None, start_col = None, end_col = None))]
     pub fn search_range(
         &self,
@@ -377,88 +376,25 @@ impl Sheet {
             return Ok(None);
         }
 
-        let resolved_start_row = match start_row {
-            Some(r) => {
-                if r < 0 || r as usize >= rows_count {
-                    return Err(pyo3::exceptions::PyIndexError::new_err(
-                        "start_row out of bounds",
-                    ));
-                }
-                r as usize
-            }
-            None => 0,
-        };
+        let (resolved_start_row, resolved_end_row, resolved_start_col, resolved_end_col) =
+            Self::resolve_search_bounds(
+                rows_count, cols_count, start_row, end_row, start_col, end_col,
+            )?;
 
-        let resolved_end_row = match end_row {
-            Some(r) => {
-                if r < 0 || r as usize >= rows_count {
-                    return Err(pyo3::exceptions::PyIndexError::new_err(
-                        "end_row out of bounds",
-                    ));
-                }
-                r as usize
-            }
-            None => rows_count - 1,
-        };
-
-        let resolved_start_col = match start_col {
-            Some(c) => {
-                if c < 0 || c as usize >= cols_count {
-                    return Err(pyo3::exceptions::PyIndexError::new_err(
-                        "start_col out of bounds",
-                    ));
-                }
-                c as usize
-            }
-            None => 0,
-        };
-
-        let resolved_end_col = match end_col {
-            Some(c) => {
-                if c < 0 || c as usize >= cols_count {
-                    return Err(pyo3::exceptions::PyIndexError::new_err(
-                        "end_col out of bounds",
-                    ));
-                }
-                c as usize
-            }
-            None => cols_count - 1,
-        };
-
-        if resolved_start_row > resolved_end_row {
-            return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                "start_row ({resolved_start_row}) cannot be greater than end_row ({resolved_end_row})"
-            )));
-        }
-        if resolved_start_col > resolved_end_col {
-            return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                "start_col ({resolved_start_col}) cannot be greater than end_col ({resolved_end_col})"
-            )));
-        }
-
-        // Construct the sliced subgrid
+        // Construct the row-sliced data (keeping full column width)
         let mut sliced_data: Vec<Vec<CellValue>> = Vec::new();
         for r in resolved_start_row..=resolved_end_row {
-            let row_slice = self.data[r][resolved_start_col..=resolved_end_col].to_vec();
-            sliced_data.push(row_slice);
+            sliced_data.push(self.data[r].clone());
         }
 
-        // Scan row-by-row
-        for i in 0..sliced_data.len() {
-            if let Some(end_idx) = match_range(py, &matcher.row_patterns, &sliced_data, 0, i)? {
-                // Ensure the match actually consumed at least one row
-                if end_idx > i {
-                    return Ok(Some(Range {
-                        start_row: resolved_start_row + i,
-                        end_row: resolved_start_row + end_idx - 1,
-                        start_col: resolved_start_col,
-                        end_col: resolved_end_col,
-                    }));
-                }
-            }
-        }
-
-        Ok(None)
+        Self::scan_grid_for_range(
+            py,
+            matcher,
+            &sliced_data,
+            resolved_start_row,
+            resolved_start_col,
+            resolved_end_col,
+        )
     }
 
     pub fn get_range_between(&self, start: &Range, end: &Range) -> PyResult<Range> {
@@ -554,6 +490,132 @@ impl Sheet {
 }
 
 impl Sheet {
+    #[allow(clippy::cast_sign_loss)]
+    fn resolve_search_bounds(
+        rows_count: usize,
+        cols_count: usize,
+        start_row: Option<isize>,
+        end_row: Option<isize>,
+        start_col: Option<isize>,
+        end_col: Option<isize>,
+    ) -> PyResult<(usize, usize, usize, usize)> {
+        let resolved_start_row = match start_row {
+            Some(r) => {
+                if r < 0 || r as usize >= rows_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "start_row out of bounds",
+                    ));
+                }
+                r as usize
+            }
+            None => 0,
+        };
+
+        let resolved_end_row = match end_row {
+            Some(r) => {
+                if r < 0 || r as usize >= rows_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "end_row out of bounds",
+                    ));
+                }
+                r as usize
+            }
+            None => rows_count - 1,
+        };
+
+        let resolved_start_col = match start_col {
+            Some(c) => {
+                if c < 0 || c as usize >= cols_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "start_col out of bounds",
+                    ));
+                }
+                c as usize
+            }
+            None => 0,
+        };
+
+        let resolved_end_col = match end_col {
+            Some(c) => {
+                if c < 0 || c as usize >= cols_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "end_col out of bounds",
+                    ));
+                }
+                c as usize
+            }
+            None => cols_count - 1,
+        };
+
+        if resolved_start_row > resolved_end_row {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "start_row ({resolved_start_row}) cannot be greater than end_row ({resolved_end_row})"
+            )));
+        }
+        if resolved_start_col > resolved_end_col {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "start_col ({resolved_start_col}) cannot be greater than end_col ({resolved_end_col})"
+            )));
+        }
+
+        Ok((
+            resolved_start_row,
+            resolved_end_row,
+            resolved_start_col,
+            resolved_end_col,
+        ))
+    }
+
+    fn scan_grid_for_range(
+        py: Python<'_>,
+        matcher: &RangeMatcher,
+        sliced_data: &[Vec<CellValue>],
+        resolved_start_row: usize,
+        resolved_start_col: usize,
+        resolved_end_col: usize,
+    ) -> PyResult<Option<Range>> {
+        let (min_w, max_w) = if let Some(first_pattern) = matcher.row_patterns.first() {
+            first_pattern.width_bounds()
+        } else {
+            (1, None)
+        };
+
+        for i in 0..sliced_data.len() {
+            for c_start in resolved_start_col..=resolved_end_col {
+                let min_end = match c_start.checked_add(min_w) {
+                    Some(sum) => sum.saturating_sub(1),
+                    None => continue,
+                };
+                if min_end > resolved_end_col {
+                    continue;
+                }
+                let max_end = match max_w {
+                    Some(max_len) => match c_start.checked_add(max_len) {
+                        Some(sum) => std::cmp::min(sum.saturating_sub(1), resolved_end_col),
+                        None => resolved_end_col,
+                    },
+                    None => resolved_end_col,
+                };
+
+                for c_end in min_end..=max_end {
+                    if let Some(end_idx) =
+                        match_range(py, &matcher.row_patterns, sliced_data, c_start, c_end, 0, i)?
+                    {
+                        if end_idx > i {
+                            return Ok(Some(Range {
+                                start_row: resolved_start_row + i,
+                                end_row: resolved_start_row + end_idx - 1,
+                                start_col: c_start,
+                                end_col: c_end,
+                            }));
+                        }
+                    }
+                }
+            }
+        }
+        Ok(None)
+    }
+
     pub fn get_merged_cell_value(&self, row: usize, col: usize) -> &CellValue {
         for &((s_row, s_col), (e_row, e_col)) in &self.merged_regions {
             if row >= s_row && row <= e_row && col >= s_col && col <= e_col {

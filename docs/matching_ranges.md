@@ -168,6 +168,20 @@ matched_range = sheet.search_range(
 
 ---
 
+### 🧩 Partial Column Matching
+
+Unlike regular expressions that match a full row, Tabularix's matching engine matches a row **for the table to extract** rather than the entire worksheet row. This means `search_range` performs **partial column matching** to find a table anywhere horizontally within the worksheet.
+
+For example, given a worksheet with 5 columns (A to E), if you define a 3-column `RowPattern` matching `"Header #1"`, `"Header #2"`, and `"Header #3"`, the layout engine will check only the valid 3-column sub-spans:
+
+- `A:C` (columns 0 to 2)
+- `B:D` (columns 1 to 3)
+- `C:E` (columns 2 to 4)
+
+If a match is found on one of these spans, the returned `Range` will enclose only those matched columns. This allows you to find and extract tables directly without needing to pad the patterns with leading/trailing wildcard or empty cell rules.
+
+---
+
 ### 🔗 Relational Search
 
 In many layout structures, tables are located relative to other landmarks (such as headers or footers) rather than at fixed indices. `search_range_relative` dynamically resolves coordinates and inherits boundaries from previously matched `Range` objects:
