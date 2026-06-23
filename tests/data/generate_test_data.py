@@ -1,6 +1,9 @@
+import datetime
 import os
+import random
 
 import openpyxl
+from openpyxl.styles import Alignment, Font, PatternFill
 
 
 def create_sheet_simple(wb):
@@ -31,7 +34,7 @@ def create_sheet_simple(wb):
     ws["A4"] = "Merged value"
 
 
-def create_sheet_comple(wb):
+def create_sheet_complex(wb):
     """Add a sheet named 'complex' with a complex layout (multiple tables, merged cells, different data types)."""
     ws = wb.create_sheet(title="complex")
 
@@ -82,13 +85,147 @@ def create_sheet_comple(wb):
     ws["B14"] = "Confidential - Internal Use Only"
 
 
+def create_sheet_multi_tables(wb):
+    """Add a sheet named 'multi-tables' with styled titles/metadata, and territory sub-tables."""
+    ws = wb.create_sheet(title="multi-tables")
+
+    # Add some junk data in the 5 first rows of columns A and B
+    dates = ["2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05"]
+    codes = ["INT-CODE-001", "INT-CODE-002", "INT-CODE-003", "INT-CODE-004", "INT-CODE-005"]
+    for row in range(1, 6):
+        ws[f"A{row}"] = dates[row - 1]
+        ws[f"B{row}"] = codes[row - 1]
+
+    # Hide these first 5 rows
+    for row in range(1, 6):
+        ws.row_dimensions[row].hidden = True
+
+    # Sheet title in cells B7:F7 merged
+    ws.merge_cells("B7:F7")
+    ws["B7"] = "Financial Report"
+
+    title_fill = PatternFill(start_color="1F497D", end_color="1F497D", fill_type="solid")
+    title_font = Font(name="Calibri", size=14, bold=True, color="FFFFFF")
+    center_align = Alignment(horizontal="center", vertical="center")
+    for col in range(2, 7):
+        cell = ws.cell(row=7, column=col)
+        cell.fill = title_fill
+        cell.font = title_font
+        cell.alignment = center_align
+
+    # Double row height for row 7 (default is typically 15.0 pt)
+    ws.row_dimensions[7].height = 35.0
+
+    # Add some metadata in cells C9:D10
+    blue_font = Font(bold=True, color="000080")
+    ws["C9"] = "Date"
+    ws["C9"].font = blue_font
+    ws["D9"] = datetime.date(2026, 6, 23)
+    ws["D9"].number_format = "yyyy-mm-dd"
+
+    ws["C10"] = "Fiscal Year"
+    ws["C10"].font = blue_font
+    ws["D10"] = "2025-2026"
+
+    # Seed the random number generator to ensure static values across runs
+    random.seed(42)
+
+    territories = ["territory #1", "territory #2", "territory #3"]
+    # We can assign different counts of data rows to each territory:
+    data_row_counts = {"territory #1": 3, "territory #2": 4, "territory #3": 2}
+
+    current_row = 12
+    header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+
+    footer_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    footer_font = Font(name="Calibri", size=11, bold=True, color="000000")
+
+    for terr in territories:
+        # B{current_row}: Territory name
+        ws[f"B{current_row}"] = terr
+        ws[f"B{current_row}"].font = Font(name="Calibri", size=12, bold=True, color="1F497D")
+
+        # Headers on current_row + 1 and current_row + 2
+        r1 = current_row + 1
+        r2 = current_row + 2
+
+        ws.row_dimensions[r1].height = 22.0
+        ws.row_dimensions[r2].height = 22.0
+
+        # B{r1} (merged with B{r2}): "Product"
+        ws.merge_cells(start_row=r1, start_column=2, end_row=r2, end_column=2)
+        ws.cell(row=r1, column=2, value="Product")
+
+        # C{r1} (merged with D{r1}): "2025"
+        ws.merge_cells(start_row=r1, start_column=3, end_row=r1, end_column=4)
+        ws.cell(row=r1, column=3, value=2025)
+
+        # E{r1} (merged with F{r1}): "2026"
+        ws.merge_cells(start_row=r1, start_column=5, end_row=r1, end_column=6)
+        ws.cell(row=r1, column=5, value=2026)
+
+        # C{r2} and E{r2}: "Expected"
+        ws.cell(row=r2, column=3, value="Expected")
+        ws.cell(row=r2, column=5, value="Expected")
+
+        # D{r2} and F{r2}: "Actual"
+        ws.cell(row=r2, column=4, value="Actual")
+        ws.cell(row=r2, column=6, value="Actual")
+
+        # Style headers
+        for r in (r1, r2):
+            for col in range(2, 7):
+                cell = ws.cell(row=r, column=col)
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = center_align
+
+        # Data rows
+        num_rows = data_row_counts[terr]
+        data_start = r2 + 1
+        for i in range(num_rows):
+            row_idx = data_start + i
+            # Product name: "Product A", "Product B", etc.
+            ws.cell(row=row_idx, column=2, value=f"Product {chr(65 + i)}")
+            # Expected/Actual columns: generate random static numbers
+            ws.cell(row=row_idx, column=3, value=random.randint(100, 500))  # nosec B311
+            ws.cell(row=row_idx, column=4, value=random.randint(90, 510))  # nosec B311
+            ws.cell(row=row_idx, column=5, value=random.randint(110, 550))  # nosec B311
+            ws.cell(row=row_idx, column=6, value=random.randint(100, 560))  # nosec B311
+
+        data_end = data_start + num_rows - 1
+
+        # Footer row with =SUM(...) formulae
+        footer_row = data_end + 1
+        ws.cell(row=footer_row, column=2, value="Total")
+        ws.cell(row=footer_row, column=3, value=f"=SUM(C{data_start}:C{data_end})")
+        ws.cell(row=footer_row, column=4, value=f"=SUM(D{data_start}:D{data_end})")
+        ws.cell(row=footer_row, column=5, value=f"=SUM(E{data_start}:E{data_end})")
+        ws.cell(row=footer_row, column=6, value=f"=SUM(F{data_start}:F{data_end})")
+
+        ws.row_dimensions[footer_row].height = 20.0
+        for col in range(2, 7):
+            cell = ws.cell(row=footer_row, column=col)
+            cell.fill = footer_fill
+            cell.font = footer_font
+            if col > 2:
+                cell.alignment = Alignment(horizontal="right", vertical="center")
+            else:
+                cell.alignment = Alignment(horizontal="left", vertical="center")
+
+        # Advance to the row after the blank row
+        current_row = footer_row + 2
+
+
 def generate():
     """Generate sample Excel test data for acceptance testing."""
     dir_path = os.path.dirname(os.path.abspath(__file__))
 
     wb = openpyxl.Workbook()
     create_sheet_simple(wb)
-    create_sheet_comple(wb)
+    create_sheet_complex(wb)
+    create_sheet_multi_tables(wb)
 
     output_path = os.path.join(dir_path, "sample.xlsx")
     wb.save(output_path)

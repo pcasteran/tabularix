@@ -944,7 +944,7 @@ mod tests {
         let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
         let mut names = wb.sheet_names();
         names.sort();
-        assert_eq!(names, vec!["complex", "simple"]);
+        assert_eq!(names, vec!["complex", "multi-tables", "simple"]);
 
         let sheet = wb.get_sheet("simple").unwrap();
         assert_eq!(sheet.name, "simple");
