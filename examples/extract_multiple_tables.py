@@ -2,7 +2,7 @@ from typing import cast
 
 import polars as pl
 import tabularix as tx
-from tabularix import RangeMatcher, regex
+from tabularix import RangeMatcher, empty, regex, value
 
 
 def extract_metadata(sheet: tx.Sheet) -> pl.DataFrame:
@@ -42,16 +42,22 @@ def extract_metadata(sheet: tx.Sheet) -> pl.DataFrame:
 
 def main() -> None:
     """Run the multiple tables extraction example."""
-    # Load the workbook
+    # Load the workbook.
     workbook = tx.load_workbook("tests/data/sample.xlsx")
 
-    # Get the target worksheet
+    # Get the target worksheet.
     sheet = workbook.get_sheet("multi-tables")
 
     # Extract the metadata.
     metadata_df = extract_metadata(sheet)
     print("Extracted Metadata DataFrame:")
     print(metadata_df)
+    print("-" * 40)
+
+    # Extract and combine territory tables.
+    territories_df = extract_territory_tables(sheet)
+    print("Combined Territories DataFrame:")
+    print(territories_df)
 
 
 if __name__ == "__main__":

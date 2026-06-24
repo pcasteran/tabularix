@@ -112,7 +112,7 @@
   <rect x="280" y="265" width="120" height="30" class="cell-rect" />
   <text x="288" y="284" class="val-string">Date</text>
   <rect x="400" y="265" width="120" height="30" class="cell-rect" />
-  <text x="512" y="284" class="val-number">46196</text>
+  <text x="408" y="284" class="val-string">2026-06-23</text>
   <rect x="520" y="265" width="120" height="30" class="cell-rect" />
   <rect x="640" y="265" width="120" height="30" class="cell-rect" />
   <rect x="40" y="295" width="120" height="30" class="cell-rect" />
