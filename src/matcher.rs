@@ -424,6 +424,28 @@ fn py_any_to_cell_value(val: &Bound<'_, PyAny>) -> CellValue {
     } else if let Ok(s) = val.extract::<String>() {
         CellValue::String(s)
     } else {
+        // Look up datetime/date attributes
+        if let (Ok(year), Ok(month), Ok(day)) = (
+            val.getattr("year").and_then(|a| a.extract::<i32>()),
+            val.getattr("month").and_then(|a| a.extract::<u32>()),
+            val.getattr("day").and_then(|a| a.extract::<u32>()),
+        ) {
+            if let Some(naive_date) = chrono::NaiveDate::from_ymd_opt(year, month, day) {
+                if let (Ok(hour), Ok(minute), Ok(second), Ok(microsecond)) = (
+                    val.getattr("hour").and_then(|a| a.extract::<u32>()),
+                    val.getattr("minute").and_then(|a| a.extract::<u32>()),
+                    val.getattr("second").and_then(|a| a.extract::<u32>()),
+                    val.getattr("microsecond").and_then(|a| a.extract::<u32>()),
+                ) {
+                    if let Some(naive_dt) =
+                        naive_date.and_hms_micro_opt(hour, minute, second, microsecond)
+                    {
+                        return CellValue::DateTime(naive_dt);
+                    }
+                }
+                return CellValue::Date(naive_date);
+            }
+        }
         CellValue::Error(val.to_string())
     }
 }

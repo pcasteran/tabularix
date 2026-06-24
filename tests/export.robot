@@ -43,3 +43,29 @@ Verify Export to Polars DataFrame
     Should Be Equal As Strings    ${shape}    (2, 3)
     ${cols}=    Evaluate    $df.columns
     Should Be Equal As Strings    ${cols}    ['header_1', 'header_2', 'header_3']
+
+Verify Export Date Column to PyArrow
+    [Documentation]    Test that exporting a table with date cells to PyArrow maps them to a date32 array.
+    ${sheet}=    Load Complex Sheet
+    Verify Date Column In Table    ${sheet}
+
+
+*** Keywords ***
+Verify Date Column In Table
+    [Documentation]    Extract employee table and assert start_date column matches date32 schema in PyArrow.
+    [Arguments]    ${sheet}
+    ${expr}=    Catenate    SEPARATOR=\n
+    ...    (lambda s: [
+    ...    table := s.extract_table(
+    ...    tabularix.Range.from_a1("A11:D12"),
+    ...    tabularix.Range.from_a1("A10:D10"),
+    ...    clean_names=True
+    ...    ),
+    ...    at := table.to_arrow(),
+    ...    at.schema.names == ['name', 'role', 'active', 'start_date'] and
+    ...    str(at.schema.field('start_date').type) == 'date32[day]' and
+    ...    type(at.column('start_date')[0].as_py()) is datetime.date and
+    ...    str(at.column('start_date')[0].as_py()) == '2023-01-15'
+    ...    ][-1])($sheet)
+    ${success}=    Evaluate    ${expr}    modules=tabularix,datetime
+    Should Be True    ${success}

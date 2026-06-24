@@ -73,8 +73,8 @@ def create_sheet_complex(wb):
     ws["D10"] = "Start Date"
 
     employees = [
-        ["Alice", "Engineer", True, "2023-01-15"],
-        ["Bob", "Manager", False, "2021-06-01"],
+        ["Alice", "Engineer", True, datetime.date(2023, 1, 15)],
+        ["Bob", "Manager", False, datetime.date(2021, 6, 1)],
     ]
     for row_idx, row_data in enumerate(employees, start=11):
         for col_idx, value in enumerate(row_data, start=1):

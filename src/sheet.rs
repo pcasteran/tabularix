@@ -1,5 +1,6 @@
 use crate::matcher::{match_range, Range, RangeMatcher};
-use calamine::{open_workbook, Data, Reader, Xlsx};
+use calamine::{open_workbook, Data, DataType, Reader, Xlsx};
+use chrono::{Datelike, Timelike};
 use pyo3::prelude::*;
 use pyo3::types::PyAny;
 use pyo3::BoundObject;
@@ -15,15 +16,42 @@ pub enum CellValue {
     Int(i64),
     Bool(bool),
     Error(String),
+    Date(chrono::NaiveDate),
+    DateTime(chrono::NaiveDateTime),
 }
 
 impl From<calamine::Data> for CellValue {
     fn from(data: calamine::Data) -> Self {
         match data {
             Data::Empty | Data::DurationIso(_) => CellValue::Empty,
-            Data::String(s) | Data::DateTimeIso(s) => CellValue::String(s),
+            Data::DateTime(f) => {
+                let temp = Data::DateTime(f);
+                if let Some(dt) = temp.as_datetime() {
+                    if dt.time() == chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap() {
+                        CellValue::Date(dt.date())
+                    } else {
+                        CellValue::DateTime(dt)
+                    }
+                } else {
+                    CellValue::Float(f.as_f64())
+                }
+            }
+            Data::DateTimeIso(s) => {
+                let temp = Data::DateTimeIso(s.clone());
+                if let Some(dt) = temp.as_datetime() {
+                    if dt.time() == chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap() {
+                        CellValue::Date(dt.date())
+                    } else {
+                        CellValue::DateTime(dt)
+                    }
+                } else if let Some(d) = temp.as_date() {
+                    CellValue::Date(d)
+                } else {
+                    CellValue::String(s)
+                }
+            }
+            Data::String(s) => CellValue::String(s),
             Data::Float(f) => CellValue::Float(f),
-            Data::DateTime(f) => CellValue::Float(f.as_f64()),
             Data::Int(i) => CellValue::Int(i),
             Data::Bool(b) => CellValue::Bool(b),
             Data::Error(e) => CellValue::Error(format!("{e:?}")),
@@ -46,6 +74,8 @@ impl CellValue {
                 }
             }
             CellValue::Error(e) => format!("ERROR: {e}"),
+            CellValue::Date(d) => d.to_string(),
+            CellValue::DateTime(dt) => dt.format("%Y-%m-%dT%H:%M:%S%.f").to_string(),
         }
     }
 }
@@ -55,6 +85,7 @@ impl<'py> IntoPyObject<'py> for CellValue {
     type Output = Bound<'py, Self::Target>;
     type Error = PyErr;
 
+    #[allow(clippy::cast_possible_truncation)]
     fn into_pyobject(
         self,
         py: Python<'py>,
@@ -66,6 +97,25 @@ impl<'py> IntoPyObject<'py> for CellValue {
             CellValue::Int(i) => Ok(i.into_pyobject(py)?.into_any()),
             CellValue::Bool(b) => Ok(pyo3::types::PyBool::new(py, b).into_bound().into_any()),
             CellValue::Error(e) => Ok(e.into_pyobject(py)?.into_any()),
+            CellValue::Date(d) => {
+                let py_date =
+                    pyo3::types::PyDate::new(py, d.year(), d.month() as u8, d.day() as u8)?;
+                Ok(py_date.into_any())
+            }
+            CellValue::DateTime(dt) => {
+                let py_dt = pyo3::types::PyDateTime::new(
+                    py,
+                    dt.year(),
+                    dt.month() as u8,
+                    dt.day() as u8,
+                    dt.hour() as u8,
+                    dt.minute() as u8,
+                    dt.second() as u8,
+                    dt.nanosecond() / 1000,
+                    None,
+                )?;
+                Ok(py_dt.into_any())
+            }
         }
     }
 }
@@ -752,7 +802,7 @@ impl Sheet {
                         rect_class.push_str(" rect-error");
                         text_class.push_str("val-error");
                     }
-                    CellValue::String(_) => {
+                    CellValue::String(_) | CellValue::Date(_) | CellValue::DateTime(_) => {
                         text_class.push_str("val-string");
                     }
                     CellValue::Float(_) | CellValue::Int(_) => {
@@ -779,6 +829,8 @@ impl Sheet {
                         }
                     }
                     CellValue::Error(e) => format!("ERROR: {e}"),
+                    CellValue::Date(d) => d.to_string(),
+                    CellValue::DateTime(dt) => dt.format("%Y-%m-%dT%H:%M:%S%.f").to_string(),
                 };
 
                 if !val_str.is_empty() {
@@ -1408,5 +1460,20 @@ mod tests {
             // 6. Overlap error
             assert!(sheet.get_range_between(&r1, &r1).is_err());
         });
+    }
+
+    #[test]
+    fn test_date_cell_parsing() {
+        let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
+        let sheet = wb.get_sheet("multi-tables").unwrap();
+        let val = &sheet.data[8][3];
+        match val {
+            CellValue::Date(d) => {
+                assert_eq!(d.year(), 2026);
+                assert_eq!(d.month(), 6);
+                assert_eq!(d.day(), 23);
+            }
+            _ => panic!("Expected Date, got {val:?}"),
+        }
     }
 }

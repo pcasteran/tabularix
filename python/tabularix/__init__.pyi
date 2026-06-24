@@ -38,7 +38,7 @@ class Sheet:
             col: 0-based column index.
 
         Returns:
-            The cell's value (None, str, float, int, bool, or an error string).
+            The cell's value (None, str, float, int, bool, datetime.date, datetime.datetime, or an error string).
 
         Raises:
             IndexError: If the indices are out of bounds.
