@@ -6,7 +6,12 @@ from tabularix import RangeMatcher, regex
 
 
 def extract_metadata(sheet: tx.Sheet) -> pl.DataFrame:
-    """Extracts key-value metadata from the worksheet dynamically, returning a transposed Polars DataFrame."""
+    """Extracts key-value metadata from the worksheet dynamically, returning a transposed Polars DataFrame.
+
+    We need to transpose the extracted table because the metadata is stored horizontally in the spreadsheet:
+    the first column (column_1) contains the headers/keys ('Date', 'Fiscal Year'), and the second column
+    (column_2) contains the corresponding values. Transposing maps the keys to DataFrame column names.
+    """
     # Define a RangeMatcher to locate the metadata block dynamically.
     metadata_matcher = (
         RangeMatcher()
@@ -28,18 +33,9 @@ def extract_metadata(sheet: tx.Sheet) -> pl.DataFrame:
     # Transpose the DataFrame so keys in column_1 become column names.
     df_transposed = df.transpose(column_names="column_1")
 
-    # If "Date" column exists, format the Excel date serial number (float) to ISO format
+    # If "Date" column exists, parse the ISO 8601 string to a native date type.
     if "Date" in df_transposed.columns:
-        date_val = df_transposed["Date"][0]
-        try:
-            days = int(float(date_val))
-            import datetime
-
-            base_date = datetime.date(1899, 12, 30)
-            date_str = (base_date + datetime.timedelta(days=days)).isoformat()
-            df_transposed = df_transposed.with_columns(pl.lit(date_str).alias("Date"))
-        except (ValueError, TypeError):
-            pass
+        df_transposed = df_transposed.with_columns(pl.col("Date").str.to_date())
 
     return df_transposed
 
