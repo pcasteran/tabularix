@@ -9,6 +9,7 @@ pub enum CellMatchRule {
     NonEmpty,
     Exact(String),
     Regex(Py<PyAny>),
+    Group(CellGroupPattern),
 }
 
 impl Clone for CellMatchRule {
@@ -26,6 +27,7 @@ impl Clone for CellMatchRule {
                 });
                 CellMatchRule::Regex(cloned.unwrap())
             }
+            CellMatchRule::Group(g) => CellMatchRule::Group(g.clone()),
         }
     }
 }
@@ -37,21 +39,40 @@ pub struct CellPattern {
     pub max: Option<usize>,
 }
 
+impl CellPattern {
+    pub fn width_bounds(&self) -> (usize, Option<usize>) {
+        if let CellMatchRule::Group(sub_group) = &self.rule {
+            let (sub_min, sub_max) = sub_group.width_bounds();
+            let min_w = self.min * sub_min;
+            let max_w = match (self.max, sub_max) {
+                (Some(max_reps), Some(max_sub_w)) => Some(max_reps * max_sub_w),
+                _ => None,
+            };
+            (min_w, max_w)
+        } else {
+            let min_w = self.min;
+            let max_w = self.max;
+            (min_w, max_w)
+        }
+    }
+}
+
 #[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
-pub struct RowPattern {
+pub struct CellGroupPattern {
     pub cell_patterns: Vec<CellPattern>,
     pub cardinality: String,
 }
 
-impl RowPattern {
+impl CellGroupPattern {
     pub fn width_bounds(&self) -> (usize, Option<usize>) {
         let mut min_w = 0;
         let mut max_w = Some(0);
         for cp in &self.cell_patterns {
-            min_w += cp.min;
-            if let (Some(total), Some(cp_max)) = (max_w, cp.max) {
-                max_w = Some(total + cp_max);
+            let (cp_min, cp_max) = cp.width_bounds();
+            min_w += cp_min;
+            if let (Some(total), Some(max_val)) = (max_w, cp_max) {
+                max_w = Some(total + max_val);
             } else {
                 max_w = None;
             }
@@ -61,10 +82,10 @@ impl RowPattern {
 }
 
 #[pymethods]
-impl RowPattern {
+impl CellGroupPattern {
     #[new]
     pub fn new() -> Self {
-        RowPattern {
+        CellGroupPattern {
             cell_patterns: Vec::new(),
             cardinality: "1".to_string(),
         }
@@ -119,6 +140,15 @@ impl RowPattern {
     pub fn any(mut slf: PyRefMut<'_, Self>) -> PyRefMut<'_, Self> {
         slf.cell_patterns.push(CellPattern {
             rule: CellMatchRule::Any,
+            min: 1,
+            max: Some(1),
+        });
+        slf
+    }
+
+    pub fn group(mut slf: PyRefMut<'_, Self>, pattern: CellGroupPattern) -> PyRefMut<'_, Self> {
+        slf.cell_patterns.push(CellPattern {
+            rule: CellMatchRule::Group(pattern),
             min: 1,
             max: Some(1),
         });
@@ -317,7 +347,7 @@ impl Range {
 #[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct RangeMatcher {
-    pub row_patterns: Vec<RowPattern>,
+    pub row_patterns: Vec<CellGroupPattern>,
 }
 
 #[pymethods]
@@ -329,7 +359,7 @@ impl RangeMatcher {
         }
     }
 
-    pub fn row(mut slf: PyRefMut<'_, Self>, pattern: RowPattern) -> PyRefMut<'_, Self> {
+    pub fn row(mut slf: PyRefMut<'_, Self>, pattern: CellGroupPattern) -> PyRefMut<'_, Self> {
         slf.row_patterns.push(pattern);
         slf
     }
@@ -397,7 +427,7 @@ impl RangeMatcher {
     }
 }
 
-fn enforce_row_exclusivity(row_patterns: &mut [RowPattern]) -> PyResult<()> {
+fn enforce_row_exclusivity(row_patterns: &mut [CellGroupPattern]) -> PyResult<()> {
     if let Some(last) = row_patterns.last_mut() {
         if last.cardinality != "1" {
             return Err(pyo3::exceptions::PyValueError::new_err(
@@ -465,50 +495,212 @@ fn cell_matches_rule(py: Python<'_>, rule: &CellMatchRule, val: &CellValue) -> P
             let match_obj = bound_regex.call_method1("search", (s,))?;
             Ok(!match_obj.is_none())
         }
+        CellMatchRule::Group(_) => Ok(false),
     }
 }
 
-fn match_cells(
-    py: Python<'_>,
-    patterns: &[CellPattern],
-    cells: &[CellValue],
-    pattern_idx: usize,
+struct GroupMatchCtx<'a, 'py> {
+    py: Python<'py>,
+    cells: &'a [CellValue],
+}
+
+fn match_group_reps(
+    ctx: &GroupMatchCtx<'_, '_>,
+    sub_patterns: &[CellPattern],
+    outer_patterns: &[CellPattern],
+    outer_pattern_idx: usize,
     cell_idx: usize,
+    current_reps: usize,
 ) -> PyResult<bool> {
-    if pattern_idx == patterns.len() {
-        return Ok(cell_idx == cells.len());
+    let pattern = &outer_patterns[outer_pattern_idx];
+    let min_reps = pattern.min;
+    let max_reps = pattern.max;
+
+    if current_reps >= min_reps
+        && match_cells(ctx, outer_patterns, outer_pattern_idx + 1, cell_idx)?
+    {
+        return Ok(true);
     }
 
-    let pattern = &patterns[pattern_idx];
-    let max_limit = match pattern.max {
-        Some(m) => std::cmp::min(m, cells.len() - cell_idx),
-        None => cells.len() - cell_idx,
-    };
-
-    if max_limit < pattern.min {
-        return Ok(false);
-    }
-
-    let mut matchable = 0;
-    while matchable < max_limit {
-        if cell_matches_rule(py, &pattern.rule, &cells[cell_idx + matchable])? {
-            matchable += 1;
-        } else {
-            break;
+    if let Some(max) = max_reps {
+        if current_reps >= max {
+            return Ok(false);
         }
     }
 
-    if matchable < pattern.min {
-        return Ok(false);
-    }
+    let mut valid_ends = Vec::new();
+    find_group_match_ends(ctx, sub_patterns, cell_idx, 0, &mut valid_ends)?;
 
-    for k in (pattern.min..=matchable).rev() {
-        if match_cells(py, patterns, cells, pattern_idx + 1, cell_idx + k)? {
+    for next_cell_idx in valid_ends {
+        if match_group_reps(
+            ctx,
+            sub_patterns,
+            outer_patterns,
+            outer_pattern_idx,
+            next_cell_idx,
+            current_reps + 1,
+        )? {
             return Ok(true);
         }
     }
 
     Ok(false)
+}
+
+fn find_group_match_ends(
+    ctx: &GroupMatchCtx<'_, '_>,
+    patterns: &[CellPattern],
+    current_cell_idx: usize,
+    pattern_idx: usize,
+    results: &mut Vec<usize>,
+) -> PyResult<()> {
+    if pattern_idx == patterns.len() {
+        results.push(current_cell_idx);
+        return Ok(());
+    }
+
+    let pattern = &patterns[pattern_idx];
+
+    if let CellMatchRule::Group(ref sub_group) = pattern.rule {
+        let mut sub_ends = Vec::new();
+        find_group_reps_ends(
+            ctx,
+            &sub_group.cell_patterns,
+            pattern,
+            current_cell_idx,
+            0,
+            &mut sub_ends,
+        )?;
+        for end in sub_ends {
+            find_group_match_ends(ctx, patterns, end, pattern_idx + 1, results)?;
+        }
+    } else {
+        let max_limit = match pattern.max {
+            Some(m) => std::cmp::min(m, ctx.cells.len() - current_cell_idx),
+            None => ctx.cells.len() - current_cell_idx,
+        };
+
+        if max_limit < pattern.min {
+            return Ok(());
+        }
+
+        let mut matchable = 0;
+        while matchable < max_limit {
+            if cell_matches_rule(
+                ctx.py,
+                &pattern.rule,
+                &ctx.cells[current_cell_idx + matchable],
+            )? {
+                matchable += 1;
+            } else {
+                break;
+            }
+        }
+
+        if matchable < pattern.min {
+            return Ok(());
+        }
+
+        for k in (pattern.min..=matchable).rev() {
+            find_group_match_ends(
+                ctx,
+                patterns,
+                current_cell_idx + k,
+                pattern_idx + 1,
+                results,
+            )?;
+        }
+    }
+
+    Ok(())
+}
+
+fn find_group_reps_ends(
+    ctx: &GroupMatchCtx<'_, '_>,
+    sub_patterns: &[CellPattern],
+    pattern: &CellPattern,
+    current_cell_idx: usize,
+    current_reps: usize,
+    results: &mut Vec<usize>,
+) -> PyResult<()> {
+    if current_reps >= pattern.min {
+        results.push(current_cell_idx);
+    }
+
+    if let Some(max) = pattern.max {
+        if current_reps >= max {
+            return Ok(());
+        }
+    }
+
+    let mut valid_ends = Vec::new();
+    find_group_match_ends(ctx, sub_patterns, current_cell_idx, 0, &mut valid_ends)?;
+
+    for next_cell_idx in valid_ends {
+        find_group_reps_ends(
+            ctx,
+            sub_patterns,
+            pattern,
+            next_cell_idx,
+            current_reps + 1,
+            results,
+        )?;
+    }
+
+    Ok(())
+}
+
+fn match_cells(
+    ctx: &GroupMatchCtx<'_, '_>,
+    patterns: &[CellPattern],
+    pattern_idx: usize,
+    cell_idx: usize,
+) -> PyResult<bool> {
+    if pattern_idx == patterns.len() {
+        return Ok(cell_idx == ctx.cells.len());
+    }
+
+    let pattern = &patterns[pattern_idx];
+    if let CellMatchRule::Group(ref sub_group) = pattern.rule {
+        match_group_reps(
+            ctx,
+            &sub_group.cell_patterns,
+            patterns,
+            pattern_idx,
+            cell_idx,
+            0,
+        )
+    } else {
+        let max_limit = match pattern.max {
+            Some(m) => std::cmp::min(m, ctx.cells.len() - cell_idx),
+            None => ctx.cells.len() - cell_idx,
+        };
+
+        if max_limit < pattern.min {
+            return Ok(false);
+        }
+
+        let mut matchable = 0;
+        while matchable < max_limit {
+            if cell_matches_rule(ctx.py, &pattern.rule, &ctx.cells[cell_idx + matchable])? {
+                matchable += 1;
+            } else {
+                break;
+            }
+        }
+
+        if matchable < pattern.min {
+            return Ok(false);
+        }
+
+        for k in (pattern.min..=matchable).rev() {
+            if match_cells(ctx, patterns, pattern_idx + 1, cell_idx + k)? {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
+    }
 }
 
 fn parse_cardinality(card: &str) -> (usize, Option<usize>) {
@@ -542,7 +734,7 @@ fn parse_cardinality(card: &str) -> (usize, Option<usize>) {
 
 fn matches_row_pattern(
     py: Python<'_>,
-    pattern: &RowPattern,
+    pattern: &CellGroupPattern,
     row: &[CellValue],
     col_start: usize,
     col_end: usize,
@@ -550,12 +742,16 @@ fn matches_row_pattern(
     if col_start > col_end || col_end >= row.len() {
         return Ok(false);
     }
-    match_cells(py, &pattern.cell_patterns, &row[col_start..=col_end], 0, 0)
+    let ctx = GroupMatchCtx {
+        py,
+        cells: &row[col_start..=col_end],
+    };
+    match_cells(&ctx, &pattern.cell_patterns, 0, 0)
 }
 
 pub fn match_range(
     py: Python<'_>,
-    patterns: &[RowPattern],
+    patterns: &[CellGroupPattern],
     sheet_data: &[Vec<CellValue>],
     col_start: usize,
     col_end: usize,
@@ -633,13 +829,13 @@ mod tests {
     fn test_backtracking_matcher_exact_and_non_empty() {
         pyo3::Python::initialize();
         pyo3::Python::attach(|py| {
-            let pattern = pyo3::Bound::new(py, RowPattern::new()).unwrap();
+            let pattern = pyo3::Bound::new(py, CellGroupPattern::new()).unwrap();
             {
                 let mut p = pattern.borrow_mut();
-                p = RowPattern::value(p, "Date".to_string());
-                p = RowPattern::non_empty(p);
-                p = RowPattern::one_or_more(p).unwrap();
-                let _ = RowPattern::value(p, "Total".to_string());
+                p = CellGroupPattern::value(p, "Date".to_string());
+                p = CellGroupPattern::non_empty(p);
+                p = CellGroupPattern::one_or_more(p).unwrap();
+                let _ = CellGroupPattern::value(p, "Total".to_string());
             }
 
             let pattern_ref = pattern.borrow();
@@ -674,16 +870,16 @@ mod tests {
     fn test_backtracking_matcher_regex() {
         pyo3::Python::initialize();
         pyo3::Python::attach(|py| {
-            let pattern = pyo3::Bound::new(py, RowPattern::new()).unwrap();
+            let pattern = pyo3::Bound::new(py, CellGroupPattern::new()).unwrap();
             {
                 let mut p = pattern.borrow_mut();
                 let re = py.import("re").unwrap();
                 let re_pattern = re.call_method1("compile", ("^Q[1-4]$",)).unwrap();
 
-                p = RowPattern::regex(p, py, &re_pattern).unwrap();
-                p = RowPattern::repeat(p, 2, Some(2)).unwrap();
-                p = RowPattern::empty(p);
-                let _ = RowPattern::zero_or_more(p).unwrap();
+                p = CellGroupPattern::regex(p, py, &re_pattern).unwrap();
+                p = CellGroupPattern::repeat(p, 2, Some(2)).unwrap();
+                p = CellGroupPattern::empty(p);
+                let _ = CellGroupPattern::zero_or_more(p).unwrap();
             }
 
             let pattern_ref = pattern.borrow();
@@ -714,13 +910,13 @@ mod tests {
     fn test_exclusivity_rule() {
         pyo3::Python::initialize();
         pyo3::Python::attach(|py| {
-            let pattern = pyo3::Bound::new(py, RowPattern::new()).unwrap();
+            let pattern = pyo3::Bound::new(py, CellGroupPattern::new()).unwrap();
             let mut p = pattern.borrow_mut();
-            p = RowPattern::empty(p);
-            p = RowPattern::optional(p).unwrap();
+            p = CellGroupPattern::empty(p);
+            p = CellGroupPattern::optional(p).unwrap();
 
             // Try to set cardinality again
-            let res = RowPattern::one_or_more(p);
+            let res = CellGroupPattern::one_or_more(p);
             assert!(res.is_err());
             let err_msg = res.err().unwrap().to_string();
             assert!(err_msg.contains("Cannot set multiple cardinalities"));
@@ -784,14 +980,14 @@ mod tests {
     fn test_row_pattern_width_bounds() {
         pyo3::Python::initialize();
         pyo3::Python::attach(|py| {
-            let pattern = pyo3::Bound::new(py, RowPattern::new()).unwrap();
+            let pattern = pyo3::Bound::new(py, CellGroupPattern::new()).unwrap();
             {
                 let mut p = pattern.borrow_mut();
-                p = RowPattern::value(p, "Header".to_string());
-                p = RowPattern::non_empty(p);
-                p = RowPattern::one_or_more(p).unwrap();
-                p = RowPattern::any(p);
-                let _ = RowPattern::optional(p).unwrap();
+                p = CellGroupPattern::value(p, "Header".to_string());
+                p = CellGroupPattern::non_empty(p);
+                p = CellGroupPattern::one_or_more(p).unwrap();
+                p = CellGroupPattern::any(p);
+                let _ = CellGroupPattern::optional(p).unwrap();
             }
             let pattern_ref = pattern.borrow();
             let (min, max) = pattern_ref.width_bounds();
@@ -800,17 +996,63 @@ mod tests {
         });
 
         pyo3::Python::attach(|py| {
-            let pattern = pyo3::Bound::new(py, RowPattern::new()).unwrap();
+            let pattern = pyo3::Bound::new(py, CellGroupPattern::new()).unwrap();
             {
                 let mut p = pattern.borrow_mut();
-                p = RowPattern::value(p, "Header".to_string());
-                let p = RowPattern::non_empty(p);
-                let _ = RowPattern::repeat(p, 2, Some(4)).unwrap();
+                p = CellGroupPattern::value(p, "Header".to_string());
+                let p = CellGroupPattern::non_empty(p);
+                let _ = CellGroupPattern::repeat(p, 2, Some(4)).unwrap();
             }
             let pattern_ref = pattern.borrow();
             let (min, max) = pattern_ref.width_bounds();
             assert_eq!(min, 3); // 1 + 2 = 3
             assert_eq!(max, Some(5)); // 1 + 4 = 5
+        });
+    }
+
+    #[test]
+    fn test_group_pattern_matching() {
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
+            // Match pattern: "Product", followed by 1 or more groups of ("Expected", "Actual")
+            let sub_group = pyo3::Bound::new(py, CellGroupPattern::new()).unwrap();
+            {
+                let mut sg = sub_group.borrow_mut();
+                sg = CellGroupPattern::value(sg, "Expected".to_string());
+                let _ = CellGroupPattern::value(sg, "Actual".to_string());
+            }
+
+            let pattern = pyo3::Bound::new(py, CellGroupPattern::new()).unwrap();
+            {
+                let mut p = pattern.borrow_mut();
+                p = CellGroupPattern::value(p, "Product".to_string());
+                p = CellGroupPattern::group(p, sub_group.borrow().clone());
+                let _ = CellGroupPattern::one_or_more(p).unwrap();
+            }
+
+            let pattern_ref = pattern.borrow();
+
+            // Match success: Product, and two pairs of Expected/Actual
+            let row1 = vec![
+                CellValue::String("Product".to_string()),
+                CellValue::String("Expected".to_string()),
+                CellValue::String("Actual".to_string()),
+                CellValue::String("Expected".to_string()),
+                CellValue::String("Actual".to_string()),
+            ];
+            assert!(matches_row_pattern(py, &pattern_ref, &row1, 0, row1.len() - 1).unwrap());
+
+            // Match failure: Product, then Expected, then Expected
+            let row2 = vec![
+                CellValue::String("Product".to_string()),
+                CellValue::String("Expected".to_string()),
+                CellValue::String("Expected".to_string()),
+            ];
+            assert!(!matches_row_pattern(py, &pattern_ref, &row2, 0, row2.len() - 1).unwrap());
+
+            // Match failure: Product only
+            let row3 = vec![CellValue::String("Product".to_string())];
+            assert!(!matches_row_pattern(py, &pattern_ref, &row3, 0, row3.len() - 1).unwrap());
         });
     }
 }

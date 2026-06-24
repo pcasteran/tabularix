@@ -1296,7 +1296,7 @@ mod tests {
 
     #[test]
     fn test_search_range() {
-        use crate::matcher::{CellMatchRule, CellPattern, RangeMatcher, RowPattern};
+        use crate::matcher::{CellGroupPattern, CellMatchRule, CellPattern, RangeMatcher};
 
         let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
         let sheet = wb.get_sheet("simple").unwrap();
@@ -1304,10 +1304,10 @@ mod tests {
         pyo3::Python::initialize();
         pyo3::Python::attach(|py| {
             // Build a matcher for:
-            // RowPattern: non_empty, any, any (matches header rows)
-            // RowPattern: "ABC", any, any (matches ABC data row)
+            // CellGroupPattern: non_empty, any, any (matches header rows)
+            // CellGroupPattern: "ABC", any, any (matches ABC data row)
 
-            let mut pattern1 = RowPattern::new();
+            let mut pattern1 = CellGroupPattern::new();
             pattern1.cell_patterns.push(CellPattern {
                 rule: CellMatchRule::NonEmpty,
                 min: 1,
@@ -1324,7 +1324,7 @@ mod tests {
                 max: Some(1),
             });
 
-            let mut pattern2 = RowPattern::new();
+            let mut pattern2 = CellGroupPattern::new();
             pattern2.cell_patterns.push(CellPattern {
                 rule: CellMatchRule::Exact("ABC".to_string()),
                 min: 1,

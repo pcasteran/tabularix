@@ -5,7 +5,7 @@ This document outlines the best practices and strategies for using the Tabularix
 ## 🧭 Resilient Extraction Philosophy
 
 - **NEVER Use Fixed Coordinates:** Avoid hardcoding cell addresses (e.g., `C9:D10`, `B12:F15`) or fixed row/column offsets. Hardcoded layouts break when worksheets are updated, rows/columns are added/deleted, or styles change.
-- **Rely on Framework Matching Capabilities:** Use dynamic anchors (using `RangeMatcher`, `RowPattern`, and relative queries like `search_range_relative`) to locate the boundaries of tables and metadata.
+- **Rely on Framework Matching Capabilities:** Use dynamic anchors (using `RangeMatcher`, `CellGroupPattern`, and relative queries like `search_range_relative`) to locate the boundaries of tables and metadata.
 
 ## 🔍 Resilient Metadata Extraction Strategy
 

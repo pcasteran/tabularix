@@ -8,7 +8,7 @@ icon: lucide/target
 
 In many real-world spreadsheets, tables of interest are not nicely formatted or aligned. They might begin after arbitrary headers, contain multiline merged cells, or have variable numbers of columns and rows.
 
-To reliably locate and extract these tables, **Tabularix** provides the **Layex Pattern Matching Engine**. **Layex** stands for **Layout Expression**, a concept and syntax derived from regular expressions but tailored for layout-level structures of spreadsheets. With Layex, you define a structural pattern of cell sequences (called a `RowPattern`) and row sequences (called a `RangeMatcher`) programmatically.
+To reliably locate and extract these tables, **Tabularix** provides the **Layex Pattern Matching Engine**. **Layex** stands for **Layout Expression**, a concept and syntax derived from regular expressions but tailored for layout-level structures of spreadsheets. With Layex, you define a structural pattern of cell sequences (called a `CellGroupPattern`) and row sequences (called a `RangeMatcher`) programmatically.
 
 ---
 
@@ -16,14 +16,14 @@ To reliably locate and extract these tables, **Tabularix** provides the **Layex 
 
 The layout matcher uses two primary builders:
 
-1. **`RowPattern`**: Represents the expected horizontal sequence of cells in a single row. It is constructed using cell-matching rules (`value`, `regex`, `empty`, `non_empty`, `any`) and cell-level cardinalities (how many columns match this rule).
-2. **`RangeMatcher`**: Represents the expected vertical sequence of rows. It compiles one or more `RowPattern`s together, along with row-level cardinalities (how many times a row or block of rows repeats).
+1. **`CellGroupPattern`**: Represents the expected horizontal sequence of cells in a single row or nested cell group. It is constructed using cell-matching rules (`value`, `regex`, `empty`, `non_empty`, `any`) and cell-level cardinalities (how many columns match this rule).
+2. **`RangeMatcher`**: Represents the expected vertical sequence of rows. It compiles one or more `CellGroupPattern`s together, along with row-level cardinalities (how many times a row or block of rows repeats).
 
 ---
 
 ## 🛠️ Top-Level Helper Functions
 
-Tabularix exports top-level helper functions to cleanly start a new `RowPattern` in Python:
+Tabularix exports top-level helper functions to cleanly start a new `CellGroupPattern` in Python:
 
 - `value(val)`: Matches cells with the exact string value `val`.
 - `regex(pattern)`: Matches cells against a regular expression pattern (compiled or plain string).
@@ -35,7 +35,7 @@ Tabularix exports top-level helper functions to cleanly start a new `RowPattern`
 
 ## 🔄 Cardinalities (Repetitions)
 
-Both `RowPattern` (cells) and `RangeMatcher` (rows) support the same cardinality methods to control matches:
+Both `CellGroupPattern` (cells) and `RangeMatcher` (rows) support the same cardinality methods to control matches:
 
 - `.one_or_more()`: Matches 1 or more times (regex `+`).
 - `.zero_or_more()`: Matches 0 or more times (regex `*`).
@@ -172,7 +172,7 @@ matched_range = sheet.search_range(
 
 Unlike regular expressions that match a full row, Tabularix's matching engine matches a row **for the table to extract** rather than the entire worksheet row. This means `search_range` performs **partial column matching** to find a table anywhere horizontally within the worksheet.
 
-For example, given a worksheet with 5 columns (A to E), if you define a 3-column `RowPattern` matching `"Header #1"`, `"Header #2"`, and `"Header #3"`, the layout engine will check only the valid 3-column sub-spans:
+For example, given a worksheet with 5 columns (A to E), if you define a 3-column `CellGroupPattern` matching `"Header #1"`, `"Header #2"`, and `"Header #3"`, the layout engine will check only the valid 3-column sub-spans:
 
 - `A:C` (columns 0 to 2)
 - `B:D` (columns 1 to 3)
