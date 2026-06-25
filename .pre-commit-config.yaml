@@ -124,7 +124,7 @@ repos:
 
   - repo: https://github.com/MarketSquare/robotframework-robocop
     # Robocop version.
-    rev: v8.3.1
+    rev: v8.3.2
     hooks:
       # Run the linter.
       - id: robocop

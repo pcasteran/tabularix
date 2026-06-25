@@ -381,9 +381,12 @@ class CellGroupPattern:
         """
         ...
 
-    def one_or_more(self) -> CellGroupPattern:
+    def one_or_more(self, greedy: bool = True) -> CellGroupPattern:
         """Sets the cardinality of the last cell pattern to one-or-more (+).
 
+        Args:
+            greedy: Whether matching should be greedy (default True).
+
         Returns:
             This CellGroupPattern instance for chaining.
 
@@ -392,9 +395,12 @@ class CellGroupPattern:
         """
         ...
 
-    def zero_or_more(self) -> CellGroupPattern:
+    def zero_or_more(self, greedy: bool = True) -> CellGroupPattern:
         """Sets the cardinality of the last cell pattern to zero-or-more (*).
 
+        Args:
+            greedy: Whether matching should be greedy (default True).
+
         Returns:
             This CellGroupPattern instance for chaining.
 
@@ -403,9 +409,12 @@ class CellGroupPattern:
         """
         ...
 
-    def optional(self) -> CellGroupPattern:
+    def optional(self, greedy: bool = True) -> CellGroupPattern:
         """Sets the cardinality of the last cell pattern to optional (?).
 
+        Args:
+            greedy: Whether matching should be greedy (default True).
+
         Returns:
             This CellGroupPattern instance for chaining.
 
@@ -414,12 +423,13 @@ class CellGroupPattern:
         """
         ...
 
-    def repeat(self, min: int, max: int | None = None) -> CellGroupPattern:
+    def repeat(self, min: int, max: int | None = None, greedy: bool = True) -> CellGroupPattern:
         """Sets the cardinality of the last cell pattern to repeat a custom number of times or range.
 
         Args:
             min: Minimum number of repetitions.
             max: Optional maximum number of repetitions. If None, matches min or more.
+            greedy: Whether matching should be greedy (default True).
 
         Returns:
             This CellGroupPattern instance for chaining.
@@ -489,9 +499,12 @@ class RangeMatcher:
         """
         ...
 
-    def one_or_more(self) -> RangeMatcher:
+    def one_or_more(self, greedy: bool = True) -> RangeMatcher:
         """Sets the repetition cardinality of the last row pattern to one-or-more (+).
 
+        Args:
+            greedy: Whether matching should be greedy (default True).
+
         Returns:
             This RangeMatcher instance for chaining.
 
@@ -500,9 +513,12 @@ class RangeMatcher:
         """
         ...
 
-    def zero_or_more(self) -> RangeMatcher:
+    def zero_or_more(self, greedy: bool = True) -> RangeMatcher:
         """Sets the repetition cardinality of the last row pattern to zero-or-more (*).
 
+        Args:
+            greedy: Whether matching should be greedy (default True).
+
         Returns:
             This RangeMatcher instance for chaining.
 
@@ -511,9 +527,12 @@ class RangeMatcher:
         """
         ...
 
-    def optional(self) -> RangeMatcher:
+    def optional(self, greedy: bool = True) -> RangeMatcher:
         """Sets the repetition cardinality of the last row pattern to optional (?).
 
+        Args:
+            greedy: Whether matching should be greedy (default True).
+
         Returns:
             This RangeMatcher instance for chaining.
 
@@ -522,12 +541,13 @@ class RangeMatcher:
         """
         ...
 
-    def repeat(self, min: int, max: int | None = None) -> RangeMatcher:
+    def repeat(self, min: int, max: int | None = None, greedy: bool = True) -> RangeMatcher:
         """Sets the repetition cardinality of the last row pattern to repeat a custom number of times or range.
 
         Args:
             min: Minimum number of repetitions.
             max: Optional maximum number of repetitions. If None, matches min or more.
+            greedy: Whether matching should be greedy (default True).
 
         Returns:
             This RangeMatcher instance for chaining.

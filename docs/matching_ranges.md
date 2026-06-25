@@ -46,6 +46,28 @@ Both `CellGroupPattern` (cells) and `RangeMatcher` (rows) support the same cardi
 !!! important "Cardinality Exclusivity"
     You can only configure a cardinality method once per cell or row pattern. Chaining multiple cardinalities (e.g. `.optional().one_or_more()`) will raise a `ValueError`.
 
+### 🪵 Greedy vs. Lazy Matching
+
+By default, all repetition cardinalities in Tabularix (such as `.one_or_more()`, `.zero_or_more()`, `.optional()`, and `.repeat()`) match **greedily**.
+
+When scanning a row, the matching engine will always attempt to match the **largest possible horizontal span of cells (columns)** that satisfies the layout pattern. If a larger span fails to satisfy the entire vertical sequence of row patterns in the `RangeMatcher`, the engine backtracks and automatically tries progressively smaller widths until a full match is found.
+
+#### Configuring Lazy Matching
+
+If you want the matching engine to match the **smallest possible span** (lazy matching), you can pass `greedy=False` to any of the repetition methods on both `CellGroupPattern` and `RangeMatcher`:
+
+- `.one_or_more(greedy=False)`
+- `.zero_or_more(greedy=False)`
+- `.optional(greedy=False)`
+- `.repeat(min, max=None, greedy=False)`
+
+This allows configuration of greediness for both directions:
+
+- **Horizontal Matching (Columns)**: Configured on `CellGroupPattern` builders. Controls how many columns are matched by repeating cell patterns.
+- **Vertical Matching (Rows)**: Configured on `RangeMatcher` builders. Controls how many repeating rows are matched.
+
+When lazy matching is enabled, the engine starts by evaluating the minimum required columns/rows and only expands to match more elements if the remainder of the matcher rules fail. This is useful when you want to avoid matching too wide of a range, such as when parsing sub-table headers or optional separators.
+
 ---
 
 ## 📖 Usage Examples

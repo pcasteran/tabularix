@@ -142,3 +142,91 @@ Verify Partial Column Range Search
     ${range}=    Evaluate    $sheet.search_range($matcher)
     Should Not Be Equal    ${range}    ${None}
     Verify Range Coordinates    ${range}    0    0    1    2
+
+Verify Greedy Range Search Matching
+    [Documentation]    Verify search_range matches the largest matching column span (greedy).
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
+    ${sub}=    Evaluate    tabularix.CellGroupPattern().value("Expected").value("Actual")    modules=tabularix
+    ${hdr1}=    Evaluate
+    ...    tabularix.CellGroupPattern().value("Product").group(tabularix.regex(r"\\d{4}").empty()).zero_or_more()
+    ...    modules=tabularix
+    ${hdr2}=    Evaluate    tabularix.CellGroupPattern().empty().group($sub).zero_or_more()    modules=tabularix
+    ${matcher}=    Evaluate    tabularix.RangeMatcher().row($hdr1).row($hdr2)    modules=tabularix
+    ${range}=    Evaluate    $sheet.search_range($matcher)
+    Should Not Be Equal    ${range}    ${None}
+    Verify Range Coordinates    ${range}    12    13    1    5
+
+Verify Lazy Range Search Matching
+    [Documentation]    Verify search_range matches the smallest matching column span when lazy.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
+    ${sub}=    Evaluate    tabularix.CellGroupPattern().value("Expected").value("Actual")    modules=tabularix
+    ${sub_hdr}=    Evaluate    tabularix.regex(r"\\d{4}").empty()    modules=tabularix
+    ${hdr1}=    Evaluate
+    ...    tabularix.CellGroupPattern().value("Product").group($sub_hdr).zero_or_more(greedy=False)
+    ...    modules=tabularix
+    ${hdr2}=    Evaluate
+    ...    tabularix.CellGroupPattern().empty().group($sub).zero_or_more(greedy=False)
+    ...    modules=tabularix
+    ${matcher}=    Evaluate    tabularix.RangeMatcher().row($hdr1).row($hdr2)    modules=tabularix
+    ${range}=    Evaluate    $sheet.search_range($matcher)
+    Should Not Be Equal    ${range}    ${None}
+    Verify Range Coordinates    ${range}    12    13    1    1
+
+Verify Greedy Row Repetition Search Matching
+    [Documentation]    Verify vertical greedy row matching matches as many rows as possible.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
+    ${row_pat}=    Evaluate    tabularix.CellGroupPattern().regex(r"^Product .*$")    modules=tabularix
+    ${matcher}=    Evaluate    tabularix.RangeMatcher().row($row_pat).one_or_more(greedy=True)    modules=tabularix
+    ${range}=    Evaluate    $sheet.search_range($matcher, start_row=14, end_row=16, start_col=1, end_col=1)
+    Should Not Be Equal    ${range}    ${None}
+    Verify Range Coordinates    ${range}    14    16    1    1
+
+Verify Lazy Row Repetition Search Matching
+    [Documentation]    Verify vertical lazy row matching matches as few rows as possible.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
+    ${row_pat}=    Evaluate    tabularix.CellGroupPattern().regex(r"^Product .*$")    modules=tabularix
+    ${matcher}=    Evaluate    tabularix.RangeMatcher().row($row_pat).one_or_more(greedy=False)    modules=tabularix
+    ${range}=    Evaluate    $sheet.search_range($matcher, start_row=14, end_row=16, start_col=1, end_col=1)
+    Should Not Be Equal    ${range}    ${None}
+    Verify Range Coordinates    ${range}    14    14    1    1
+
+Verify Greedy Row Repetition Backtracking Search Matching
+    [Documentation]    Verify row repetition backtracks correctly when followed by a boundary row of the same type.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
+    ${row_pat}=    Evaluate    tabularix.CellGroupPattern().regex(r"^Product .*$")    modules=tabularix
+    ${matcher}=    Evaluate
+    ...    tabularix.RangeMatcher().row($row_pat).one_or_more(greedy=True).row($row_pat)
+    ...    modules=tabularix
+    ${range}=    Evaluate    $sheet.search_range($matcher, start_row=14, end_row=16, start_col=1, end_col=1)
+    Should Not Be Equal    ${range}    ${None}
+    Verify Range Coordinates    ${range}    14    16    1    1
+
+Verify Lazy Row Repetition Backtracking Search Matching (same type)
+    [Documentation]    Verify lazy row repetition backtracks correctly when followed by same type boundary.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
+    ${row_pat}=    Evaluate    tabularix.CellGroupPattern().regex(r"^Product .*$")    modules=tabularix
+    ${matcher}=    Evaluate
+    ...    tabularix.RangeMatcher().row($row_pat).one_or_more(greedy=False).row($row_pat)
+    ...    modules=tabularix
+    ${range}=    Evaluate    $sheet.search_range($matcher, start_row=14, end_row=16, start_col=1, end_col=1)
+    Should Not Be Equal    ${range}    ${None}
+    Verify Range Coordinates    ${range}    14    15    1    1
+
+Verify Lazy Row Repetition Backtracking Search Matching (different type)
+    [Documentation]    Verify lazy row repetition backtracks correctly when followed by different type boundary.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
+    ${row_pat}=    Evaluate    tabularix.CellGroupPattern().regex(r"^Product .*$")    modules=tabularix
+    ${total_pat}=    Evaluate    tabularix.CellGroupPattern().value("Total")    modules=tabularix
+    ${matcher}=    Evaluate
+    ...    tabularix.RangeMatcher().row($row_pat).one_or_more(greedy=False).row($total_pat)
+    ...    modules=tabularix
+    ${range}=    Evaluate    $sheet.search_range($matcher, start_row=14, end_row=17, start_col=1, end_col=1)
+    Should Not Be Equal    ${range}    ${None}
+    Verify Range Coordinates    ${range}    14    17    1    1

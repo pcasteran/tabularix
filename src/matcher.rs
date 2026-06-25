@@ -37,6 +37,7 @@ pub struct CellPattern {
     pub rule: CellMatchRule,
     pub min: usize,
     pub max: Option<usize>,
+    pub greedy: bool,
 }
 
 impl CellPattern {
@@ -62,6 +63,7 @@ impl CellPattern {
 pub struct CellGroupPattern {
     pub cell_patterns: Vec<CellPattern>,
     pub cardinality: String,
+    pub greedy: bool,
 }
 
 impl CellGroupPattern {
@@ -88,6 +90,7 @@ impl CellGroupPattern {
         CellGroupPattern {
             cell_patterns: Vec::new(),
             cardinality: "1".to_string(),
+            greedy: true,
         }
     }
 
@@ -96,6 +99,7 @@ impl CellGroupPattern {
             rule: CellMatchRule::Exact(val),
             min: 1,
             max: Some(1),
+            greedy: true,
         });
         slf
     }
@@ -115,6 +119,7 @@ impl CellGroupPattern {
             rule: CellMatchRule::Regex(compiled),
             min: 1,
             max: Some(1),
+            greedy: true,
         });
         Ok(slf)
     }
@@ -124,6 +129,7 @@ impl CellGroupPattern {
             rule: CellMatchRule::Empty,
             min: 1,
             max: Some(1),
+            greedy: true,
         });
         slf
     }
@@ -133,6 +139,7 @@ impl CellGroupPattern {
             rule: CellMatchRule::NonEmpty,
             min: 1,
             max: Some(1),
+            greedy: true,
         });
         slf
     }
@@ -142,6 +149,7 @@ impl CellGroupPattern {
             rule: CellMatchRule::Any,
             min: 1,
             max: Some(1),
+            greedy: true,
         });
         slf
     }
@@ -151,42 +159,50 @@ impl CellGroupPattern {
             rule: CellMatchRule::Group(pattern),
             min: 1,
             max: Some(1),
+            greedy: true,
         });
         slf
     }
 
-    pub fn one_or_more(mut slf: PyRefMut<'_, Self>) -> PyResult<PyRefMut<'_, Self>> {
+    #[pyo3(signature = (greedy = true))]
+    pub fn one_or_more(mut slf: PyRefMut<'_, Self>, greedy: bool) -> PyResult<PyRefMut<'_, Self>> {
         enforce_cell_exclusivity(&mut slf.cell_patterns)?;
         if let Some(last) = slf.cell_patterns.last_mut() {
             last.min = 1;
             last.max = None;
+            last.greedy = greedy;
         }
         Ok(slf)
     }
 
-    pub fn zero_or_more(mut slf: PyRefMut<'_, Self>) -> PyResult<PyRefMut<'_, Self>> {
+    #[pyo3(signature = (greedy = true))]
+    pub fn zero_or_more(mut slf: PyRefMut<'_, Self>, greedy: bool) -> PyResult<PyRefMut<'_, Self>> {
         enforce_cell_exclusivity(&mut slf.cell_patterns)?;
         if let Some(last) = slf.cell_patterns.last_mut() {
             last.min = 0;
             last.max = None;
+            last.greedy = greedy;
         }
         Ok(slf)
     }
 
-    pub fn optional(mut slf: PyRefMut<'_, Self>) -> PyResult<PyRefMut<'_, Self>> {
+    #[pyo3(signature = (greedy = true))]
+    pub fn optional(mut slf: PyRefMut<'_, Self>, greedy: bool) -> PyResult<PyRefMut<'_, Self>> {
         enforce_cell_exclusivity(&mut slf.cell_patterns)?;
         if let Some(last) = slf.cell_patterns.last_mut() {
             last.min = 0;
             last.max = Some(1);
+            last.greedy = greedy;
         }
         Ok(slf)
     }
 
-    #[pyo3(signature = (min, max = Some(-1)))]
+    #[pyo3(signature = (min, max = Some(-1), greedy = true))]
     pub fn repeat(
         mut slf: PyRefMut<'_, Self>,
         min: usize,
         max: Option<isize>,
+        greedy: bool,
     ) -> PyResult<PyRefMut<'_, Self>> {
         enforce_cell_exclusivity(&mut slf.cell_patterns)?;
         let parsed_max = match max {
@@ -197,6 +213,7 @@ impl CellGroupPattern {
         if let Some(last) = slf.cell_patterns.last_mut() {
             last.min = min;
             last.max = parsed_max;
+            last.greedy = greedy;
         }
         Ok(slf)
     }
@@ -364,35 +381,42 @@ impl RangeMatcher {
         slf
     }
 
-    pub fn one_or_more(mut slf: PyRefMut<'_, Self>) -> PyResult<PyRefMut<'_, Self>> {
+    #[pyo3(signature = (greedy = true))]
+    pub fn one_or_more(mut slf: PyRefMut<'_, Self>, greedy: bool) -> PyResult<PyRefMut<'_, Self>> {
         enforce_row_exclusivity(&mut slf.row_patterns)?;
         if let Some(last) = slf.row_patterns.last_mut() {
             last.cardinality = "+".to_string();
+            last.greedy = greedy;
         }
         Ok(slf)
     }
 
-    pub fn zero_or_more(mut slf: PyRefMut<'_, Self>) -> PyResult<PyRefMut<'_, Self>> {
+    #[pyo3(signature = (greedy = true))]
+    pub fn zero_or_more(mut slf: PyRefMut<'_, Self>, greedy: bool) -> PyResult<PyRefMut<'_, Self>> {
         enforce_row_exclusivity(&mut slf.row_patterns)?;
         if let Some(last) = slf.row_patterns.last_mut() {
             last.cardinality = "*".to_string();
+            last.greedy = greedy;
         }
         Ok(slf)
     }
 
-    pub fn optional(mut slf: PyRefMut<'_, Self>) -> PyResult<PyRefMut<'_, Self>> {
+    #[pyo3(signature = (greedy = true))]
+    pub fn optional(mut slf: PyRefMut<'_, Self>, greedy: bool) -> PyResult<PyRefMut<'_, Self>> {
         enforce_row_exclusivity(&mut slf.row_patterns)?;
         if let Some(last) = slf.row_patterns.last_mut() {
             last.cardinality = "?".to_string();
+            last.greedy = greedy;
         }
         Ok(slf)
     }
 
-    #[pyo3(signature = (min, max = Some(-1)))]
+    #[pyo3(signature = (min, max = Some(-1), greedy = true))]
     pub fn repeat(
         mut slf: PyRefMut<'_, Self>,
         min: usize,
         max: Option<isize>,
+        greedy: bool,
     ) -> PyResult<PyRefMut<'_, Self>> {
         enforce_row_exclusivity(&mut slf.row_patterns)?;
         let card = match max {
@@ -402,6 +426,7 @@ impl RangeMatcher {
         };
         if let Some(last) = slf.row_patterns.last_mut() {
             last.cardinality = card;
+            last.greedy = greedy;
         }
         Ok(slf)
     }
@@ -516,31 +541,61 @@ fn match_group_reps(
     let min_reps = pattern.min;
     let max_reps = pattern.max;
 
-    if current_reps >= min_reps
-        && match_cells(ctx, outer_patterns, outer_pattern_idx + 1, cell_idx)?
-    {
-        return Ok(true);
-    }
+    if pattern.greedy {
+        let can_match_more = match max_reps {
+            Some(max) => current_reps < max,
+            None => true,
+        };
 
-    if let Some(max) = max_reps {
-        if current_reps >= max {
-            return Ok(false);
+        if can_match_more {
+            let mut valid_ends = Vec::new();
+            find_group_match_ends(ctx, sub_patterns, cell_idx, 0, &mut valid_ends)?;
+            for next_cell_idx in valid_ends {
+                if match_group_reps(
+                    ctx,
+                    sub_patterns,
+                    outer_patterns,
+                    outer_pattern_idx,
+                    next_cell_idx,
+                    current_reps + 1,
+                )? {
+                    return Ok(true);
+                }
+            }
         }
-    }
 
-    let mut valid_ends = Vec::new();
-    find_group_match_ends(ctx, sub_patterns, cell_idx, 0, &mut valid_ends)?;
-
-    for next_cell_idx in valid_ends {
-        if match_group_reps(
-            ctx,
-            sub_patterns,
-            outer_patterns,
-            outer_pattern_idx,
-            next_cell_idx,
-            current_reps + 1,
-        )? {
+        if current_reps >= min_reps
+            && match_cells(ctx, outer_patterns, outer_pattern_idx + 1, cell_idx)?
+        {
             return Ok(true);
+        }
+    } else {
+        if current_reps >= min_reps
+            && match_cells(ctx, outer_patterns, outer_pattern_idx + 1, cell_idx)?
+        {
+            return Ok(true);
+        }
+
+        let can_match_more = match max_reps {
+            Some(max) => current_reps < max,
+            None => true,
+        };
+
+        if can_match_more {
+            let mut valid_ends = Vec::new();
+            find_group_match_ends(ctx, sub_patterns, cell_idx, 0, &mut valid_ends)?;
+            for next_cell_idx in valid_ends {
+                if match_group_reps(
+                    ctx,
+                    sub_patterns,
+                    outer_patterns,
+                    outer_pattern_idx,
+                    next_cell_idx,
+                    current_reps + 1,
+                )? {
+                    return Ok(true);
+                }
+            }
         }
     }
 
@@ -601,14 +656,26 @@ fn find_group_match_ends(
             return Ok(());
         }
 
-        for k in (pattern.min..=matchable).rev() {
-            find_group_match_ends(
-                ctx,
-                patterns,
-                current_cell_idx + k,
-                pattern_idx + 1,
-                results,
-            )?;
+        if pattern.greedy {
+            for k in (pattern.min..=matchable).rev() {
+                find_group_match_ends(
+                    ctx,
+                    patterns,
+                    current_cell_idx + k,
+                    pattern_idx + 1,
+                    results,
+                )?;
+            }
+        } else {
+            for k in pattern.min..=matchable {
+                find_group_match_ends(
+                    ctx,
+                    patterns,
+                    current_cell_idx + k,
+                    pattern_idx + 1,
+                    results,
+                )?;
+            }
         }
     }
 
@@ -623,28 +690,54 @@ fn find_group_reps_ends(
     current_reps: usize,
     results: &mut Vec<usize>,
 ) -> PyResult<()> {
-    if current_reps >= pattern.min {
-        results.push(current_cell_idx);
-    }
+    if pattern.greedy {
+        let can_match_more = match pattern.max {
+            Some(max) => current_reps < max,
+            None => true,
+        };
 
-    if let Some(max) = pattern.max {
-        if current_reps >= max {
-            return Ok(());
+        if can_match_more {
+            let mut valid_ends = Vec::new();
+            find_group_match_ends(ctx, sub_patterns, current_cell_idx, 0, &mut valid_ends)?;
+            for next_cell_idx in valid_ends {
+                find_group_reps_ends(
+                    ctx,
+                    sub_patterns,
+                    pattern,
+                    next_cell_idx,
+                    current_reps + 1,
+                    results,
+                )?;
+            }
         }
-    }
 
-    let mut valid_ends = Vec::new();
-    find_group_match_ends(ctx, sub_patterns, current_cell_idx, 0, &mut valid_ends)?;
+        if current_reps >= pattern.min {
+            results.push(current_cell_idx);
+        }
+    } else {
+        if current_reps >= pattern.min {
+            results.push(current_cell_idx);
+        }
 
-    for next_cell_idx in valid_ends {
-        find_group_reps_ends(
-            ctx,
-            sub_patterns,
-            pattern,
-            next_cell_idx,
-            current_reps + 1,
-            results,
-        )?;
+        let can_match_more = match pattern.max {
+            Some(max) => current_reps < max,
+            None => true,
+        };
+
+        if can_match_more {
+            let mut valid_ends = Vec::new();
+            find_group_match_ends(ctx, sub_patterns, current_cell_idx, 0, &mut valid_ends)?;
+            for next_cell_idx in valid_ends {
+                find_group_reps_ends(
+                    ctx,
+                    sub_patterns,
+                    pattern,
+                    next_cell_idx,
+                    current_reps + 1,
+                    results,
+                )?;
+            }
+        }
     }
 
     Ok(())
@@ -693,9 +786,17 @@ fn match_cells(
             return Ok(false);
         }
 
-        for k in (pattern.min..=matchable).rev() {
-            if match_cells(ctx, patterns, pattern_idx + 1, cell_idx + k)? {
-                return Ok(true);
+        if pattern.greedy {
+            for k in (pattern.min..=matchable).rev() {
+                if match_cells(ctx, patterns, pattern_idx + 1, cell_idx + k)? {
+                    return Ok(true);
+                }
+            }
+        } else {
+            for k in pattern.min..=matchable {
+                if match_cells(ctx, patterns, pattern_idx + 1, cell_idx + k)? {
+                    return Ok(true);
+                }
             }
         }
 
@@ -793,17 +894,33 @@ pub fn match_range(
         return Ok(None);
     }
 
-    for k in (min_rows..=matchable).rev() {
-        if let Some(end_idx) = match_range(
-            py,
-            patterns,
-            sheet_data,
-            col_start,
-            col_end,
-            pattern_idx + 1,
-            sheet_row_idx + k,
-        )? {
-            return Ok(Some(end_idx));
+    if pattern.greedy {
+        for k in (min_rows..=matchable).rev() {
+            if let Some(end_idx) = match_range(
+                py,
+                patterns,
+                sheet_data,
+                col_start,
+                col_end,
+                pattern_idx + 1,
+                sheet_row_idx + k,
+            )? {
+                return Ok(Some(end_idx));
+            }
+        }
+    } else {
+        for k in min_rows..=matchable {
+            if let Some(end_idx) = match_range(
+                py,
+                patterns,
+                sheet_data,
+                col_start,
+                col_end,
+                pattern_idx + 1,
+                sheet_row_idx + k,
+            )? {
+                return Ok(Some(end_idx));
+            }
         }
     }
 
@@ -834,7 +951,7 @@ mod tests {
                 let mut p = pattern.borrow_mut();
                 p = CellGroupPattern::value(p, "Date".to_string());
                 p = CellGroupPattern::non_empty(p);
-                p = CellGroupPattern::one_or_more(p).unwrap();
+                p = CellGroupPattern::one_or_more(p, true).unwrap();
                 let _ = CellGroupPattern::value(p, "Total".to_string());
             }
 
@@ -877,9 +994,9 @@ mod tests {
                 let re_pattern = re.call_method1("compile", ("^Q[1-4]$",)).unwrap();
 
                 p = CellGroupPattern::regex(p, py, &re_pattern).unwrap();
-                p = CellGroupPattern::repeat(p, 2, Some(2)).unwrap();
+                p = CellGroupPattern::repeat(p, 2, Some(2), true).unwrap();
                 p = CellGroupPattern::empty(p);
-                let _ = CellGroupPattern::zero_or_more(p).unwrap();
+                let _ = CellGroupPattern::zero_or_more(p, true).unwrap();
             }
 
             let pattern_ref = pattern.borrow();
@@ -913,10 +1030,10 @@ mod tests {
             let pattern = pyo3::Bound::new(py, CellGroupPattern::new()).unwrap();
             let mut p = pattern.borrow_mut();
             p = CellGroupPattern::empty(p);
-            p = CellGroupPattern::optional(p).unwrap();
+            p = CellGroupPattern::optional(p, true).unwrap();
 
             // Try to set cardinality again
-            let res = CellGroupPattern::one_or_more(p);
+            let res = CellGroupPattern::one_or_more(p, true);
             assert!(res.is_err());
             let err_msg = res.err().unwrap().to_string();
             assert!(err_msg.contains("Cannot set multiple cardinalities"));
@@ -985,9 +1102,9 @@ mod tests {
                 let mut p = pattern.borrow_mut();
                 p = CellGroupPattern::value(p, "Header".to_string());
                 p = CellGroupPattern::non_empty(p);
-                p = CellGroupPattern::one_or_more(p).unwrap();
+                p = CellGroupPattern::one_or_more(p, true).unwrap();
                 p = CellGroupPattern::any(p);
-                let _ = CellGroupPattern::optional(p).unwrap();
+                let _ = CellGroupPattern::optional(p, true).unwrap();
             }
             let pattern_ref = pattern.borrow();
             let (min, max) = pattern_ref.width_bounds();
@@ -1001,7 +1118,7 @@ mod tests {
                 let mut p = pattern.borrow_mut();
                 p = CellGroupPattern::value(p, "Header".to_string());
                 let p = CellGroupPattern::non_empty(p);
-                let _ = CellGroupPattern::repeat(p, 2, Some(4)).unwrap();
+                let _ = CellGroupPattern::repeat(p, 2, Some(4), true).unwrap();
             }
             let pattern_ref = pattern.borrow();
             let (min, max) = pattern_ref.width_bounds();
@@ -1027,7 +1144,7 @@ mod tests {
                 let mut p = pattern.borrow_mut();
                 p = CellGroupPattern::value(p, "Product".to_string());
                 p = CellGroupPattern::group(p, sub_group.borrow().clone());
-                let _ = CellGroupPattern::one_or_more(p).unwrap();
+                let _ = CellGroupPattern::one_or_more(p, true).unwrap();
             }
 
             let pattern_ref = pattern.borrow();

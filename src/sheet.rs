@@ -630,6 +630,11 @@ impl Sheet {
             (1, None)
         };
 
+        let is_first_row_greedy = matcher
+            .row_patterns
+            .first()
+            .is_none_or(|p| p.greedy && p.cell_patterns.iter().all(|cp| cp.greedy));
+
         for i in 0..sliced_data.len() {
             for c_start in resolved_start_col..=resolved_end_col {
                 let min_end = match c_start.checked_add(min_w) {
@@ -647,17 +652,46 @@ impl Sheet {
                     None => resolved_end_col,
                 };
 
-                for c_end in min_end..=max_end {
-                    if let Some(end_idx) =
-                        match_range(py, &matcher.row_patterns, sliced_data, c_start, c_end, 0, i)?
-                    {
-                        if end_idx > i {
-                            return Ok(Some(Range {
-                                start_row: resolved_start_row + i,
-                                end_row: resolved_start_row + end_idx - 1,
-                                start_col: c_start,
-                                end_col: c_end,
-                            }));
+                if is_first_row_greedy {
+                    for c_end in (min_end..=max_end).rev() {
+                        if let Some(end_idx) = match_range(
+                            py,
+                            &matcher.row_patterns,
+                            sliced_data,
+                            c_start,
+                            c_end,
+                            0,
+                            i,
+                        )? {
+                            if end_idx > i {
+                                return Ok(Some(Range {
+                                    start_row: resolved_start_row + i,
+                                    end_row: resolved_start_row + end_idx - 1,
+                                    start_col: c_start,
+                                    end_col: c_end,
+                                }));
+                            }
+                        }
+                    }
+                } else {
+                    for c_end in min_end..=max_end {
+                        if let Some(end_idx) = match_range(
+                            py,
+                            &matcher.row_patterns,
+                            sliced_data,
+                            c_start,
+                            c_end,
+                            0,
+                            i,
+                        )? {
+                            if end_idx > i {
+                                return Ok(Some(Range {
+                                    start_row: resolved_start_row + i,
+                                    end_row: resolved_start_row + end_idx - 1,
+                                    start_col: c_start,
+                                    end_col: c_end,
+                                }));
+                            }
                         }
                     }
                 }
@@ -1312,16 +1346,19 @@ mod tests {
                 rule: CellMatchRule::NonEmpty,
                 min: 1,
                 max: Some(1),
+                greedy: true,
             });
             pattern1.cell_patterns.push(CellPattern {
                 rule: CellMatchRule::Any,
                 min: 1,
                 max: Some(1),
+                greedy: true,
             });
             pattern1.cell_patterns.push(CellPattern {
                 rule: CellMatchRule::Any,
                 min: 1,
                 max: Some(1),
+                greedy: true,
             });
 
             let mut pattern2 = CellGroupPattern::new();
@@ -1329,16 +1366,19 @@ mod tests {
                 rule: CellMatchRule::Exact("ABC".to_string()),
                 min: 1,
                 max: Some(1),
+                greedy: true,
             });
             pattern2.cell_patterns.push(CellPattern {
                 rule: CellMatchRule::Any,
                 min: 1,
                 max: Some(1),
+                greedy: true,
             });
             pattern2.cell_patterns.push(CellPattern {
                 rule: CellMatchRule::Any,
                 min: 1,
                 max: Some(1),
+                greedy: true,
             });
 
             let mut matcher = RangeMatcher::new();
