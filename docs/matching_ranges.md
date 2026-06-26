@@ -8,7 +8,7 @@ icon: lucide/target
 
 In many real-world spreadsheets, tables of interest are not nicely formatted or aligned. They might begin after arbitrary headers, contain multiline merged cells, or have variable numbers of columns and rows.
 
-To reliably locate and extract these tables, **Tabularix** provides the **Layex Pattern Matching Engine**. **Layex** stands for **Layout Expression**, a concept and syntax derived from regular expressions but tailored for layout-level structures of spreadsheets. With Layex, you define a structural pattern of cell sequences (called a `RowPattern`) and row sequences (called a `RangeMatcher`) programmatically.
+To reliably locate and extract these tables, **Tabularix** provides the **Layex Pattern Matching Engine**. **Layex** stands for **Layout Expression**, a concept and syntax derived from regular expressions but tailored for layout-level structures of spreadsheets. With Layex, you define a structural pattern of cell sequences (called a `CellGroupPattern`) and row sequences (called a `RangeMatcher`) programmatically.
 
 ---
 
@@ -16,14 +16,14 @@ To reliably locate and extract these tables, **Tabularix** provides the **Layex 
 
 The layout matcher uses two primary builders:
 
-1. **`RowPattern`**: Represents the expected horizontal sequence of cells in a single row. It is constructed using cell-matching rules (`value`, `regex`, `empty`, `non_empty`, `any`) and cell-level cardinalities (how many columns match this rule).
-2. **`RangeMatcher`**: Represents the expected vertical sequence of rows. It compiles one or more `RowPattern`s together, along with row-level cardinalities (how many times a row or block of rows repeats).
+1. **`CellGroupPattern`**: Represents the expected horizontal sequence of cells in a single row or nested cell group. It is constructed using cell-matching rules (`value`, `regex`, `empty`, `non_empty`, `any`) and cell-level cardinalities (how many columns match this rule).
+2. **`RangeMatcher`**: Represents the expected vertical sequence of rows. It compiles one or more `CellGroupPattern`s together, along with row-level cardinalities (how many times a row or block of rows repeats).
 
 ---
 
 ## 🛠️ Top-Level Helper Functions
 
-Tabularix exports top-level helper functions to cleanly start a new `RowPattern` in Python:
+Tabularix exports top-level helper functions to cleanly start a new `CellGroupPattern` in Python:
 
 - `value(val)`: Matches cells with the exact string value `val`.
 - `regex(pattern)`: Matches cells against a regular expression pattern (compiled or plain string).
@@ -35,7 +35,7 @@ Tabularix exports top-level helper functions to cleanly start a new `RowPattern`
 
 ## 🔄 Cardinalities (Repetitions)
 
-Both `RowPattern` (cells) and `RangeMatcher` (rows) support the same cardinality methods to control matches:
+Both `CellGroupPattern` (cells) and `RangeMatcher` (rows) support the same cardinality methods to control matches:
 
 - `.one_or_more()`: Matches 1 or more times (regex `+`).
 - `.zero_or_more()`: Matches 0 or more times (regex `*`).
@@ -45,6 +45,28 @@ Both `RowPattern` (cells) and `RangeMatcher` (rows) support the same cardinality
 <!-- prettier-ignore -->
 !!! important "Cardinality Exclusivity"
     You can only configure a cardinality method once per cell or row pattern. Chaining multiple cardinalities (e.g. `.optional().one_or_more()`) will raise a `ValueError`.
+
+### 🪵 Greedy vs. Lazy Matching
+
+By default, all repetition cardinalities in Tabularix (such as `.one_or_more()`, `.zero_or_more()`, `.optional()`, and `.repeat()`) match **greedily**.
+
+When scanning a row, the matching engine will always attempt to match the **largest possible horizontal span of cells (columns)** that satisfies the layout pattern. If a larger span fails to satisfy the entire vertical sequence of row patterns in the `RangeMatcher`, the engine backtracks and automatically tries progressively smaller widths until a full match is found.
+
+#### Configuring Lazy Matching
+
+If you want the matching engine to match the **smallest possible span** (lazy matching), you can pass `greedy=False` to any of the repetition methods on both `CellGroupPattern` and `RangeMatcher`:
+
+- `.one_or_more(greedy=False)`
+- `.zero_or_more(greedy=False)`
+- `.optional(greedy=False)`
+- `.repeat(min, max=None, greedy=False)`
+
+This allows configuration of greediness for both directions:
+
+- **Horizontal Matching (Columns)**: Configured on `CellGroupPattern` builders. Controls how many columns are matched by repeating cell patterns.
+- **Vertical Matching (Rows)**: Configured on `RangeMatcher` builders. Controls how many repeating rows are matched.
+
+When lazy matching is enabled, the engine starts by evaluating the minimum required columns/rows and only expands to match more elements if the remainder of the matcher rules fail. This is useful when you want to avoid matching too wide of a range, such as when parsing sub-table headers or optional separators.
 
 ---
 
@@ -165,6 +187,20 @@ matched_range = sheet.search_range(
 <!-- prettier-ignore -->
 !!! note "Bounds Checking"
     If any indices are out of bounds, an `IndexError` is raised. If `start_row > end_row` or `start_col > end_col`, a `ValueError` is raised.
+
+---
+
+### 🧩 Partial Column Matching
+
+Unlike regular expressions that match a full row, Tabularix's matching engine matches a row **for the table to extract** rather than the entire worksheet row. This means `search_range` performs **partial column matching** to find a table anywhere horizontally within the worksheet.
+
+For example, given a worksheet with 5 columns (A to E), if you define a 3-column `CellGroupPattern` matching `"Header #1"`, `"Header #2"`, and `"Header #3"`, the layout engine will check only the valid 3-column sub-spans:
+
+- `A:C` (columns 0 to 2)
+- `B:D` (columns 1 to 3)
+- `C:E` (columns 2 to 4)
+
+If a match is found on one of these spans, the returned `Range` will enclose only those matched columns. This allows you to find and extract tables directly without needing to pad the patterns with leading/trailing wildcard or empty cell rules.
 
 ---
 

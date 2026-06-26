@@ -38,7 +38,7 @@ class Sheet:
             col: 0-based column index.
 
         Returns:
-            The cell's value (None, str, float, int, bool, or an error string).
+            The cell's value (None, str, float, int, bool, datetime.date, datetime.datetime, or an error string).
 
         Raises:
             IndexError: If the indices are out of bounds.
@@ -271,147 +271,168 @@ class Workbook:
         """
         ...
 
-def value(val: str) -> RowPattern:
+def value(val: str) -> CellGroupPattern:
     """Starts a row pattern with an exact cell value.
 
     Args:
         val: The exact string value to match.
 
     Returns:
-        A new RowPattern instance containing the cell rule.
+        A new CellGroupPattern instance containing the cell rule.
     """
     ...
 
-def regex(pattern: Union[str, Pattern[str]]) -> RowPattern:
+def regex(pattern: Union[str, Pattern[str]]) -> CellGroupPattern:
     """Starts a row pattern with a regex cell match.
 
     Args:
         pattern: A regex string or a compiled regex pattern.
 
     Returns:
-        A new RowPattern instance containing the cell rule.
+        A new CellGroupPattern instance containing the cell rule.
     """
     ...
 
-def empty() -> RowPattern:
+def empty() -> CellGroupPattern:
     """Starts a row pattern with an empty cell match.
 
     Returns:
-        A new RowPattern instance containing the cell rule.
+        A new CellGroupPattern instance containing the cell rule.
     """
     ...
 
-def non_empty() -> RowPattern:
+def non_empty() -> CellGroupPattern:
     """Starts a row pattern with a non-empty cell match.
 
     Returns:
-        A new RowPattern instance containing the cell rule.
+        A new CellGroupPattern instance containing the cell rule.
     """
     ...
 
-def any() -> RowPattern:
+def any() -> CellGroupPattern:
     """Starts a row pattern with a wildcard cell match.
 
     Returns:
-        A new RowPattern instance containing the cell rule.
+        A new CellGroupPattern instance containing the cell rule.
     """
     ...
 
-class RowPattern:
-    """Represents a matching pattern for a single row containing multiple cell patterns and a repetition cardinality."""
+class CellGroupPattern:
+    """Represents a matching pattern for a group/sequence of cells containing multiple cell patterns and a repetition cardinality."""
 
     def __init__(self) -> None:
-        """Initializes an empty row pattern."""
+        """Initializes an empty cell group pattern."""
         ...
 
-    def value(self, val: str) -> RowPattern:
-        """Appends an exact cell value match to the row pattern.
+    def value(self, val: str) -> CellGroupPattern:
+        """Appends an exact cell value match to the pattern.
 
         Args:
             val: The exact string value to match.
 
         Returns:
-            This RowPattern instance for chaining.
+            This CellGroupPattern instance for chaining.
         """
         ...
 
-    def regex(self, pattern: Union[str, Pattern[str]]) -> RowPattern:
-        """Appends a regex cell match to the row pattern.
+    def regex(self, pattern: Union[str, Pattern[str]]) -> CellGroupPattern:
+        """Appends a regex cell match to the pattern.
 
         Args:
             pattern: A regex string or a compiled regex pattern.
 
         Returns:
-            This RowPattern instance for chaining.
+            This CellGroupPattern instance for chaining.
         """
         ...
 
-    def empty(self) -> RowPattern:
-        """Appends an empty cell match to the row pattern.
+    def empty(self) -> CellGroupPattern:
+        """Appends an empty cell match to the pattern.
 
         Returns:
-            This RowPattern instance for chaining.
+            This CellGroupPattern instance for chaining.
         """
         ...
 
-    def non_empty(self) -> RowPattern:
-        """Appends a non-empty cell match to the row pattern.
+    def non_empty(self) -> CellGroupPattern:
+        """Appends a non-empty cell match to the pattern.
 
         Returns:
-            This RowPattern instance for chaining.
+            This CellGroupPattern instance for chaining.
         """
         ...
 
-    def any(self) -> RowPattern:
-        """Appends a wildcard cell match to the row pattern.
+    def any(self) -> CellGroupPattern:
+        """Appends a wildcard cell match to the pattern.
 
         Returns:
-            This RowPattern instance for chaining.
+            This CellGroupPattern instance for chaining.
         """
         ...
 
-    def one_or_more(self) -> RowPattern:
+    def group(self, pattern: CellGroupPattern) -> CellGroupPattern:
+        """Appends a nested cell group pattern.
+
+        Args:
+            pattern: The CellGroupPattern instance to group.
+
+        Returns:
+            This CellGroupPattern instance for chaining.
+        """
+        ...
+
+    def one_or_more(self, greedy: bool = True) -> CellGroupPattern:
         """Sets the cardinality of the last cell pattern to one-or-more (+).
 
+        Args:
+            greedy: Whether matching should be greedy (default True).
+
         Returns:
-            This RowPattern instance for chaining.
+            This CellGroupPattern instance for chaining.
 
         Raises:
             ValueError: If a cardinality has already been configured on the last cell pattern.
         """
         ...
 
-    def zero_or_more(self) -> RowPattern:
+    def zero_or_more(self, greedy: bool = True) -> CellGroupPattern:
         """Sets the cardinality of the last cell pattern to zero-or-more (*).
 
+        Args:
+            greedy: Whether matching should be greedy (default True).
+
         Returns:
-            This RowPattern instance for chaining.
+            This CellGroupPattern instance for chaining.
 
         Raises:
             ValueError: If a cardinality has already been configured on the last cell pattern.
         """
         ...
 
-    def optional(self) -> RowPattern:
+    def optional(self, greedy: bool = True) -> CellGroupPattern:
         """Sets the cardinality of the last cell pattern to optional (?).
 
+        Args:
+            greedy: Whether matching should be greedy (default True).
+
         Returns:
-            This RowPattern instance for chaining.
+            This CellGroupPattern instance for chaining.
 
         Raises:
             ValueError: If a cardinality has already been configured on the last cell pattern.
         """
         ...
 
-    def repeat(self, min: int, max: int | None = None) -> RowPattern:
+    def repeat(self, min: int, max: int | None = None, greedy: bool = True) -> CellGroupPattern:
         """Sets the cardinality of the last cell pattern to repeat a custom number of times or range.
 
         Args:
             min: Minimum number of repetitions.
             max: Optional maximum number of repetitions. If None, matches min or more.
+            greedy: Whether matching should be greedy (default True).
 
         Returns:
-            This RowPattern instance for chaining.
+            This CellGroupPattern instance for chaining.
 
         Raises:
             ValueError: If a cardinality has already been configured on the last cell pattern.
@@ -467,20 +488,23 @@ class RangeMatcher:
         """Initializes an empty range matcher."""
         ...
 
-    def row(self, pattern: RowPattern) -> RangeMatcher:
-        """Appends a row pattern to the matcher.
+    def row(self, pattern: CellGroupPattern) -> RangeMatcher:
+        """Appends a cell group pattern representing a row to the matcher.
 
         Args:
-            pattern: The RowPattern instance to append.
+            pattern: The CellGroupPattern instance to append.
 
         Returns:
             This RangeMatcher instance for chaining.
         """
         ...
 
-    def one_or_more(self) -> RangeMatcher:
+    def one_or_more(self, greedy: bool = True) -> RangeMatcher:
         """Sets the repetition cardinality of the last row pattern to one-or-more (+).
 
+        Args:
+            greedy: Whether matching should be greedy (default True).
+
         Returns:
             This RangeMatcher instance for chaining.
 
@@ -489,9 +513,12 @@ class RangeMatcher:
         """
         ...
 
-    def zero_or_more(self) -> RangeMatcher:
+    def zero_or_more(self, greedy: bool = True) -> RangeMatcher:
         """Sets the repetition cardinality of the last row pattern to zero-or-more (*).
 
+        Args:
+            greedy: Whether matching should be greedy (default True).
+
         Returns:
             This RangeMatcher instance for chaining.
 
@@ -500,9 +527,12 @@ class RangeMatcher:
         """
         ...
 
-    def optional(self) -> RangeMatcher:
+    def optional(self, greedy: bool = True) -> RangeMatcher:
         """Sets the repetition cardinality of the last row pattern to optional (?).
 
+        Args:
+            greedy: Whether matching should be greedy (default True).
+
         Returns:
             This RangeMatcher instance for chaining.
 
@@ -511,12 +541,13 @@ class RangeMatcher:
         """
         ...
 
-    def repeat(self, min: int, max: int | None = None) -> RangeMatcher:
+    def repeat(self, min: int, max: int | None = None, greedy: bool = True) -> RangeMatcher:
         """Sets the repetition cardinality of the last row pattern to repeat a custom number of times or range.
 
         Args:
             min: Minimum number of repetitions.
             max: Optional maximum number of repetitions. If None, matches min or more.
+            greedy: Whether matching should be greedy (default True).
 
         Returns:
             This RangeMatcher instance for chaining.

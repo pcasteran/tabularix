@@ -3,7 +3,8 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use arrow::array::{
-    ArrayRef, BooleanBuilder, Float64Builder, Int64Builder, StringBuilder, StructArray,
+    ArrayRef, BooleanBuilder, Date32Builder, Float64Builder, Int64Builder, StringBuilder,
+    StructArray, TimestampMicrosecondBuilder,
 };
 use arrow::datatypes::{DataType, Field, Fields, Schema, SchemaRef};
 use arrow::record_batch::RecordBatch;
@@ -44,6 +45,7 @@ impl Table {
         )
     }
 
+    #[pyo3(signature = (_requested_schema = None))]
     fn __arrow_c_stream__<'py>(
         &self,
         py: Python<'py>,
@@ -249,6 +251,8 @@ fn build_flat_array(
     let mut has_float = false;
     let mut has_int = false;
     let mut has_bool = false;
+    let mut has_date = false;
+    let mut has_datetime = false;
 
     for cell in &cells {
         match cell {
@@ -256,11 +260,16 @@ fn build_flat_array(
             CellValue::Float(_) => has_float = true,
             CellValue::Int(_) => has_int = true,
             CellValue::Bool(_) => has_bool = true,
+            CellValue::Date(_) => has_date = true,
+            CellValue::DateTime(_) => has_datetime = true,
             CellValue::Empty | CellValue::Error(_) => {}
         }
     }
 
-    let datatype = if has_string || (has_bool && (has_int || has_float)) {
+    let datatype = if has_string
+        || (has_bool && (has_int || has_float || has_date || has_datetime))
+        || ((has_date || has_datetime) && (has_int || has_float))
+    {
         DataType::Utf8
     } else if has_bool {
         DataType::Boolean
@@ -268,11 +277,21 @@ fn build_flat_array(
         DataType::Float64
     } else if has_int {
         DataType::Int64
+    } else if has_datetime {
+        DataType::Timestamp(arrow::datatypes::TimeUnit::Microsecond, None)
+    } else if has_date {
+        DataType::Date32
     } else {
         DataType::Utf8
     };
 
-    let array: ArrayRef = match datatype {
+    let array = build_array_for_type(&datatype, &cells);
+    (datatype, array)
+}
+
+#[allow(clippy::cast_precision_loss)]
+fn build_array_for_type(datatype: &DataType, cells: &[&CellValue]) -> ArrayRef {
+    match datatype {
         DataType::Int64 => {
             let mut builder = Int64Builder::new();
             for cell in cells {
@@ -304,6 +323,38 @@ fn build_flat_array(
             }
             Arc::new(builder.finish())
         }
+        DataType::Date32 => {
+            let mut builder = Date32Builder::new();
+            for cell in cells {
+                match cell {
+                    CellValue::Date(d) => {
+                        let days = arrow::datatypes::Date32Type::from_naive_date(*d);
+                        builder.append_value(days);
+                    }
+                    _ => builder.append_null(),
+                }
+            }
+            Arc::new(builder.finish())
+        }
+        DataType::Timestamp(arrow::datatypes::TimeUnit::Microsecond, None) => {
+            let mut builder = TimestampMicrosecondBuilder::new();
+            for cell in cells {
+                match cell {
+                    CellValue::DateTime(dt) => {
+                        builder.append_value(dt.and_utc().timestamp_micros());
+                    }
+                    CellValue::Date(d) => {
+                        if let Some(dt) = d.and_hms_opt(0, 0, 0) {
+                            builder.append_value(dt.and_utc().timestamp_micros());
+                        } else {
+                            builder.append_null();
+                        }
+                    }
+                    _ => builder.append_null(),
+                }
+            }
+            Arc::new(builder.finish())
+        }
         DataType::Utf8 => {
             let mut builder = StringBuilder::new();
             for cell in cells {
@@ -312,15 +363,17 @@ fn build_flat_array(
                     CellValue::Int(v) => builder.append_value(v.to_string()),
                     CellValue::Float(v) => builder.append_value(v.to_string()),
                     CellValue::Bool(v) => builder.append_value(if *v { "TRUE" } else { "FALSE" }),
+                    CellValue::Date(d) => builder.append_value(d.to_string()),
+                    CellValue::DateTime(dt) => {
+                        builder.append_value(dt.format("%Y-%m-%dT%H:%M:%S%.f").to_string());
+                    }
                     _ => builder.append_null(),
                 }
             }
             Arc::new(builder.finish())
         }
         _ => unreachable!(),
-    };
-
-    (datatype, array)
+    }
 }
 
 struct ExtractionContext<'a> {

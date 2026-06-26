@@ -10,6 +10,7 @@ Build **Tabularix**, a high-performance framework for identifying, extracting, a
 - Ergonomic Python API matching the example blueprint from `tabularix_core_design.md`.
 - Acceptance tests written in Robot Framework passing for defined MVP features.
 - CI/CD quality gates passing (compilation, strict linting, tests).
+- **Partial Column Matching**: The matching engine finds and isolates the table region by performing partial column matching within worksheet rows. It optimizes the search space by only checking column spans that match the width boundaries (min/max cell counts) of the first pattern.
 
 ## Tech Stack
 

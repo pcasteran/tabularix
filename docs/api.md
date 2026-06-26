@@ -187,7 +187,7 @@ This page describes the public API exposed by the Tabularix library.
 ---
 
 <!-- prettier-ignore -->
-::: tabularix.RowPattern
+::: tabularix.CellGroupPattern
     options:
       heading_level: 3
 

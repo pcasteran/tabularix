@@ -3,5 +3,6 @@
   "python.languageServer": "None",
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff"
-  }
+  },
+  "todo-tree.ripgrep.ripgrep": "/home/vscode/.local/share/mise/installs/ripgrep/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl/rg"
 }

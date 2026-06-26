@@ -50,3 +50,13 @@ Verify set_cell_value Type Validation
     ${sheet}=    Evaluate    $wb.active_sheet()
     Run Keyword And Expect Error    *TypeError:*    Evaluate    $sheet.set_cell_value(0, 0, 123)
     Run Keyword And Expect Error    *TypeError:*    Evaluate    $sheet.set_cell_value(0, 0, True)
+
+Verify get_cell_value Date
+    [Documentation]    Verify get_cell_value on a date cell returns a Python datetime.date object.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
+    ${val}=    Evaluate    $sheet.get_cell_value(8, 3)
+    ${is_date}=    Evaluate    type($val) is datetime.date    modules=datetime
+    Should Be True    ${is_date}
+    ${expected_str}=    Evaluate    str($val)
+    Should Be Equal As Strings    ${expected_str}    2026-06-23
