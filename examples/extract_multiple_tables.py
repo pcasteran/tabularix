@@ -83,12 +83,12 @@ def extract_territory_tables(sheet: tx.Sheet) -> pl.DataFrame:
     search_row = 0
 
     while search_row < sheet.shape[0]:
-        # Match territory title range dynamically below the last footer
+        # Match territory title range dynamically below the last footer.
         territory_range = sheet.search_range(territory_matcher, start_row=search_row)
         if territory_range is None:
             break
 
-        # Retrieve the matched territory name (e.g. "North", "South")
+        # Retrieve the matched territory name (e.g. "North", "South").
         territory = str(sheet.get_cell_value(territory_range.start_row, territory_range.start_col))
 
         # Match the 2-row header range below the territory title.
@@ -99,15 +99,15 @@ def extract_territory_tables(sheet: tx.Sheet) -> pl.DataFrame:
         if header_range is None:
             raise ValueError(f"Header not found for territory '{territory}'.")
 
-        # Match the footer range below the header
+        # Match the footer range below the header.
         footer_range = sheet.search_range_relative(footer_matcher, below=header_range)
         if footer_range is None:
             raise ValueError(f"Footer not found for territory '{territory}'.")
 
-        # Get the data range situated between header and footer
+        # Get the data range situated between header and footer.
         data_range = sheet.get_range_between(header_range, footer_range)
 
-        # Extract the structured table, flattening the multi-row headers
+        # Extract the structured table, flattening the multi-row headers.
         table = sheet.extract_table(
             data_range,
             header=header_range,
@@ -116,12 +116,12 @@ def extract_territory_tables(sheet: tx.Sheet) -> pl.DataFrame:
             header_separator="_",
         )
 
-        # Convert to Polars and insert the territory context column at the beginning
+        # Convert to a Polars DataFrame and insert the territory context column at the beginning.
         df = cast(pl.DataFrame, pl.from_arrow(table.to_arrow()))
         df = df.select([pl.lit(territory).alias("territory"), pl.all()])
         dfs.append(df)
 
-        # Advance search_row to scan below the current section in the next iteration
+        # Advance search_row to scan below the current section in the next iteration.
         search_row = footer_range.end_row + 1
 
     if not dfs:
