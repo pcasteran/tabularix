@@ -26,6 +26,7 @@ exclude-newer = "7 days"
 
 [dependency-groups]
 dev = [
+    "duckdb>=1.5.3",
     "openpyxl>=3.1.5",
     "pandas>=3.0.3",
     "polars>=1.41.2",
@@ -33,7 +34,7 @@ dev = [
 ]
 
 [tool.fawltydeps]
-ignore_unused = ["robotframework", "pandas", "polars"] # TODO: to remove on code samples are written
+ignore_unused = ["robotframework"]
 
 [tool.ruff]
 line-length = 120

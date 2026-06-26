@@ -66,6 +66,9 @@ def main():
     sheet_complex = wb.get_sheet("complex")
     sheet_complex.to_svg(f"{ASSETS_DIR}/sheet_complex.svg")
 
+    sheet_multi_tables = wb.get_sheet("multi-tables")
+    sheet_multi_tables.to_svg(f"{ASSETS_DIR}/sheet_multi_tables.svg")
+
     # Generate the renders for the APIs.
     generate_drop_row_renders(sheet_simple)
     generate_drop_column_renders(sheet_simple)

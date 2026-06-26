@@ -60,3 +60,23 @@ Verify Match Regex Compiled
 
     ${res2}=    Evaluate    $matcher.matches_range([["abc"]])
     Should Be Equal    ${res2}    ${False}
+
+Verify Match Nested Group
+    [Documentation]    Verify matching a nested group pattern like (Expected Actual)+.
+    ${sub}=    Evaluate    tabularix.CellGroupPattern().value("Expected").value("Actual")    modules=tabularix
+    ${pattern}=    Evaluate
+    ...    tabularix.CellGroupPattern().value("Product").group($sub).one_or_more()
+    ...    modules=tabularix
+    ${matcher}=    Evaluate    tabularix.RangeMatcher().row($pattern)    modules=tabularix
+
+    # Matches: Product, and two pairs of Expected/Actual
+    ${res1}=    Evaluate    $matcher.matches_range([["Product", "Expected", "Actual", "Expected", "Actual"]])
+    Should Be True    ${res1}
+
+    # Fails: Product, then Expected, then Expected
+    ${res2}=    Evaluate    $matcher.matches_range([["Product", "Expected", "Expected"]])
+    Should Be Equal    ${res2}    ${False}
+
+    # Fails: Product only
+    ${res3}=    Evaluate    $matcher.matches_range([["Product"]])
+    Should Be Equal    ${res3}    ${False}

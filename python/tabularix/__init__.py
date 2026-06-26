@@ -5,9 +5,9 @@ if TYPE_CHECKING:
 
 
 from ._tabularix import (  # ty: ignore[unresolved-import]
+    CellGroupPattern,
     Range,
     RangeMatcher,
-    RowPattern,
     Sheet,
     Table,
     Workbook,
@@ -15,55 +15,55 @@ from ._tabularix import (  # ty: ignore[unresolved-import]
 )
 
 
-def value(val: str) -> RowPattern:
+def value(val: str) -> CellGroupPattern:
     """Starts a row pattern with an exact cell value.
 
     Args:
         val: The exact string value to match.
 
     Returns:
-        A new RowPattern instance containing the cell rule.
+        A new CellGroupPattern instance containing the cell rule.
     """
-    return RowPattern().value(val)
+    return CellGroupPattern().value(val)
 
 
-def regex(pattern: Any) -> RowPattern:
+def regex(pattern: Any) -> CellGroupPattern:
     """Starts a row pattern with a regex cell match.
 
     Args:
         pattern: A regex string or a compiled regex pattern.
 
     Returns:
-        A new RowPattern instance containing the cell rule.
+        A new CellGroupPattern instance containing the cell rule.
     """
-    return RowPattern().regex(pattern)
+    return CellGroupPattern().regex(pattern)
 
 
-def empty() -> RowPattern:
+def empty() -> CellGroupPattern:
     """Starts a row pattern with an empty cell match.
 
     Returns:
-        A new RowPattern instance containing the cell rule.
+        A new CellGroupPattern instance containing the cell rule.
     """
-    return RowPattern().empty()
+    return CellGroupPattern().empty()
 
 
-def non_empty() -> RowPattern:
+def non_empty() -> CellGroupPattern:
     """Starts a row pattern with a non-empty cell match.
 
     Returns:
-        A new RowPattern instance containing the cell rule.
+        A new CellGroupPattern instance containing the cell rule.
     """
-    return RowPattern().non_empty()
+    return CellGroupPattern().non_empty()
 
 
-def any() -> RowPattern:
+def any() -> CellGroupPattern:
     """Starts a row pattern with a wildcard cell match.
 
     Returns:
-        A new RowPattern instance containing the cell rule.
+        A new CellGroupPattern instance containing the cell rule.
     """
-    return RowPattern().any()
+    return CellGroupPattern().any()
 
 
 def search_range_relative(
@@ -152,7 +152,7 @@ __all__ = [
     "load_workbook",
     "Sheet",
     "Workbook",
-    "RowPattern",
+    "CellGroupPattern",
     "RangeMatcher",
     "Range",
     "Table",

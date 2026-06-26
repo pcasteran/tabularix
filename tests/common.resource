@@ -9,6 +9,12 @@ Load Simple Sheet
     ${sheet}=    Evaluate    $wb.get_sheet("simple")
     RETURN    ${sheet}
 
+Load Complex Sheet
+    [Documentation]    Loads the 'complex' worksheet from the test data sample workbook.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("complex")
+    RETURN    ${sheet}
+
 Verify Range Coordinates
     [Documentation]    Verifies that the given Range matches the expected start/end row/col coordinates.
     [Arguments]    ${range}    ${s_row}    ${e_row}    ${s_col}    ${e_col}

@@ -1,5 +1,6 @@
 use crate::matcher::{match_range, Range, RangeMatcher};
-use calamine::{open_workbook, Data, Reader, Xlsx};
+use calamine::{open_workbook, Data, DataType, Reader, Xlsx};
+use chrono::{Datelike, Timelike};
 use pyo3::prelude::*;
 use pyo3::types::PyAny;
 use pyo3::BoundObject;
@@ -15,15 +16,42 @@ pub enum CellValue {
     Int(i64),
     Bool(bool),
     Error(String),
+    Date(chrono::NaiveDate),
+    DateTime(chrono::NaiveDateTime),
 }
 
 impl From<calamine::Data> for CellValue {
     fn from(data: calamine::Data) -> Self {
         match data {
             Data::Empty | Data::DurationIso(_) => CellValue::Empty,
-            Data::String(s) | Data::DateTimeIso(s) => CellValue::String(s),
+            Data::DateTime(f) => {
+                let temp = Data::DateTime(f);
+                if let Some(dt) = temp.as_datetime() {
+                    if dt.time() == chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap() {
+                        CellValue::Date(dt.date())
+                    } else {
+                        CellValue::DateTime(dt)
+                    }
+                } else {
+                    CellValue::Float(f.as_f64())
+                }
+            }
+            Data::DateTimeIso(s) => {
+                let temp = Data::DateTimeIso(s.clone());
+                if let Some(dt) = temp.as_datetime() {
+                    if dt.time() == chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap() {
+                        CellValue::Date(dt.date())
+                    } else {
+                        CellValue::DateTime(dt)
+                    }
+                } else if let Some(d) = temp.as_date() {
+                    CellValue::Date(d)
+                } else {
+                    CellValue::String(s)
+                }
+            }
+            Data::String(s) => CellValue::String(s),
             Data::Float(f) => CellValue::Float(f),
-            Data::DateTime(f) => CellValue::Float(f.as_f64()),
             Data::Int(i) => CellValue::Int(i),
             Data::Bool(b) => CellValue::Bool(b),
             Data::Error(e) => CellValue::Error(format!("{e:?}")),
@@ -46,6 +74,8 @@ impl CellValue {
                 }
             }
             CellValue::Error(e) => format!("ERROR: {e}"),
+            CellValue::Date(d) => d.to_string(),
+            CellValue::DateTime(dt) => dt.format("%Y-%m-%dT%H:%M:%S%.f").to_string(),
         }
     }
 }
@@ -55,6 +85,7 @@ impl<'py> IntoPyObject<'py> for CellValue {
     type Output = Bound<'py, Self::Target>;
     type Error = PyErr;
 
+    #[allow(clippy::cast_possible_truncation)]
     fn into_pyobject(
         self,
         py: Python<'py>,
@@ -66,6 +97,25 @@ impl<'py> IntoPyObject<'py> for CellValue {
             CellValue::Int(i) => Ok(i.into_pyobject(py)?.into_any()),
             CellValue::Bool(b) => Ok(pyo3::types::PyBool::new(py, b).into_bound().into_any()),
             CellValue::Error(e) => Ok(e.into_pyobject(py)?.into_any()),
+            CellValue::Date(d) => {
+                let py_date =
+                    pyo3::types::PyDate::new(py, d.year(), d.month() as u8, d.day() as u8)?;
+                Ok(py_date.into_any())
+            }
+            CellValue::DateTime(dt) => {
+                let py_dt = pyo3::types::PyDateTime::new(
+                    py,
+                    dt.year(),
+                    dt.month() as u8,
+                    dt.day() as u8,
+                    dt.hour() as u8,
+                    dt.minute() as u8,
+                    dt.second() as u8,
+                    dt.nanosecond() / 1000,
+                    None,
+                )?;
+                Ok(py_dt.into_any())
+            }
         }
     }
 }
@@ -355,7 +405,6 @@ impl Sheet {
         Ok(())
     }
 
-    #[allow(clippy::cast_sign_loss)]
     #[pyo3(signature = (matcher, start_row = None, end_row = None, start_col = None, end_col = None))]
     pub fn search_range(
         &self,
@@ -377,88 +426,25 @@ impl Sheet {
             return Ok(None);
         }
 
-        let resolved_start_row = match start_row {
-            Some(r) => {
-                if r < 0 || r as usize >= rows_count {
-                    return Err(pyo3::exceptions::PyIndexError::new_err(
-                        "start_row out of bounds",
-                    ));
-                }
-                r as usize
-            }
-            None => 0,
-        };
+        let (resolved_start_row, resolved_end_row, resolved_start_col, resolved_end_col) =
+            Self::resolve_search_bounds(
+                rows_count, cols_count, start_row, end_row, start_col, end_col,
+            )?;
 
-        let resolved_end_row = match end_row {
-            Some(r) => {
-                if r < 0 || r as usize >= rows_count {
-                    return Err(pyo3::exceptions::PyIndexError::new_err(
-                        "end_row out of bounds",
-                    ));
-                }
-                r as usize
-            }
-            None => rows_count - 1,
-        };
-
-        let resolved_start_col = match start_col {
-            Some(c) => {
-                if c < 0 || c as usize >= cols_count {
-                    return Err(pyo3::exceptions::PyIndexError::new_err(
-                        "start_col out of bounds",
-                    ));
-                }
-                c as usize
-            }
-            None => 0,
-        };
-
-        let resolved_end_col = match end_col {
-            Some(c) => {
-                if c < 0 || c as usize >= cols_count {
-                    return Err(pyo3::exceptions::PyIndexError::new_err(
-                        "end_col out of bounds",
-                    ));
-                }
-                c as usize
-            }
-            None => cols_count - 1,
-        };
-
-        if resolved_start_row > resolved_end_row {
-            return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                "start_row ({resolved_start_row}) cannot be greater than end_row ({resolved_end_row})"
-            )));
-        }
-        if resolved_start_col > resolved_end_col {
-            return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                "start_col ({resolved_start_col}) cannot be greater than end_col ({resolved_end_col})"
-            )));
-        }
-
-        // Construct the sliced subgrid
+        // Construct the row-sliced data (keeping full column width)
         let mut sliced_data: Vec<Vec<CellValue>> = Vec::new();
         for r in resolved_start_row..=resolved_end_row {
-            let row_slice = self.data[r][resolved_start_col..=resolved_end_col].to_vec();
-            sliced_data.push(row_slice);
+            sliced_data.push(self.data[r].clone());
         }
 
-        // Scan row-by-row
-        for i in 0..sliced_data.len() {
-            if let Some(end_idx) = match_range(py, &matcher.row_patterns, &sliced_data, 0, i)? {
-                // Ensure the match actually consumed at least one row
-                if end_idx > i {
-                    return Ok(Some(Range {
-                        start_row: resolved_start_row + i,
-                        end_row: resolved_start_row + end_idx - 1,
-                        start_col: resolved_start_col,
-                        end_col: resolved_end_col,
-                    }));
-                }
-            }
-        }
-
-        Ok(None)
+        Self::scan_grid_for_range(
+            py,
+            matcher,
+            &sliced_data,
+            resolved_start_row,
+            resolved_start_col,
+            resolved_end_col,
+        )
     }
 
     pub fn get_range_between(&self, start: &Range, end: &Range) -> PyResult<Range> {
@@ -554,6 +540,166 @@ impl Sheet {
 }
 
 impl Sheet {
+    #[allow(clippy::cast_sign_loss)]
+    fn resolve_search_bounds(
+        rows_count: usize,
+        cols_count: usize,
+        start_row: Option<isize>,
+        end_row: Option<isize>,
+        start_col: Option<isize>,
+        end_col: Option<isize>,
+    ) -> PyResult<(usize, usize, usize, usize)> {
+        let resolved_start_row = match start_row {
+            Some(r) => {
+                if r < 0 || r as usize >= rows_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "start_row out of bounds",
+                    ));
+                }
+                r as usize
+            }
+            None => 0,
+        };
+
+        let resolved_end_row = match end_row {
+            Some(r) => {
+                if r < 0 || r as usize >= rows_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "end_row out of bounds",
+                    ));
+                }
+                r as usize
+            }
+            None => rows_count - 1,
+        };
+
+        let resolved_start_col = match start_col {
+            Some(c) => {
+                if c < 0 || c as usize >= cols_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "start_col out of bounds",
+                    ));
+                }
+                c as usize
+            }
+            None => 0,
+        };
+
+        let resolved_end_col = match end_col {
+            Some(c) => {
+                if c < 0 || c as usize >= cols_count {
+                    return Err(pyo3::exceptions::PyIndexError::new_err(
+                        "end_col out of bounds",
+                    ));
+                }
+                c as usize
+            }
+            None => cols_count - 1,
+        };
+
+        if resolved_start_row > resolved_end_row {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "start_row ({resolved_start_row}) cannot be greater than end_row ({resolved_end_row})"
+            )));
+        }
+        if resolved_start_col > resolved_end_col {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "start_col ({resolved_start_col}) cannot be greater than end_col ({resolved_end_col})"
+            )));
+        }
+
+        Ok((
+            resolved_start_row,
+            resolved_end_row,
+            resolved_start_col,
+            resolved_end_col,
+        ))
+    }
+
+    fn scan_grid_for_range(
+        py: Python<'_>,
+        matcher: &RangeMatcher,
+        sliced_data: &[Vec<CellValue>],
+        resolved_start_row: usize,
+        resolved_start_col: usize,
+        resolved_end_col: usize,
+    ) -> PyResult<Option<Range>> {
+        let (min_w, max_w) = if let Some(first_pattern) = matcher.row_patterns.first() {
+            first_pattern.width_bounds()
+        } else {
+            (1, None)
+        };
+
+        let is_first_row_greedy = matcher
+            .row_patterns
+            .first()
+            .is_none_or(|p| p.greedy && p.cell_patterns.iter().all(|cp| cp.greedy));
+
+        for i in 0..sliced_data.len() {
+            for c_start in resolved_start_col..=resolved_end_col {
+                let min_end = match c_start.checked_add(min_w) {
+                    Some(sum) => sum.saturating_sub(1),
+                    None => continue,
+                };
+                if min_end > resolved_end_col {
+                    continue;
+                }
+                let max_end = match max_w {
+                    Some(max_len) => match c_start.checked_add(max_len) {
+                        Some(sum) => std::cmp::min(sum.saturating_sub(1), resolved_end_col),
+                        None => resolved_end_col,
+                    },
+                    None => resolved_end_col,
+                };
+
+                if is_first_row_greedy {
+                    for c_end in (min_end..=max_end).rev() {
+                        if let Some(end_idx) = match_range(
+                            py,
+                            &matcher.row_patterns,
+                            sliced_data,
+                            c_start,
+                            c_end,
+                            0,
+                            i,
+                        )? {
+                            if end_idx > i {
+                                return Ok(Some(Range {
+                                    start_row: resolved_start_row + i,
+                                    end_row: resolved_start_row + end_idx - 1,
+                                    start_col: c_start,
+                                    end_col: c_end,
+                                }));
+                            }
+                        }
+                    }
+                } else {
+                    for c_end in min_end..=max_end {
+                        if let Some(end_idx) = match_range(
+                            py,
+                            &matcher.row_patterns,
+                            sliced_data,
+                            c_start,
+                            c_end,
+                            0,
+                            i,
+                        )? {
+                            if end_idx > i {
+                                return Ok(Some(Range {
+                                    start_row: resolved_start_row + i,
+                                    end_row: resolved_start_row + end_idx - 1,
+                                    start_col: c_start,
+                                    end_col: c_end,
+                                }));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Ok(None)
+    }
+
     pub fn get_merged_cell_value(&self, row: usize, col: usize) -> &CellValue {
         for &((s_row, s_col), (e_row, e_col)) in &self.merged_regions {
             if row >= s_row && row <= e_row && col >= s_col && col <= e_col {
@@ -690,7 +836,7 @@ impl Sheet {
                         rect_class.push_str(" rect-error");
                         text_class.push_str("val-error");
                     }
-                    CellValue::String(_) => {
+                    CellValue::String(_) | CellValue::Date(_) | CellValue::DateTime(_) => {
                         text_class.push_str("val-string");
                     }
                     CellValue::Float(_) | CellValue::Int(_) => {
@@ -717,6 +863,8 @@ impl Sheet {
                         }
                     }
                     CellValue::Error(e) => format!("ERROR: {e}"),
+                    CellValue::Date(d) => d.to_string(),
+                    CellValue::DateTime(dt) => dt.format("%Y-%m-%dT%H:%M:%S%.f").to_string(),
                 };
 
                 if !val_str.is_empty() {
@@ -944,7 +1092,7 @@ mod tests {
         let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
         let mut names = wb.sheet_names();
         names.sort();
-        assert_eq!(names, vec!["complex", "simple"]);
+        assert_eq!(names, vec!["complex", "multi-tables", "simple"]);
 
         let sheet = wb.get_sheet("simple").unwrap();
         assert_eq!(sheet.name, "simple");
@@ -1182,7 +1330,7 @@ mod tests {
 
     #[test]
     fn test_search_range() {
-        use crate::matcher::{CellMatchRule, CellPattern, RangeMatcher, RowPattern};
+        use crate::matcher::{CellGroupPattern, CellMatchRule, CellPattern, RangeMatcher};
 
         let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
         let sheet = wb.get_sheet("simple").unwrap();
@@ -1190,41 +1338,47 @@ mod tests {
         pyo3::Python::initialize();
         pyo3::Python::attach(|py| {
             // Build a matcher for:
-            // RowPattern: non_empty, any, any (matches header rows)
-            // RowPattern: "ABC", any, any (matches ABC data row)
+            // CellGroupPattern: non_empty, any, any (matches header rows)
+            // CellGroupPattern: "ABC", any, any (matches ABC data row)
 
-            let mut pattern1 = RowPattern::new();
+            let mut pattern1 = CellGroupPattern::new();
             pattern1.cell_patterns.push(CellPattern {
                 rule: CellMatchRule::NonEmpty,
                 min: 1,
                 max: Some(1),
+                greedy: true,
             });
             pattern1.cell_patterns.push(CellPattern {
                 rule: CellMatchRule::Any,
                 min: 1,
                 max: Some(1),
+                greedy: true,
             });
             pattern1.cell_patterns.push(CellPattern {
                 rule: CellMatchRule::Any,
                 min: 1,
                 max: Some(1),
+                greedy: true,
             });
 
-            let mut pattern2 = RowPattern::new();
+            let mut pattern2 = CellGroupPattern::new();
             pattern2.cell_patterns.push(CellPattern {
                 rule: CellMatchRule::Exact("ABC".to_string()),
                 min: 1,
                 max: Some(1),
+                greedy: true,
             });
             pattern2.cell_patterns.push(CellPattern {
                 rule: CellMatchRule::Any,
                 min: 1,
                 max: Some(1),
+                greedy: true,
             });
             pattern2.cell_patterns.push(CellPattern {
                 rule: CellMatchRule::Any,
                 min: 1,
                 max: Some(1),
+                greedy: true,
             });
 
             let mut matcher = RangeMatcher::new();
@@ -1346,5 +1500,20 @@ mod tests {
             // 6. Overlap error
             assert!(sheet.get_range_between(&r1, &r1).is_err());
         });
+    }
+
+    #[test]
+    fn test_date_cell_parsing() {
+        let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
+        let sheet = wb.get_sheet("multi-tables").unwrap();
+        let val = &sheet.data[8][3];
+        match val {
+            CellValue::Date(d) => {
+                assert_eq!(d.year(), 2026);
+                assert_eq!(d.month(), 6);
+                assert_eq!(d.day(), 23);
+            }
+            _ => panic!("Expected Date, got {val:?}"),
+        }
     }
 }
