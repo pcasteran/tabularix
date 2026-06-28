@@ -9,8 +9,8 @@ Resource            common.resource
 Verify Range Between Vertically
     [Documentation]    Test computing range between two vertically separated ranges.
     ${sheet}=    Load Simple Sheet
-    ${header}=    Find Range By Value    ${sheet}    Header #1
-    ${footer}=    Find Range By Value    ${sheet}    Merged value
+    ${header}=    Find Range By Value In Simple Sheet    ${sheet}    Header #1
+    ${footer}=    Find Range By Value In Simple Sheet    ${sheet}    Merged value
     ${res}=    Evaluate    $sheet.get_range_between($header, $footer)
     Verify Range Coordinates    ${res}    1    2    0    2
 

@@ -1,11 +1,10 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, List, Literal, Optional, Union
 
 if TYPE_CHECKING:
     import pyarrow
 
 
 from ._tabularix import (  # ty: ignore[unresolved-import]
-    CellGroupPattern,
     Range,
     RangeMatcher,
     Sheet,
@@ -13,57 +12,177 @@ from ._tabularix import (  # ty: ignore[unresolved-import]
     Workbook,
     load_workbook,
 )
+from ._tabularix import (  # ty: ignore[unresolved-import]
+    RangePattern1D as _RangePattern1D,
+)
+
+Direction = Literal["LR", "RL", "TB", "BT"]
+RuleType = Literal["exact", "regex", "empty", "non_empty", "any"]
 
 
-def value(val: str) -> CellGroupPattern:
-    """Starts a row pattern with an exact cell value.
+class CellRule:
+    """Represents a rule for matching a single cell in a 1D sequence."""
 
-    Args:
-        val: The exact string value to match.
+    def __init__(self, rule_type: RuleType, value: Any = None):
+        self.rule_type = rule_type
+        self.value = value
+        self.min = 1
+        self.max = 1
+        self.greedy = True
 
-    Returns:
-        A new CellGroupPattern instance containing the cell rule.
-    """
-    return CellGroupPattern().value(val)
+    def repeat(self, min: int, max: Optional[int] = -1, greedy: bool = True) -> "CellRule":
+        self.min = min
+        self.max = max
+        self.greedy = greedy
+        return self
 
+    def one_or_more(self, greedy: bool = True) -> "CellRule":
+        return self.repeat(1, None, greedy)
 
-def regex(pattern: Any) -> CellGroupPattern:
-    """Starts a row pattern with a regex cell match.
+    def zero_or_more(self, greedy: bool = True) -> "CellRule":
+        return self.repeat(0, None, greedy)
 
-    Args:
-        pattern: A regex string or a compiled regex pattern.
-
-    Returns:
-        A new CellGroupPattern instance containing the cell rule.
-    """
-    return CellGroupPattern().regex(pattern)
-
-
-def empty() -> CellGroupPattern:
-    """Starts a row pattern with an empty cell match.
-
-    Returns:
-        A new CellGroupPattern instance containing the cell rule.
-    """
-    return CellGroupPattern().empty()
+    def optional(self, greedy: bool = True) -> "CellRule":
+        return self.repeat(0, 1, greedy)
 
 
-def non_empty() -> CellGroupPattern:
-    """Starts a row pattern with a non-empty cell match.
+class RangePattern1D:
+    """A direction-agnostic 1D sequence of cell pattern rules."""
 
-    Returns:
-        A new CellGroupPattern instance containing the cell rule.
-    """
-    return CellGroupPattern().non_empty()
+    def __init__(self, elements: List[Union[CellRule, "RangePattern1D"]]):
+        """Initializes a new 1D pattern with the given cell rules or nested 1D patterns."""
+        self.elements = elements
+        self.min = 1
+        self.max = 1
+        self.greedy = True
+
+    def repeat(self, min: int, max: Optional[int] = -1, greedy: bool = True) -> "RangePattern1D":
+        """Sets the cardinality of the 1D pattern to repeat a custom number of times or range."""
+        self.min = min
+        self.max = max
+        self.greedy = greedy
+        return self
+
+    def one_or_more(self, greedy: bool = True) -> "RangePattern1D":
+        """Sets the cardinality of this 1D pattern to one-or-more (+)."""
+        return self.repeat(1, None, greedy)
+
+    def zero_or_more(self, greedy: bool = True) -> "RangePattern1D":
+        """Sets the cardinality of this 1D pattern to zero-or-more (*)."""
+        return self.repeat(0, None, greedy)
+
+    def optional(self, greedy: bool = True) -> "RangePattern1D":
+        """Sets the cardinality of this 1D pattern to optional (?)."""
+        return self.repeat(0, 1, greedy)
+
+    def to_rust(self) -> _RangePattern1D:
+        """Compiles this Python pattern into a Rust-native _RangePattern1D object."""
+        rust_p = _RangePattern1D()
+        for element in self.elements:
+            if isinstance(element, RangePattern1D):
+                sub_rust = element.to_rust()
+                rust_p = rust_p.group(sub_rust)
+                if element.min != 1 or element.max != 1:
+                    if element.min == 1 and element.max is None:
+                        rust_p = rust_p.one_or_more(element.greedy)
+                    elif element.min == 0 and element.max is None:
+                        rust_p = rust_p.zero_or_more(element.greedy)
+                    elif element.min == 0 and element.max == 1:
+                        rust_p = rust_p.optional(element.greedy)
+                    else:
+                        rust_p = rust_p.repeat(
+                            element.min, element.max if element.max is not None else -1, element.greedy
+                        )
+            elif isinstance(element, CellRule):
+                if element.rule_type == "exact":
+                    rust_p = rust_p.value(element.value)
+                elif element.rule_type == "regex":
+                    rust_p = rust_p.regex(element.value)
+                elif element.rule_type == "empty":
+                    rust_p = rust_p.empty()
+                elif element.rule_type == "non_empty":
+                    rust_p = rust_p.non_empty()
+                elif element.rule_type == "any":
+                    rust_p = rust_p.any()
+
+                if element.min != 1 or element.max != 1:
+                    if element.min == 1 and element.max is None:
+                        rust_p = rust_p.one_or_more(element.greedy)
+                    elif element.min == 0 and element.max is None:
+                        rust_p = rust_p.zero_or_more(element.greedy)
+                    elif element.min == 0 and element.max == 1:
+                        rust_p = rust_p.optional(element.greedy)
+                    else:
+                        rust_p = rust_p.repeat(
+                            element.min, element.max if element.max is not None else -1, element.greedy
+                        )
+        return rust_p
+
+    def _compile_rust_pattern(self) -> _RangePattern1D:
+        """Helper to compile this Python pattern and apply cardinality metadata for Rust."""
+        rust_p = self.to_rust()
+        if self.min != 1 or self.max != 1:
+            if self.min == 1 and self.max is None:
+                rust_p.cardinality = "+"
+                rust_p.greedy = self.greedy
+            elif self.min == 0 and self.max is None:
+                rust_p.cardinality = "*"
+                rust_p.greedy = self.greedy
+            elif self.min == 0 and self.max == 1:
+                rust_p.cardinality = "?"
+                rust_p.greedy = self.greedy
+            else:
+                rust_p.cardinality = f"{{{self.min},{self.max if self.max is not None else ''}}}"
+                rust_p.greedy = self.greedy
+        return rust_p
+
+    def to_matcher(self, direction: Direction = "LR") -> RangeMatcher:
+        """Converts this 1D pattern to a RangeMatcher bound to the specified matching direction."""
+        if direction in ("LR", "RL"):
+            outer_direction = "TB"
+        else:
+            outer_direction = "LR"
+
+        rust_p = self._compile_rust_pattern()
+        return RangeMatcher([rust_p], outer_direction, direction)
 
 
-def any() -> CellGroupPattern:
-    """Starts a row pattern with a wildcard cell match.
+class RangePattern2D:
+    """A direction-agnostic 2D pattern consisting of a sequence of 1D patterns."""
 
-    Returns:
-        A new CellGroupPattern instance containing the cell rule.
-    """
-    return CellGroupPattern().any()
+    def __init__(self, patterns: List[RangePattern1D]):
+        """Initializes a new 2D pattern with the given list of 1D patterns."""
+        self.patterns = patterns
+
+    def to_matcher(self, outer_direction: Direction = "TB", inner_direction: Direction = "LR") -> RangeMatcher:
+        """Converts this 2D pattern to a RangeMatcher bound to the specified scanning directions."""
+        rust_patterns = [pat._compile_rust_pattern() for pat in self.patterns]
+        return RangeMatcher(rust_patterns, outer_direction, inner_direction)
+
+
+def value(val: str) -> CellRule:
+    """Creates a cell rule matching an exact string value."""
+    return CellRule("exact", val)
+
+
+def regex(pattern: Any) -> CellRule:
+    """Creates a cell rule matching a regex pattern or string."""
+    return CellRule("regex", pattern)
+
+
+def empty() -> CellRule:
+    """Creates a cell rule matching an empty cell."""
+    return CellRule("empty")
+
+
+def non_empty() -> CellRule:
+    """Creates a cell rule matching a non-empty cell."""
+    return CellRule("non_empty")
+
+
+def any() -> CellRule:
+    """Creates a wildcard cell rule matching any cell."""
+    return CellRule("any")
 
 
 def search_range_relative(
@@ -152,7 +271,8 @@ __all__ = [
     "load_workbook",
     "Sheet",
     "Workbook",
-    "CellGroupPattern",
+    "RangePattern1D",
+    "RangePattern2D",
     "RangeMatcher",
     "Range",
     "Table",

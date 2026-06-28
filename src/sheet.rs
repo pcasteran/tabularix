@@ -1,4 +1,4 @@
-use crate::matcher::{match_range, Range, RangeMatcher};
+use crate::matcher::{map_canonical_range_back, match_range, orient_grid, Range, RangeMatcher};
 use calamine::{open_workbook, Data, DataType, Reader, Xlsx};
 use chrono::{Datelike, Timelike};
 use pyo3::prelude::*;
@@ -406,6 +406,7 @@ impl Sheet {
     }
 
     #[pyo3(signature = (matcher, start_row = None, end_row = None, start_col = None, end_col = None))]
+    #[allow(clippy::needless_range_loop)]
     pub fn search_range(
         &self,
         py: Python<'_>,
@@ -431,20 +432,48 @@ impl Sheet {
                 rows_count, cols_count, start_row, end_row, start_col, end_col,
             )?;
 
-        // Construct the row-sliced data (keeping full column width)
-        let mut sliced_data: Vec<Vec<CellValue>> = Vec::new();
-        for r in resolved_start_row..=resolved_end_row {
-            sliced_data.push(self.data[r].clone());
+        // 1. Extract the subgrid bounded by search boundaries
+        let orig_rows = resolved_end_row - resolved_start_row + 1;
+        let orig_cols = resolved_end_col - resolved_start_col + 1;
+        let mut orig_subgrid = vec![vec![CellValue::Empty; orig_cols]; orig_rows];
+        for r in 0..orig_rows {
+            for c in 0..orig_cols {
+                orig_subgrid[r][c] =
+                    self.data[resolved_start_row + r][resolved_start_col + c].clone();
+            }
         }
 
-        Self::scan_grid_for_range(
-            py,
-            matcher,
-            &sliced_data,
-            resolved_start_row,
-            resolved_start_col,
-            resolved_end_col,
-        )
+        // 2. Orient the subgrid to canonical "TB"/"LR" direction
+        let canon_subgrid = orient_grid(
+            &orig_subgrid,
+            &matcher.outer_direction,
+            &matcher.inner_direction,
+        );
+
+        // 3. Scan the canonical grid for the range
+        if let Some(canon_range) = Self::scan_grid_for_range(py, matcher, &canon_subgrid)? {
+            // 4. Map the canonical range back to the original subgrid coordinates
+            let (s_row, e_row, s_col, e_col) = map_canonical_range_back(
+                canon_range.start_row,
+                canon_range.end_row,
+                canon_range.start_col,
+                canon_range.end_col,
+                orig_rows,
+                orig_cols,
+                &matcher.outer_direction,
+                &matcher.inner_direction,
+            );
+
+            // 5. Shift by start_row/start_col offset to get absolute sheet coordinates
+            Ok(Some(Range {
+                start_row: resolved_start_row + s_row,
+                end_row: resolved_start_row + e_row,
+                start_col: resolved_start_col + s_col,
+                end_col: resolved_start_col + e_col,
+            }))
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn get_range_between(&self, start: &Range, end: &Range) -> PyResult<Range> {
@@ -620,9 +649,6 @@ impl Sheet {
         py: Python<'_>,
         matcher: &RangeMatcher,
         sliced_data: &[Vec<CellValue>],
-        resolved_start_row: usize,
-        resolved_start_col: usize,
-        resolved_end_col: usize,
     ) -> PyResult<Option<Range>> {
         let (min_w, max_w) = if let Some(first_pattern) = matcher.row_patterns.first() {
             first_pattern.width_bounds()
@@ -635,21 +661,30 @@ impl Sheet {
             .first()
             .is_none_or(|p| p.greedy && p.cell_patterns.iter().all(|cp| cp.greedy));
 
-        for i in 0..sliced_data.len() {
-            for c_start in resolved_start_col..=resolved_end_col {
+        let rows_count = sliced_data.len();
+        let cols_count = if rows_count > 0 {
+            sliced_data[0].len()
+        } else {
+            0
+        };
+
+        for i in 0..rows_count {
+            for c_start in 0..cols_count {
                 let min_end = match c_start.checked_add(min_w) {
                     Some(sum) => sum.saturating_sub(1),
                     None => continue,
                 };
-                if min_end > resolved_end_col {
+                if min_end > cols_count.saturating_sub(1) {
                     continue;
                 }
                 let max_end = match max_w {
                     Some(max_len) => match c_start.checked_add(max_len) {
-                        Some(sum) => std::cmp::min(sum.saturating_sub(1), resolved_end_col),
-                        None => resolved_end_col,
+                        Some(sum) => {
+                            std::cmp::min(sum.saturating_sub(1), cols_count.saturating_sub(1))
+                        }
+                        None => cols_count.saturating_sub(1),
                     },
-                    None => resolved_end_col,
+                    None => cols_count.saturating_sub(1),
                 };
 
                 if is_first_row_greedy {
@@ -665,8 +700,8 @@ impl Sheet {
                         )? {
                             if end_idx > i {
                                 return Ok(Some(Range {
-                                    start_row: resolved_start_row + i,
-                                    end_row: resolved_start_row + end_idx - 1,
+                                    start_row: i,
+                                    end_row: end_idx - 1,
                                     start_col: c_start,
                                     end_col: c_end,
                                 }));
@@ -686,8 +721,8 @@ impl Sheet {
                         )? {
                             if end_idx > i {
                                 return Ok(Some(Range {
-                                    start_row: resolved_start_row + i,
-                                    end_row: resolved_start_row + end_idx - 1,
+                                    start_row: i,
+                                    end_row: end_idx - 1,
                                     start_col: c_start,
                                     end_col: c_end,
                                 }));
@@ -1330,7 +1365,7 @@ mod tests {
 
     #[test]
     fn test_search_range() {
-        use crate::matcher::{CellGroupPattern, CellMatchRule, CellPattern, RangeMatcher};
+        use crate::matcher::{CellMatchRule, CellPattern, RangeMatcher, RangePattern1D};
 
         let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
         let sheet = wb.get_sheet("simple").unwrap();
@@ -1338,10 +1373,10 @@ mod tests {
         pyo3::Python::initialize();
         pyo3::Python::attach(|py| {
             // Build a matcher for:
-            // CellGroupPattern: non_empty, any, any (matches header rows)
-            // CellGroupPattern: "ABC", any, any (matches ABC data row)
+            // RangePattern1D: non_empty, any, any (matches header rows)
+            // RangePattern1D: "ABC", any, any (matches ABC data row)
 
-            let mut pattern1 = CellGroupPattern::new();
+            let mut pattern1 = RangePattern1D::new();
             pattern1.cell_patterns.push(CellPattern {
                 rule: CellMatchRule::NonEmpty,
                 min: 1,
@@ -1361,7 +1396,7 @@ mod tests {
                 greedy: true,
             });
 
-            let mut pattern2 = CellGroupPattern::new();
+            let mut pattern2 = RangePattern1D::new();
             pattern2.cell_patterns.push(CellPattern {
                 rule: CellMatchRule::Exact("ABC".to_string()),
                 min: 1,
@@ -1381,9 +1416,9 @@ mod tests {
                 greedy: true,
             });
 
-            let mut matcher = RangeMatcher::new();
-            matcher.row_patterns.push(pattern1);
-            matcher.row_patterns.push(pattern2);
+            let matcher =
+                RangeMatcher::new(vec![pattern1, pattern2], "TB".to_string(), "LR".to_string())
+                    .unwrap();
 
             // Test search on entire sheet
             let range = sheet
