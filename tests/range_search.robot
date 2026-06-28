@@ -151,6 +151,40 @@ Verify Relative Range Search Horizontal Conflicts
     ...    Evaluate
     ...    $sheet.search_range_relative($val_m, right=$rg_row1, left=$rg_row2)
 
+Verify Relative Range Search Above
+    [Documentation]    Test search_range_relative above a matched range.
+    ${sheet}=    Load Simple Sheet
+    ${def_range}=    Find Range By Value In Simple Sheet    ${sheet}    DEF
+    ${abc_p}=    Evaluate
+    ...    tabularix.RangePattern1D([tabularix.value("ABC"), tabularix.any(), tabularix.any()])
+    ...    modules=tabularix
+    ${abc_m}=    Evaluate    $abc_p.to_matcher(direction="LR")
+    ${abc_range}=    Evaluate    $sheet.search_range_relative($abc_m, above=$def_range)
+    Should Not Be Equal    ${abc_range}    ${None}
+    Verify Range Coordinates    ${abc_range}    1    1    0    2
+
+Verify Relative Range Search Left
+    [Documentation]    Test search_range_relative left of a matched range.
+    ${sheet}=    Load Simple Sheet
+    ${left_rg}=    Evaluate    tabularix.Range.from_a1("C2:C3")    modules=tabularix
+    ${def_p}=    Evaluate
+    ...    tabularix.RangePattern1D([tabularix.value("DEF"), tabularix.any()])
+    ...    modules=tabularix
+    ${def_m}=    Evaluate    $def_p.to_matcher(direction="LR")
+    ${def_range}=    Evaluate    $sheet.search_range_relative($def_m, left=$left_rg)
+    Should Not Be Equal    ${def_range}    ${None}
+    Verify Range Coordinates    ${def_range}    2    2    0    1
+
+Verify Relative Range Search Right
+    [Documentation]    Test search_range_relative right of a matched range.
+    ${sheet}=    Load Simple Sheet
+    ${right_rg}=    Evaluate    tabularix.Range.from_a1("A1:A4")    modules=tabularix
+    ${alice_p}=    Evaluate    tabularix.RangePattern1D([tabularix.value("Alice")])    modules=tabularix
+    ${alice_m}=    Evaluate    $alice_p.to_matcher(direction="LR")
+    ${alice_range}=    Evaluate    $sheet.search_range_relative($alice_m, right=$right_rg)
+    Should Not Be Equal    ${alice_range}    ${None}
+    Verify Range Coordinates    ${alice_range}    1    1    2    2
+
 Verify Partial Column Range Search
     [Documentation]    Test that RangeMatcher can match a subset of columns in a wider sheet.
     ${sheet}=    Load Simple Sheet

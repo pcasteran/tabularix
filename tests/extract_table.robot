@@ -53,3 +53,34 @@ Verify Slicing Out of Bounds Error
     ${sheet}=    Load Simple Sheet
     ${bad_data}=    Evaluate    tabularix.Range.from_a1("A2:C11")    modules=tabularix
     Run Keyword And Expect Error    *IndexError*    Evaluate    $sheet.extract_table($bad_data)
+
+Verify Table Extraction With Flattened Multi-Row Header
+    [Documentation]    Test extracting table with a multi-row header flattened.
+    ${sheet}=    Load Mutated Multi-Row Header Sheet
+    ${data}=    Evaluate    tabularix.Range.from_a1("A3:C5")    modules=tabularix
+    ${header}=    Evaluate    tabularix.Range.from_a1("A1:C2")    modules=tabularix
+    ${table}=    Evaluate    $sheet.extract_table($data, $header, flatten_header=True, header_separator="::")
+    ${cols}=    Evaluate    $table.columns
+    Should Be Equal As Strings    ${cols}    ['Product::Name', 'Q1::Actual', 'Q1::Forecast']
+
+Verify Table Extraction With Nested Multi-Row Header
+    [Documentation]    Test extracting table with a nested (non-flattened) multi-row header.
+    ${sheet}=    Load Mutated Multi-Row Header Sheet
+    ${data}=    Evaluate    tabularix.Range.from_a1("A3:C5")    modules=tabularix
+    ${header}=    Evaluate    tabularix.Range.from_a1("A1:C2")    modules=tabularix
+    ${table}=    Evaluate    $sheet.extract_table($data, $header, flatten_header=False)
+    ${cols}=    Evaluate    $table.columns
+    Should Be Equal As Strings    ${cols}    ['Product', 'Q1']
+
+
+*** Keywords ***
+Load Mutated Multi-Row Header Sheet
+    [Documentation]    Loads the simple sheet and mutates its first two rows to form a multi-row header.
+    ${sheet}=    Load Simple Sheet
+    Evaluate    $sheet.set_cell_value(0, 0, "Product")
+    Evaluate    $sheet.set_cell_value(0, 1, "Q1")
+    Evaluate    $sheet.set_cell_value(0, 2, "Q1")
+    Evaluate    $sheet.set_cell_value(1, 0, "Name")
+    Evaluate    $sheet.set_cell_value(1, 1, "Actual")
+    Evaluate    $sheet.set_cell_value(1, 2, "Forecast")
+    RETURN    ${sheet}

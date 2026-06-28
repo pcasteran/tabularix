@@ -94,3 +94,52 @@ Verify Row Cardinality Repeating
     # Matches 3 rows
     ${res2}=    Evaluate    $matcher.matches_range([["A", "B"], ["C", "D"], ["E", "F"]])
     Should Be True    ${res2}
+
+Verify Row Cardinality Optional
+    [Documentation]    Verify row optional repetition works correctly.
+    ${r1}=    Evaluate    tabularix.RangePattern1D([tabularix.value("Header")])    modules=tabularix
+    ${r2}=    Evaluate    tabularix.RangePattern1D([tabularix.value("Data")]).optional()    modules=tabularix
+    ${r3}=    Evaluate    tabularix.RangePattern1D([tabularix.value("Footer")])    modules=tabularix
+    ${matcher}=    Evaluate
+    ...    tabularix.RangePattern2D([$r1, $r2, $r3]).to_matcher(outer_direction="TB", inner_direction="LR")
+    ...    modules=tabularix
+
+    # Matches 0 reps
+    ${res1}=    Evaluate    $matcher.matches_range([["Header"], ["Footer"]])
+    Should Be True    ${res1}
+
+    # Matches 1 rep
+    ${res2}=    Evaluate    $matcher.matches_range([["Header"], ["Data"], ["Footer"]])
+    Should Be True    ${res2}
+
+Verify Row Cardinality Zero Or More
+    [Documentation]    Verify row zero_or_more repetition works correctly.
+    ${r1}=    Evaluate    tabularix.RangePattern1D([tabularix.value("Header")])    modules=tabularix
+    ${r2}=    Evaluate    tabularix.RangePattern1D([tabularix.value("Data")]).zero_or_more()    modules=tabularix
+    ${r3}=    Evaluate    tabularix.RangePattern1D([tabularix.value("Footer")])    modules=tabularix
+    ${matcher}=    Evaluate
+    ...    tabularix.RangePattern2D([$r1, $r2, $r3]).to_matcher(outer_direction="TB", inner_direction="LR")
+    ...    modules=tabularix
+
+    # Matches 0 reps
+    ${res1}=    Evaluate    $matcher.matches_range([["Header"], ["Footer"]])
+    Should Be True    ${res1}
+
+    # Matches 2 reps
+    ${res2}=    Evaluate    $matcher.matches_range([["Header"], ["Data"], ["Data"], ["Footer"]])
+    Should Be True    ${res2}
+
+Verify Row Cardinality Repeat Custom Range
+    [Documentation]    Verify row custom repetition count works correctly.
+    ${pattern}=    Evaluate    tabularix.RangePattern1D([tabularix.non_empty().repeat(2)])    modules=tabularix
+    ${matcher}=    Evaluate
+    ...    tabularix.RangePattern2D([$pattern.repeat(2, 3)]).to_matcher(outer_direction="TB", inner_direction="LR")
+    ...    modules=tabularix
+
+    # Matches 2 rows
+    ${res1}=    Evaluate    $matcher.matches_range([["A", "B"], ["C", "D"]])
+    Should Be True    ${res1}
+
+    # Does not match 1 row
+    ${res2}=    Evaluate    $matcher.matches_range([["A", "B"]])
+    Should Be Equal    ${res2}    ${False}
