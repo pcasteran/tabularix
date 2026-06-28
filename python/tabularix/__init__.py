@@ -47,7 +47,7 @@ class CellRule:
 
 
 class RangePattern1D:
-    """A direction-agnostic 1D sequence of cell pattern rules."""
+    """A direction-agnostic one-dimensional sequence of cell pattern rules."""
 
     def __init__(self, elements: List[Union[CellRule, "RangePattern1D"]]):
         """Initializes a new 1D pattern with the given cell rules or nested 1D patterns."""
@@ -148,7 +148,7 @@ class RangePattern1D:
 
 
 class RangePattern2D:
-    """A direction-agnostic 2D pattern consisting of a sequence of 1D patterns."""
+    """A direction-agnostic two-dimensional pattern consisting of a sequence of one-dimensional patterns."""
 
     def __init__(self, patterns: List[RangePattern1D]):
         """Initializes a new 2D pattern with the given list of 1D patterns."""

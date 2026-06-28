@@ -41,12 +41,15 @@ Metadata is often stored horizontally: keys in one column and values in the adja
 We define a [RangeMatcher](../api.md#tabularix.RangeMatcher) matching "Date" or "Fiscal Year" followed by a non-empty cell:
 
 ```python
-from tabularix import RangeMatcher, regex
+from tabularix import RangePattern1D, RangePattern2D, non_empty, regex
 
-metadata_matcher = (
-    RangeMatcher()
-    .row(regex(r"^(Date|Fiscal Year)$").non_empty())
-    .one_or_more()
+metadata_row = RangePattern1D([
+    regex(r"^(Date|Fiscal Year)$"),
+    non_empty()
+])
+metadata_matcher = RangePattern2D([metadata_row.one_or_more()]).to_matcher(
+    outer_direction="TB",
+    inner_direction="LR"
 )
 ```
 
@@ -85,34 +88,36 @@ def extract_metadata(sheet: tx.Sheet) -> pl.DataFrame:
 To match the territory tables dynamically, we define layout matchers for the headers and footers. Because of merged cells and empty cells representing empty values or un-cached formulas, we use **greedy cell matchers** to capture the full width of the table.
 
 ```python
-from tabularix import RangeMatcher, empty, regex, value
+from tabularix import RangePattern1D, RangePattern2D, any, empty, regex, value
 
 # Locate the territory title
-territory_matcher = RangeMatcher().row(regex(r"^(North|South|East|West)$"))
+territory_pattern = RangePattern1D([regex(r"^(North|South|East|West)$")])
+territory_matcher = territory_pattern.to_matcher(direction="LR")
 
 # Locate the two-row merged header
-header_matcher = (
-    RangeMatcher()
-    .row(
-        value("Product")
-        .group(
-            regex(r"\d{4}")
-            .empty()  # Matches the merged cell next to the year
-        )
-        .zero_or_more()
-    )
-    .row(
-        empty()       # Matches the merged cell below "Product"
-        .group(
-            value("Expected")
-            .value("Actual")
-        )
-        .zero_or_more()
-    )
-)
+header_row1 = RangePattern1D([
+    value("Product"),
+    RangePattern1D([
+        regex(r"\d{4}"),
+        empty()  # Matches the merged cell next to the year
+    ]).zero_or_more()
+])
+header_row2 = RangePattern1D([
+    empty(),  # Matches the merged cell below "Product"
+    RangePattern1D([
+        value("Expected"),
+        value("Actual")
+    ]).zero_or_more()
+])
+header_pattern = RangePattern2D([header_row1, header_row2])
+header_matcher = header_pattern.to_matcher(outer_direction="TB", inner_direction="LR")
 
 # Locate the footer row using greedy wildcard matching
-footer_matcher = RangeMatcher().row(value("Total").any().zero_or_more())
+footer_pattern = RangePattern1D([
+    value("Total"),
+    any().zero_or_more()
+])
+footer_matcher = footer_pattern.to_matcher(direction="LR")
 ```
 
 ---
