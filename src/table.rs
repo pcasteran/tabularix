@@ -145,6 +145,7 @@ impl Table {
                         sheet
                             .get_merged_cell_value(h.start_row, c)
                             .to_string_for_search()
+                            .into_owned()
                     } else {
                         (h.start_row..=h.end_row)
                             .map(|r| sheet.get_merged_cell_value(r, c).to_string_for_search())

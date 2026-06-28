@@ -1,4 +1,4 @@
-use crate::matcher::{map_canonical_range_back, match_range, orient_grid, Range, RangeMatcher};
+use crate::matcher::{match_range, parse_cardinality, Range, RangeMatcher, VirtualGrid};
 use calamine::{open_workbook, Data, DataType, Reader, Xlsx};
 use chrono::{Datelike, Timelike};
 use pyo3::prelude::*;
@@ -60,22 +60,24 @@ impl From<calamine::Data> for CellValue {
 }
 
 impl CellValue {
-    pub fn to_string_for_search(&self) -> String {
+    pub fn to_string_for_search(&self) -> std::borrow::Cow<'_, str> {
         match self {
-            CellValue::Empty => String::new(),
-            CellValue::String(s) => s.clone(),
-            CellValue::Float(f) => f.to_string(),
-            CellValue::Int(i) => i.to_string(),
+            CellValue::Empty => std::borrow::Cow::Borrowed(""),
+            CellValue::String(s) => std::borrow::Cow::Borrowed(s.as_str()),
+            CellValue::Float(f) => std::borrow::Cow::Owned(f.to_string()),
+            CellValue::Int(i) => std::borrow::Cow::Owned(i.to_string()),
             CellValue::Bool(b) => {
                 if *b {
-                    "TRUE".to_string()
+                    std::borrow::Cow::Borrowed("TRUE")
                 } else {
-                    "FALSE".to_string()
+                    std::borrow::Cow::Borrowed("FALSE")
                 }
             }
-            CellValue::Error(e) => format!("ERROR: {e}"),
-            CellValue::Date(d) => d.to_string(),
-            CellValue::DateTime(dt) => dt.format("%Y-%m-%dT%H:%M:%S%.f").to_string(),
+            CellValue::Error(e) => std::borrow::Cow::Owned(format!("ERROR: {e}")),
+            CellValue::Date(d) => std::borrow::Cow::Owned(d.to_string()),
+            CellValue::DateTime(dt) => {
+                std::borrow::Cow::Owned(dt.format("%Y-%m-%dT%H:%M:%S%.f").to_string())
+            }
         }
     }
 }
@@ -406,7 +408,6 @@ impl Sheet {
     }
 
     #[pyo3(signature = (matcher, start_row = None, end_row = None, start_col = None, end_col = None))]
-    #[allow(clippy::needless_range_loop)]
     pub fn search_range(
         &self,
         py: Python<'_>,
@@ -432,44 +433,42 @@ impl Sheet {
                 rows_count, cols_count, start_row, end_row, start_col, end_col,
             )?;
 
-        // 1. Extract the subgrid bounded by search boundaries
-        let orig_rows = resolved_end_row - resolved_start_row + 1;
-        let orig_cols = resolved_end_col - resolved_start_col + 1;
-        let mut orig_subgrid = vec![vec![CellValue::Empty; orig_cols]; orig_rows];
-        for r in 0..orig_rows {
-            for c in 0..orig_cols {
-                orig_subgrid[r][c] =
-                    self.data[resolved_start_row + r][resolved_start_col + c].clone();
-            }
-        }
+        let needs_transpose = matches!(matcher.outer_direction.as_str(), "LR" | "RL");
+        let reverse_rows = if needs_transpose {
+            matcher.outer_direction == "RL"
+        } else {
+            matcher.outer_direction == "BT"
+        };
+        let reverse_cols = if needs_transpose {
+            matcher.inner_direction == "BT"
+        } else {
+            matcher.inner_direction == "RL"
+        };
 
-        // 2. Orient the subgrid to canonical "TB"/"LR" direction
-        let canon_subgrid = orient_grid(
-            &orig_subgrid,
-            &matcher.outer_direction,
-            &matcher.inner_direction,
-        );
+        let grid = VirtualGrid {
+            sheet_data: &self.data,
+            start_row: resolved_start_row,
+            end_row: resolved_end_row,
+            start_col: resolved_start_col,
+            end_col: resolved_end_col,
+            needs_transpose,
+            reverse_rows,
+            reverse_cols,
+        };
 
-        // 3. Scan the canonical grid for the range
-        if let Some(canon_range) = Self::scan_grid_for_range(py, matcher, &canon_subgrid)? {
-            // 4. Map the canonical range back to the original subgrid coordinates
-            let (s_row, e_row, s_col, e_col) = map_canonical_range_back(
+        if let Some(canon_range) = Self::scan_grid_for_range(py, matcher, &grid)? {
+            let (s_row, e_row, s_col, e_col) = grid.map_back(
                 canon_range.start_row,
                 canon_range.end_row,
                 canon_range.start_col,
                 canon_range.end_col,
-                orig_rows,
-                orig_cols,
-                &matcher.outer_direction,
-                &matcher.inner_direction,
             );
 
-            // 5. Shift by start_row/start_col offset to get absolute sheet coordinates
             Ok(Some(Range {
-                start_row: resolved_start_row + s_row,
-                end_row: resolved_start_row + e_row,
-                start_col: resolved_start_col + s_col,
-                end_col: resolved_start_col + e_col,
+                start_row: s_row,
+                end_row: e_row,
+                start_col: s_col,
+                end_col: e_col,
             }))
         } else {
             Ok(None)
@@ -648,36 +647,48 @@ impl Sheet {
     fn scan_grid_for_range(
         py: Python<'_>,
         matcher: &RangeMatcher,
-        sliced_data: &[Vec<CellValue>],
+        grid: &VirtualGrid<'_>,
     ) -> PyResult<Option<Range>> {
-        let (min_w, max_w) = if let Some(first_pattern) = matcher.row_patterns.first() {
-            first_pattern.width_bounds()
-        } else {
-            (1, None)
-        };
+        let mut overall_min_w = 1;
+        let mut overall_max_w: Option<usize> = None;
+
+        for pattern in &matcher.row_patterns {
+            let (p_min, p_max) = pattern.width_bounds();
+            overall_min_w = std::cmp::max(overall_min_w, p_min);
+            overall_max_w = match (overall_max_w, p_max) {
+                (Some(curr_max), Some(p_limit)) => Some(std::cmp::min(curr_max, p_limit)),
+                (None, Some(p_limit)) => Some(p_limit),
+                (curr_max, None) => curr_max,
+            };
+        }
 
         let is_first_row_greedy = matcher
             .row_patterns
             .first()
             .is_none_or(|p| p.greedy && p.cell_patterns.iter().all(|cp| cp.greedy));
 
-        let rows_count = sliced_data.len();
-        let cols_count = if rows_count > 0 {
-            sliced_data[0].len()
-        } else {
-            0
-        };
+        let rows_count = grid.rows_count();
+        let cols_count = grid.cols_count();
 
-        for i in 0..rows_count {
+        // Calculate minimum height required by the row patterns
+        let mut min_height = 0;
+        for pattern in &matcher.row_patterns {
+            let (min_rows, _) = parse_cardinality(&pattern.cardinality);
+            min_height += min_rows;
+        }
+
+        let scan_rows_limit = rows_count.saturating_sub(min_height);
+
+        for i in 0..=scan_rows_limit {
             for c_start in 0..cols_count {
-                let min_end = match c_start.checked_add(min_w) {
+                let min_end = match c_start.checked_add(overall_min_w) {
                     Some(sum) => sum.saturating_sub(1),
                     None => continue,
                 };
                 if min_end > cols_count.saturating_sub(1) {
                     continue;
                 }
-                let max_end = match max_w {
+                let max_end = match overall_max_w {
                     Some(max_len) => match c_start.checked_add(max_len) {
                         Some(sum) => {
                             std::cmp::min(sum.saturating_sub(1), cols_count.saturating_sub(1))
@@ -689,15 +700,9 @@ impl Sheet {
 
                 if is_first_row_greedy {
                     for c_end in (min_end..=max_end).rev() {
-                        if let Some(end_idx) = match_range(
-                            py,
-                            &matcher.row_patterns,
-                            sliced_data,
-                            c_start,
-                            c_end,
-                            0,
-                            i,
-                        )? {
+                        if let Some(end_idx) =
+                            match_range(py, &matcher.row_patterns, grid, c_start, c_end, 0, i)?
+                        {
                             if end_idx > i {
                                 return Ok(Some(Range {
                                     start_row: i,
@@ -710,15 +715,9 @@ impl Sheet {
                     }
                 } else {
                     for c_end in min_end..=max_end {
-                        if let Some(end_idx) = match_range(
-                            py,
-                            &matcher.row_patterns,
-                            sliced_data,
-                            c_start,
-                            c_end,
-                            0,
-                            i,
-                        )? {
+                        if let Some(end_idx) =
+                            match_range(py, &matcher.row_patterns, grid, c_start, c_end, 0, i)?
+                        {
                             if end_idx > i {
                                 return Ok(Some(Range {
                                     start_row: i,

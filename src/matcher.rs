@@ -417,128 +417,43 @@ impl RangeMatcher {
             .map(|r| r.into_iter().map(|c| py_any_to_cell_value(&c)).collect())
             .collect();
 
-        // Orient the input grid to canonical direction
-        let canon_data = orient_grid(&sheet_data, &self.outer_direction, &self.inner_direction);
+        let r_count = sheet_data.len();
+        let c_count = if r_count > 0 { sheet_data[0].len() } else { 0 };
 
-        let cols_count = if canon_data.is_empty() {
-            0
+        let needs_transpose = matches!(self.outer_direction.as_str(), "LR" | "RL");
+        let reverse_rows = if needs_transpose {
+            self.outer_direction == "RL"
         } else {
-            canon_data[0].len()
+            self.outer_direction == "BT"
         };
-        let col_end = if cols_count > 0 { cols_count - 1 } else { 0 };
-        let matched_end = match_range(py, &self.row_patterns, &canon_data, 0, col_end, 0, 0)?;
-        Ok(matched_end.is_some() && matched_end.unwrap() == canon_data.len())
-    }
-}
+        let reverse_cols = if needs_transpose {
+            self.inner_direction == "BT"
+        } else {
+            self.inner_direction == "RL"
+        };
 
-pub fn orient_grid(
-    grid: &[Vec<CellValue>],
-    outer_dir: &str,
-    inner_dir: &str,
-) -> Vec<Vec<CellValue>> {
-    let needs_transpose = matches!(outer_dir, "LR" | "RL");
-
-    let mut working = if needs_transpose {
-        let r_count = grid.len();
-        let c_count = if r_count > 0 { grid[0].len() } else { 0 };
-        let mut transposed = vec![vec![CellValue::Empty; r_count]; c_count];
-        for r in 0..r_count {
-            for c in 0..c_count {
-                transposed[c][r] = grid[r][c].clone();
-            }
+        if r_count == 0 || c_count == 0 {
+            return Ok(false);
         }
-        transposed
-    } else {
-        grid.to_vec()
-    };
 
-    let reverse_rows = if needs_transpose {
-        outer_dir == "RL"
-    } else {
-        outer_dir == "BT"
-    };
+        let grid = VirtualGrid {
+            sheet_data: &sheet_data,
+            start_row: 0,
+            end_row: r_count - 1,
+            start_col: 0,
+            end_col: c_count - 1,
+            needs_transpose,
+            reverse_rows,
+            reverse_cols,
+        };
 
-    if reverse_rows {
-        working.reverse();
-    }
-
-    let reverse_cols = if needs_transpose {
-        inner_dir == "BT"
-    } else {
-        inner_dir == "RL"
-    };
-
-    if reverse_cols {
-        for row in &mut working {
-            row.reverse();
-        }
-    }
-
-    working
-}
-
-#[allow(clippy::too_many_arguments)]
-pub fn map_canonical_range_back(
-    canon_start_row: usize,
-    canon_end_row: usize,
-    canon_start_col: usize,
-    canon_end_col: usize,
-    orig_rows: usize,
-    orig_cols: usize,
-    outer_dir: &str,
-    inner_dir: &str,
-) -> (usize, usize, usize, usize) {
-    let needs_transpose = matches!(outer_dir, "LR" | "RL");
-
-    let reverse_rows = if needs_transpose {
-        outer_dir == "RL"
-    } else {
-        outer_dir == "BT"
-    };
-
-    let reverse_cols = if needs_transpose {
-        inner_dir == "BT"
-    } else {
-        inner_dir == "RL"
-    };
-
-    let canon_rows_limit = if needs_transpose {
-        orig_cols
-    } else {
-        orig_rows
-    };
-    let canon_cols_limit = if needs_transpose {
-        orig_rows
-    } else {
-        orig_cols
-    };
-
-    let (t_start_row, t_end_row) = if reverse_rows {
-        (
-            canon_rows_limit - 1 - canon_end_row,
-            canon_rows_limit - 1 - canon_start_row,
-        )
-    } else {
-        (canon_start_row, canon_end_row)
-    };
-
-    let (t_start_col, t_end_col) = if reverse_cols {
-        (
-            canon_cols_limit - 1 - canon_end_col,
-            canon_cols_limit - 1 - canon_start_col,
-        )
-    } else {
-        (canon_start_col, canon_end_col)
-    };
-
-    if needs_transpose {
-        let start_row = t_start_col;
-        let end_row = t_end_col;
-        let start_col = t_start_row;
-        let end_col = t_end_row;
-        (start_row, end_row, start_col, end_col)
-    } else {
-        (t_start_row, t_end_row, t_start_col, t_end_col)
+        let col_end = if grid.cols_count() > 0 {
+            grid.cols_count() - 1
+        } else {
+            0
+        };
+        let matched_end = match_range(py, &self.row_patterns, &grid, 0, col_end, 0, 0)?;
+        Ok(matched_end.is_some() && matched_end.unwrap() == grid.rows_count())
     }
 }
 
@@ -586,21 +501,147 @@ fn cell_matches_rule(py: Python<'_>, rule: &CellMatchRule, val: &CellValue) -> P
         CellMatchRule::NonEmpty => Ok(!matches!(val, CellValue::Empty)),
         CellMatchRule::Exact(expected) => {
             let s = val.to_string_for_search();
-            Ok(s == *expected)
+            Ok(s.as_ref() == expected)
         }
         CellMatchRule::Regex(py_regex) => {
             let s = val.to_string_for_search();
             let bound_regex = py_regex.bind(py);
-            let match_obj = bound_regex.call_method1("search", (s,))?;
+            let match_obj = bound_regex.call_method1("search", (s.as_ref(),))?;
             Ok(!match_obj.is_none())
         }
         CellMatchRule::Group(_) => Ok(false),
     }
 }
 
+pub struct VirtualGrid<'a> {
+    pub sheet_data: &'a [Vec<CellValue>],
+    pub start_row: usize,
+    pub end_row: usize,
+    pub start_col: usize,
+    pub end_col: usize,
+    pub needs_transpose: bool,
+    pub reverse_rows: bool,
+    pub reverse_cols: bool,
+}
+
+impl VirtualGrid<'_> {
+    pub fn rows_count(&self) -> usize {
+        if self.needs_transpose {
+            self.end_col.saturating_sub(self.start_col) + 1
+        } else {
+            self.end_row.saturating_sub(self.start_row) + 1
+        }
+    }
+
+    pub fn cols_count(&self) -> usize {
+        if self.needs_transpose {
+            self.end_row.saturating_sub(self.start_row) + 1
+        } else {
+            self.end_col.saturating_sub(self.start_col) + 1
+        }
+    }
+
+    pub fn get(&self, r: usize, c: usize) -> &CellValue {
+        let t_r = if self.reverse_rows {
+            self.rows_count().saturating_sub(1).saturating_sub(r)
+        } else {
+            r
+        };
+        let t_c = if self.reverse_cols {
+            self.cols_count().saturating_sub(1).saturating_sub(c)
+        } else {
+            c
+        };
+
+        let (orig_r, orig_c) = if self.needs_transpose {
+            (self.start_row + t_c, self.start_col + t_r)
+        } else {
+            (self.start_row + t_r, self.start_col + t_c)
+        };
+
+        if orig_r >= self.sheet_data.len() {
+            return &CellValue::Empty;
+        }
+        if orig_c >= self.sheet_data[orig_r].len() {
+            return &CellValue::Empty;
+        }
+        &self.sheet_data[orig_r][orig_c]
+    }
+
+    pub fn map_back(
+        &self,
+        canon_start_row: usize,
+        canon_end_row: usize,
+        canon_start_col: usize,
+        canon_end_col: usize,
+    ) -> (usize, usize, usize, usize) {
+        let (t_start_row, t_end_row) = if self.reverse_rows {
+            (
+                self.rows_count()
+                    .saturating_sub(1)
+                    .saturating_sub(canon_end_row),
+                self.rows_count()
+                    .saturating_sub(1)
+                    .saturating_sub(canon_start_row),
+            )
+        } else {
+            (canon_start_row, canon_end_row)
+        };
+
+        let (t_start_col, t_end_col) = if self.reverse_cols {
+            (
+                self.cols_count()
+                    .saturating_sub(1)
+                    .saturating_sub(canon_end_col),
+                self.cols_count()
+                    .saturating_sub(1)
+                    .saturating_sub(canon_start_col),
+            )
+        } else {
+            (canon_start_col, canon_end_col)
+        };
+
+        if self.needs_transpose {
+            let start_row = self.start_row + t_start_col;
+            let end_row = self.start_row + t_end_col;
+            let start_col = self.start_col + t_start_row;
+            let end_col = self.start_col + t_end_row;
+            (start_row, end_row, start_col, end_col)
+        } else {
+            let start_row = self.start_row + t_start_row;
+            let end_row = self.start_row + t_end_row;
+            let start_col = self.start_col + t_start_col;
+            let end_col = self.start_col + t_end_col;
+            (start_row, end_row, start_col, end_col)
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct VirtualRow<'a> {
+    pub grid: &'a VirtualGrid<'a>,
+    pub r: usize,
+    pub col_start: usize,
+    pub col_end: usize,
+}
+
+impl VirtualRow<'_> {
+    pub fn len(&self) -> usize {
+        if self.col_start > self.col_end {
+            0
+        } else {
+            self.col_end - self.col_start + 1
+        }
+    }
+
+    pub fn get(&self, idx: usize) -> &CellValue {
+        self.grid.get(self.r, self.col_start + idx)
+    }
+}
+
 struct GroupMatchCtx<'a, 'py> {
     py: Python<'py>,
-    cells: &'a [CellValue],
+    cells: VirtualRow<'a>,
 }
 
 fn match_group_reps(
@@ -705,8 +746,8 @@ fn find_group_match_ends(
         }
     } else {
         let max_limit = match pattern.max {
-            Some(m) => std::cmp::min(m, ctx.cells.len() - current_cell_idx),
-            None => ctx.cells.len() - current_cell_idx,
+            Some(m) => std::cmp::min(m, ctx.cells.len().saturating_sub(current_cell_idx)),
+            None => ctx.cells.len().saturating_sub(current_cell_idx),
         };
 
         if max_limit < pattern.min {
@@ -718,7 +759,7 @@ fn find_group_match_ends(
             if cell_matches_rule(
                 ctx.py,
                 &pattern.rule,
-                &ctx.cells[current_cell_idx + matchable],
+                ctx.cells.get(current_cell_idx + matchable),
             )? {
                 matchable += 1;
             } else {
@@ -844,8 +885,8 @@ fn match_cells(
     }
 
     let max_limit = match pattern.max {
-        Some(m) => std::cmp::min(m, ctx.cells.len() - cell_idx),
-        None => ctx.cells.len() - cell_idx,
+        Some(m) => std::cmp::min(m, ctx.cells.len().saturating_sub(cell_idx)),
+        None => ctx.cells.len().saturating_sub(cell_idx),
     };
 
     if max_limit < pattern.min {
@@ -854,7 +895,7 @@ fn match_cells(
 
     let mut matchable = 0;
     while matchable < max_limit {
-        if cell_matches_rule(ctx.py, &pattern.rule, &ctx.cells[cell_idx + matchable])? {
+        if cell_matches_rule(ctx.py, &pattern.rule, ctx.cells.get(cell_idx + matchable))? {
             matchable += 1;
         } else {
             break;
@@ -882,7 +923,7 @@ fn match_cells(
     Ok(false)
 }
 
-fn parse_cardinality(card: &str) -> (usize, Option<usize>) {
+pub(crate) fn parse_cardinality(card: &str) -> (usize, Option<usize>) {
     match card {
         "1" => (1, Some(1)),
         "+" => (1, None),
@@ -924,16 +965,22 @@ impl StringHelpers for str {
 fn matches_row_pattern(
     py: Python<'_>,
     pattern: &RangePattern1D,
-    row: &[CellValue],
+    grid: &VirtualGrid<'_>,
+    row_idx: usize,
     col_start: usize,
     col_end: usize,
 ) -> PyResult<bool> {
-    if col_start > col_end || col_end >= row.len() {
+    if col_start > col_end || col_end >= grid.cols_count() {
         return Ok(false);
     }
     let ctx = GroupMatchCtx {
         py,
-        cells: &row[col_start..=col_end],
+        cells: VirtualRow {
+            grid,
+            r: row_idx,
+            col_start,
+            col_end,
+        },
     };
     match_cells(&ctx, &pattern.cell_patterns, 0, 0)
 }
@@ -941,7 +988,7 @@ fn matches_row_pattern(
 pub fn match_range(
     py: Python<'_>,
     patterns: &[RangePattern1D],
-    sheet_data: &[Vec<CellValue>],
+    grid: &VirtualGrid<'_>,
     col_start: usize,
     col_end: usize,
     pattern_idx: usize,
@@ -955,8 +1002,8 @@ pub fn match_range(
     let (min_rows, max_rows) = parse_cardinality(&pattern.cardinality);
 
     let max_limit = match max_rows {
-        Some(m) => std::cmp::min(m, sheet_data.len() - sheet_row_idx),
-        None => sheet_data.len() - sheet_row_idx,
+        Some(m) => std::cmp::min(m, grid.rows_count().saturating_sub(sheet_row_idx)),
+        None => grid.rows_count().saturating_sub(sheet_row_idx),
     };
 
     if max_limit < min_rows {
@@ -968,7 +1015,8 @@ pub fn match_range(
         if matches_row_pattern(
             py,
             pattern,
-            &sheet_data[sheet_row_idx + matchable],
+            grid,
+            sheet_row_idx + matchable,
             col_start,
             col_end,
         )? {
@@ -987,7 +1035,7 @@ pub fn match_range(
             if let Some(end_idx) = match_range(
                 py,
                 patterns,
-                sheet_data,
+                grid,
                 col_start,
                 col_end,
                 pattern_idx + 1,
@@ -1001,7 +1049,7 @@ pub fn match_range(
             if let Some(end_idx) = match_range(
                 py,
                 patterns,
-                sheet_data,
+                grid,
                 col_start,
                 col_end,
                 pattern_idx + 1,
@@ -1051,20 +1099,53 @@ mod tests {
                 CellValue::Int(123),
                 CellValue::String("Total".to_string()),
             ];
-            assert!(matches_row_pattern(py, &pattern_ref, &row1, 0, row1.len() - 1).unwrap());
+            let grid_data1 = vec![row1.clone()];
+            let grid1 = VirtualGrid {
+                sheet_data: &grid_data1,
+                start_row: 0,
+                end_row: 0,
+                start_col: 0,
+                end_col: row1.len() - 1,
+                needs_transpose: false,
+                reverse_rows: false,
+                reverse_cols: false,
+            };
+            assert!(matches_row_pattern(py, &pattern_ref, &grid1, 0, 0, row1.len() - 1).unwrap());
 
             let row2 = vec![
                 CellValue::String("Date".to_string()),
                 CellValue::String("Total".to_string()),
             ];
-            assert!(!matches_row_pattern(py, &pattern_ref, &row2, 0, row2.len() - 1).unwrap());
+            let grid_data2 = vec![row2.clone()];
+            let grid2 = VirtualGrid {
+                sheet_data: &grid_data2,
+                start_row: 0,
+                end_row: 0,
+                start_col: 0,
+                end_col: row2.len() - 1,
+                needs_transpose: false,
+                reverse_rows: false,
+                reverse_cols: false,
+            };
+            assert!(!matches_row_pattern(py, &pattern_ref, &grid2, 0, 0, row2.len() - 1).unwrap());
 
             let row3 = vec![
                 CellValue::String("Date".to_string()),
                 CellValue::String("Description".to_string()),
                 CellValue::Int(123),
             ];
-            assert!(!matches_row_pattern(py, &pattern_ref, &row3, 0, row3.len() - 1).unwrap());
+            let grid_data3 = vec![row3.clone()];
+            let grid3 = VirtualGrid {
+                sheet_data: &grid_data3,
+                start_row: 0,
+                end_row: 0,
+                start_col: 0,
+                end_col: row3.len() - 1,
+                needs_transpose: false,
+                reverse_rows: false,
+                reverse_cols: false,
+            };
+            assert!(!matches_row_pattern(py, &pattern_ref, &grid3, 0, 0, row3.len() - 1).unwrap());
         });
     }
 
@@ -1090,7 +1171,18 @@ mod tests {
                 CellValue::String("Q1".to_string()),
                 CellValue::String("Q2".to_string()),
             ];
-            assert!(matches_row_pattern(py, &pattern_ref, &row1, 0, row1.len() - 1).unwrap());
+            let grid_data1 = vec![row1.clone()];
+            let grid1 = VirtualGrid {
+                sheet_data: &grid_data1,
+                start_row: 0,
+                end_row: 0,
+                start_col: 0,
+                end_col: row1.len() - 1,
+                needs_transpose: false,
+                reverse_rows: false,
+                reverse_cols: false,
+            };
+            assert!(matches_row_pattern(py, &pattern_ref, &grid1, 0, 0, row1.len() - 1).unwrap());
 
             let row2 = vec![
                 CellValue::String("Q1".to_string()),
@@ -1098,10 +1190,32 @@ mod tests {
                 CellValue::Empty,
                 CellValue::Empty,
             ];
-            assert!(matches_row_pattern(py, &pattern_ref, &row2, 0, row2.len() - 1).unwrap());
+            let grid_data2 = vec![row2.clone()];
+            let grid2 = VirtualGrid {
+                sheet_data: &grid_data2,
+                start_row: 0,
+                end_row: 0,
+                start_col: 0,
+                end_col: row2.len() - 1,
+                needs_transpose: false,
+                reverse_rows: false,
+                reverse_cols: false,
+            };
+            assert!(matches_row_pattern(py, &pattern_ref, &grid2, 0, 0, row2.len() - 1).unwrap());
 
             let row3 = vec![CellValue::String("Q1".to_string()), CellValue::Empty];
-            assert!(!matches_row_pattern(py, &pattern_ref, &row3, 0, row3.len() - 1).unwrap());
+            let grid_data3 = vec![row3.clone()];
+            let grid3 = VirtualGrid {
+                sheet_data: &grid_data3,
+                start_row: 0,
+                end_row: 0,
+                start_col: 0,
+                end_col: row3.len() - 1,
+                needs_transpose: false,
+                reverse_rows: false,
+                reverse_cols: false,
+            };
+            assert!(!matches_row_pattern(py, &pattern_ref, &grid3, 0, 0, row3.len() - 1).unwrap());
         });
     }
 
@@ -1229,17 +1343,50 @@ mod tests {
                 CellValue::String("Expected".to_string()),
                 CellValue::String("Actual".to_string()),
             ];
-            assert!(matches_row_pattern(py, &pattern_ref, &row1, 0, row1.len() - 1).unwrap());
+            let grid_data1 = vec![row1.clone()];
+            let grid1 = VirtualGrid {
+                sheet_data: &grid_data1,
+                start_row: 0,
+                end_row: 0,
+                start_col: 0,
+                end_col: row1.len() - 1,
+                needs_transpose: false,
+                reverse_rows: false,
+                reverse_cols: false,
+            };
+            assert!(matches_row_pattern(py, &pattern_ref, &grid1, 0, 0, row1.len() - 1).unwrap());
 
             let row2 = vec![
                 CellValue::String("Product".to_string()),
                 CellValue::String("Expected".to_string()),
                 CellValue::String("Expected".to_string()),
             ];
-            assert!(!matches_row_pattern(py, &pattern_ref, &row2, 0, row2.len() - 1).unwrap());
+            let grid_data2 = vec![row2.clone()];
+            let grid2 = VirtualGrid {
+                sheet_data: &grid_data2,
+                start_row: 0,
+                end_row: 0,
+                start_col: 0,
+                end_col: row2.len() - 1,
+                needs_transpose: false,
+                reverse_rows: false,
+                reverse_cols: false,
+            };
+            assert!(!matches_row_pattern(py, &pattern_ref, &grid2, 0, 0, row2.len() - 1).unwrap());
 
             let row3 = vec![CellValue::String("Product".to_string())];
-            assert!(!matches_row_pattern(py, &pattern_ref, &row3, 0, row3.len() - 1).unwrap());
+            let grid_data3 = vec![row3.clone()];
+            let grid3 = VirtualGrid {
+                sheet_data: &grid_data3,
+                start_row: 0,
+                end_row: 0,
+                start_col: 0,
+                end_col: row3.len() - 1,
+                needs_transpose: false,
+                reverse_rows: false,
+                reverse_cols: false,
+            };
+            assert!(!matches_row_pattern(py, &pattern_ref, &grid3, 0, 0, row3.len() - 1).unwrap());
         });
     }
 }
