@@ -53,6 +53,33 @@ When you have a single-row DataFrame containing global metadata (e.g., date, fis
 
 ---
 
+## 🔄 Pivoting Hierarchical Headers Strategy
+
+When tables contain hierarchical headers (e.g. nested headers with products and years), we can extract them natively as Arrow structs and flatten them dynamically:
+
+1. **Disable Header Flattening:** Set `flatten_header=False` in `sheet.extract_table()`. This prevents columns from being flattened into concatenated strings (e.g. `2025_expected`). Instead, columns are exported as nested Arrow structs (e.g. a struct column named `2025` with fields `expected` and `actual`).
+2. **Unpack Root Structs:** If any root-level columns are structs (e.g. `product` column containing a nested field `product`), unpack them to clean scalar columns:
+    ```python
+    df = df.with_columns(pl.col("product").struct.field("product"))
+    ```
+3. **Dynamic Unpivot (Melt) with `on=None`:** Use Polars' `unpivot()` with `on=None`. Polars will automatically select all columns not specified in the `index` argument to be unpivoted to rows. This naturally normalizes differing/dynamic sets of columns (e.g., years) into a standard key-value row format:
+    ```python
+    df = df.unpivot(
+        on=None,
+        index=["territory", "product"],
+        variable_name="year",
+        value_name="metrics",
+    )
+    ```
+4. **Unnest Nested Structs:** Unnest the melted value column struct to expand its fields back into separate columns:
+    ```python
+    df = df.unnest("metrics")
+    ```
+
+This approach automatically standardizes heterogeneous year/metric columns across multiple sub-tables to ensure that `pl.concat(dfs)` succeeds natively without requiring any schema alignment or manual column unions.
+
+---
+
 ## 🥞 Stacked Table Scanning Strategy
 
 When multiple tables are stacked vertically in a single sheet:
