@@ -66,34 +66,31 @@ In this example, we need to extract the sales table located at the top of the sh
 Let's define a match pattern for the header row and a match pattern for the data rows:
 
 ```python
-from tabularix import RangeMatcher, regex, value
+from tabularix import RangePattern1D, RangePattern2D, non_empty, regex, value
 
-# Define the pattern and matcher for the header row.
+# Define the 1D pattern for the header row.
 # It starts with "Region", followed by 4 Quarter columns matching
-#  a regex pattern (e.g. Q1, Q2, etc.).
-header_pattern = (
-    # Static string
-    value("Region")
-    # Quarter header: Q1, Q2, Q3, Q4
-    .regex(r"^Q[1-4]$")
-    .repeat(4, max=4)
-)
+# a regex pattern (e.g. Q1, Q2, etc.).
+header_pattern = RangePattern1D([
+    value("Region"), # Static string
+    regex(r"^Q[1-4]$").repeat(4, max=4) # Quarter header: Q1, Q2, Q3, Q4
+])
 
-header_matcher = RangeMatcher().row(header_pattern)
+header_matcher = header_pattern.to_matcher(direction="LR")
 
-# Define the pattern and matcher for the data rows. The rows must:
+# Define the 1D pattern for a data row. The rows must:
 #   - start with a region name, i.e. a string different than `Total` (which
 #     is the marker of the table footer)
 #   - end by 4 non-empty data cells
-data_pattern = (
-    # Match any string except "Total"
-    regex(r"^(?!Total).*$")
-    # Quarters amount
-    .non_empty()
-    .repeat(4, max=4)
-)
+data_row_pattern = RangePattern1D([
+    regex(r"^(?!Total).*$"), # Match any string except "Total"
+    non_empty().repeat(4, max=4) # Quarters amount
+])
 
-data_matcher = RangeMatcher().row(data_pattern).one_or_more()
+data_matcher = RangePattern2D([data_row_pattern.one_or_more()]).to_matcher(
+    outer_direction="TB",
+    inner_direction="LR"
+)
 ```
 
 ---

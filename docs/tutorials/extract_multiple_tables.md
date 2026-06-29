@@ -32,27 +32,29 @@ Then the **Financial Report** section begins with a metadata block at the top (*
 
 ---
 
-## 🛠️ Step 1: Extract and Transpose Metadata
+## 🛠️ Step 1: Extract Metadata as a Horizontal Table
 
-Metadata is often stored horizontally: keys in one column and values in the adjacent column. To make this metadata usable as row-level dimensions, we extract it and transpose it so the keys become column headers.
+Metadata is often stored horizontally: keys in one column and values in the adjacent column. To make this metadata usable as row-level dimensions, we extract it directly as a horizontal table by using two vertical matchers (one for the header and one for the data) with `extract_table`.
 
-### Define the Metadata Matcher
+### Define the Metadata Matchers
 
-We define a [RangeMatcher](../api.md#tabularix.RangeMatcher) matching "Date" or "Fiscal Year" followed by a non-empty cell:
+We define a vertical matcher for the header column matching "Date" or "Fiscal Year", and another vertical matcher for the data column to the right:
 
 ```python
-from tabularix import RangeMatcher, regex
+from tabularix import RangePattern1D, regex, non_empty
 
-metadata_matcher = (
-    RangeMatcher()
-    .row(regex(r"^(Date|Fiscal Year)$").non_empty())
-    .one_or_more()
-)
+# Matcher for the vertical header column
+header_pattern = RangePattern1D([regex(r"^(Date|Fiscal Year)$").repeat(2, 2)])
+header_matcher = header_pattern.to_matcher(direction="TB")
+
+# Matcher for the vertical data column
+data_pattern = RangePattern1D([non_empty().repeat(2, 2)])
+data_matcher = data_pattern.to_matcher(direction="TB")
 ```
 
-### Transpose and Type Cast with Polars
+### Extracting the Horizontal Table
 
-We extract the range, convert it to a Polars DataFrame, transpose it, and parse the date string:
+We locate both the header range and the data range (restricting the search vertically to the right of the header range using `right=header_range`), extract them natively as a horizontal table, and convert them to a Polars DataFrame:
 
 ```python
 from typing import cast
@@ -60,22 +62,21 @@ import polars as pl
 import tabularix as tx
 
 def extract_metadata(sheet: tx.Sheet) -> pl.DataFrame:
-    metadata_range = sheet.search_range(metadata_matcher)
-    if metadata_range is None:
-        raise ValueError("Metadata block not found.")
+    header_range = sheet.search_range(header_matcher)
+    if header_range is None:
+        raise ValueError("Metadata headers not found.")
 
-    table = sheet.extract_table(metadata_range)
+    data_range = sheet.search_range_relative(data_matcher, right=header_range)
+    if data_range is None:
+        raise ValueError("Metadata data values not found.")
+
+    # Extract directly as a horizontal table
+    table = sheet.extract_table(data_range, header_range)
 
     # Cast to pl.DataFrame to satisfy static type checkers
     df = cast(pl.DataFrame, pl.from_arrow(table.to_arrow()))
 
-    # Transpose so keys in column_1 become headers
-    df_transposed = df.transpose(column_names="column_1")
-
-    if "Date" in df_transposed.columns:
-        df_transposed = df_transposed.with_columns(pl.col("Date").str.to_date())
-
-    return df_transposed
+    return df
 ```
 
 ---
@@ -85,34 +86,36 @@ def extract_metadata(sheet: tx.Sheet) -> pl.DataFrame:
 To match the territory tables dynamically, we define layout matchers for the headers and footers. Because of merged cells and empty cells representing empty values or un-cached formulas, we use **greedy cell matchers** to capture the full width of the table.
 
 ```python
-from tabularix import RangeMatcher, empty, regex, value
+from tabularix import RangePattern1D, RangePattern2D, any, empty, regex, value
 
 # Locate the territory title
-territory_matcher = RangeMatcher().row(regex(r"^(North|South|East|West)$"))
+territory_pattern = RangePattern1D([regex(r"^(North|South|East|West)$")])
+territory_matcher = territory_pattern.to_matcher(direction="LR")
 
 # Locate the two-row merged header
-header_matcher = (
-    RangeMatcher()
-    .row(
-        value("Product")
-        .group(
-            regex(r"\d{4}")
-            .empty()  # Matches the merged cell next to the year
-        )
-        .zero_or_more()
-    )
-    .row(
-        empty()       # Matches the merged cell below "Product"
-        .group(
-            value("Expected")
-            .value("Actual")
-        )
-        .zero_or_more()
-    )
-)
+header_row1 = RangePattern1D([
+    value("Product"),
+    RangePattern1D([
+        regex(r"\d{4}"),
+        empty()  # Matches the merged cell next to the year
+    ]).zero_or_more()
+])
+header_row2 = RangePattern1D([
+    empty(),  # Matches the merged cell below "Product"
+    RangePattern1D([
+        value("Expected"),
+        value("Actual")
+    ]).zero_or_more()
+])
+header_pattern = RangePattern2D([header_row1, header_row2])
+header_matcher = header_pattern.to_matcher(outer_direction="TB", inner_direction="LR")
 
 # Locate the footer row using greedy wildcard matching
-footer_matcher = RangeMatcher().row(value("Total").any().zero_or_more())
+footer_pattern = RangePattern1D([
+    value("Total"),
+    any().zero_or_more()
+])
+footer_matcher = footer_pattern.to_matcher(direction="LR")
 ```
 
 ---

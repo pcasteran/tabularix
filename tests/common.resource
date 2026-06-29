@@ -27,10 +27,12 @@ Verify Range Coordinates
     Should Be Equal As Integers    ${start_col}    ${s_col}
     Should Be Equal As Integers    ${end_col}    ${e_col}
 
-Find Range By Value
-    [Documentation]    Searches for a row pattern starting with the cell value.
+Find Range By Value In Simple Sheet
+    [Documentation]    Searches for a 3-column row pattern starting with the cell value (specific to simple sheet).
     [Arguments]    ${sheet}    ${val}
-    ${p}=    Evaluate    tabularix.value($val).any().any()    modules=tabularix
-    ${m}=    Evaluate    tabularix.RangeMatcher().row($p)    modules=tabularix
+    ${p}=    Evaluate
+    ...    tabularix.RangePattern1D([tabularix.value($val), tabularix.any(), tabularix.any()])
+    ...    modules=tabularix
+    ${m}=    Evaluate    $p.to_matcher(direction="LR")
     ${range}=    Evaluate    $sheet.search_range($m)
     RETURN    ${range}

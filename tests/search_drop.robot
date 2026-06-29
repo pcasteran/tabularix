@@ -66,6 +66,36 @@ Verify Regex Search And Drop
     Verify Coordinates And Shape    ${coords}    ${expected_coords}    ${sheet}    ${expected_shape}
     Verify Cell Value    ${sheet}    0    0    DEF
 
+Verify Search And Drop Top Right
+    [Documentation]    Verify exact string match with drop direction top_right.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.active_sheet()
+    ${coords}=    Evaluate    $sheet.search_and_drop("DEF", "top_right")
+    ${expected_coords}=    Evaluate    ((2, 0), (0, 0))
+    ${expected_shape}=    Evaluate    (3, 1)
+    Verify Coordinates And Shape    ${coords}    ${expected_coords}    ${sheet}    ${expected_shape}
+    Verify Cell Value    ${sheet}    0    0    DEF
+
+Verify Search And Drop Bottom Left
+    [Documentation]    Verify exact string match with drop direction bottom_left.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.active_sheet()
+    ${coords}=    Evaluate    $sheet.search_and_drop("Header #2", "bottom_left")
+    ${expected_coords}=    Evaluate    ((0, 1), (0, 0))
+    ${expected_shape}=    Evaluate    (1, 2)
+    Verify Coordinates And Shape    ${coords}    ${expected_coords}    ${sheet}    ${expected_shape}
+    Verify Cell Value    ${sheet}    0    0    Header #2
+
+Verify Search And Drop Bottom Right
+    [Documentation]    Verify exact string match with drop direction bottom_right.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.active_sheet()
+    ${coords}=    Evaluate    $sheet.search_and_drop("Header #2", "bottom_right")
+    ${expected_coords}=    Evaluate    ((0, 1), (0, 1))
+    ${expected_shape}=    Evaluate    (1, 2)
+    Verify Coordinates And Shape    ${coords}    ${expected_coords}    ${sheet}    ${expected_shape}
+    Verify Cell Value    ${sheet}    0    1    Header #2
+
 Verify Search And Drop Errors
     [Documentation]    Verify correct exception raising for invalid inputs/not found.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
