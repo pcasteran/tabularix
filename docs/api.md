@@ -187,7 +187,14 @@ This page describes the public API exposed by the Tabularix library.
 ---
 
 <!-- prettier-ignore -->
-::: tabularix.CellGroupPattern
+::: tabularix.RangePattern1D
+    options:
+      heading_level: 3
+
+---
+
+<!-- prettier-ignore -->
+::: tabularix.RangePattern2D
     options:
       heading_level: 3
 

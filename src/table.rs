@@ -109,21 +109,40 @@ fn validate_ranges(sheet: &Sheet, data: &Range, header: Option<&Range>) -> PyRes
                 "Header range exceeds sheet dimensions.",
             ));
         }
-        if h.start_col != data.start_col || h.end_col != data.end_col {
+
+        let is_vertical_align = h.start_col == data.start_col && h.end_col == data.end_col;
+        let is_horizontal_align = h.start_row == data.start_row && h.end_row == data.end_row;
+
+        if !is_vertical_align && !is_horizontal_align {
             return Err(pyo3::exceptions::PyValueError::new_err(
-                "Header and data ranges do not align horizontally (column spans differ).",
+                "Header and data ranges do not align horizontally or vertically.",
             ));
         }
-        if h.end_row >= data.start_row {
-            return Err(pyo3::exceptions::PyValueError::new_err(
-                "Header range overlaps with or is positioned below the data range.",
-            ));
+
+        if is_vertical_align {
+            let h_above = h.end_row < data.start_row;
+            let h_below = data.end_row < h.start_row;
+            if !h_above && !h_below {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    "Header range overlaps with the data range.",
+                ));
+            }
+        } else {
+            // is_horizontal_align
+            let h_left = h.end_col < data.start_col;
+            let h_right = data.end_col < h.start_col;
+            if !h_left && !h_right {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    "Header range overlaps with the data range.",
+                ));
+            }
         }
     }
     Ok(())
 }
 
 impl Table {
+    #[allow(clippy::too_many_lines)]
     pub fn extract_from_sheet(
         sheet: &Sheet,
         data: &Range,
@@ -135,7 +154,51 @@ impl Table {
         validate_ranges(sheet, data, header)?;
 
         let (fields, arrays) = if let Some(h) = header {
-            if flatten_header || h.start_row == h.end_row {
+            let is_horizontal = h.start_row == data.start_row && h.end_row == data.end_row;
+            if is_horizontal {
+                let mut resolved_fields = Vec::new();
+                let mut resolved_arrays = Vec::new();
+                let mut seen = HashSet::new();
+
+                for r in data.start_row..=data.end_row {
+                    let raw_name = if h.start_col == h.end_col {
+                        sheet
+                            .get_merged_cell_value(r, h.start_col)
+                            .to_string_for_search()
+                            .into_owned()
+                    } else {
+                        (h.start_col..=h.end_col)
+                            .map(|c| sheet.get_merged_cell_value(r, c).to_string_for_search())
+                            .collect::<Vec<_>>()
+                            .join(header_separator)
+                    };
+
+                    let mut base_name = if clean_names {
+                        clean_name(&raw_name)
+                    } else {
+                        raw_name.trim().to_string()
+                    };
+
+                    if base_name.is_empty() {
+                        base_name = format!("column_{}", r - data.start_row + 1);
+                    }
+
+                    let mut name = base_name.clone();
+                    let mut suffix = 1;
+                    while seen.contains(&name) {
+                        name = format!("{base_name}_{suffix}");
+                        suffix += 1;
+                    }
+                    seen.insert(name.clone());
+
+                    let (datatype, array) =
+                        build_flat_array_horizontal(sheet, r, data.start_col, data.end_col);
+                    resolved_fields.push(Field::new(name, datatype, true));
+                    resolved_arrays.push(array);
+                }
+
+                (resolved_fields, resolved_arrays)
+            } else if flatten_header || h.start_row == h.end_row {
                 let mut resolved_fields = Vec::new();
                 let mut resolved_arrays = Vec::new();
                 let mut seen = HashSet::new();
@@ -145,6 +208,7 @@ impl Table {
                         sheet
                             .get_merged_cell_value(h.start_row, c)
                             .to_string_for_search()
+                            .into_owned()
                     } else {
                         (h.start_row..=h.end_row)
                             .map(|r| sheet.get_merged_cell_value(r, c).to_string_for_search())
@@ -233,6 +297,60 @@ fn clean_name(name: &str) -> String {
         s = &s[..s.len() - 1];
     }
     s.to_string()
+}
+
+#[allow(clippy::cast_precision_loss)]
+fn build_flat_array_horizontal(
+    sheet: &Sheet,
+    row: usize,
+    start_col: usize,
+    end_col: usize,
+) -> (DataType, ArrayRef) {
+    let mut cells = Vec::new();
+    for c in start_col..=end_col {
+        cells.push(sheet.get_merged_cell_value(row, c));
+    }
+
+    let mut has_string = false;
+    let mut has_float = false;
+    let mut has_int = false;
+    let mut has_bool = false;
+    let mut has_date = false;
+    let mut has_datetime = false;
+
+    for cell in &cells {
+        match cell {
+            CellValue::String(_) => has_string = true,
+            CellValue::Float(_) => has_float = true,
+            CellValue::Int(_) => has_int = true,
+            CellValue::Bool(_) => has_bool = true,
+            CellValue::Date(_) => has_date = true,
+            CellValue::DateTime(_) => has_datetime = true,
+            CellValue::Empty | CellValue::Error(_) => {}
+        }
+    }
+
+    let datatype = if has_string
+        || (has_bool && (has_int || has_float || has_date || has_datetime))
+        || ((has_date || has_datetime) && (has_int || has_float))
+    {
+        DataType::Utf8
+    } else if has_bool {
+        DataType::Boolean
+    } else if has_float {
+        DataType::Float64
+    } else if has_int {
+        DataType::Int64
+    } else if has_datetime {
+        DataType::Timestamp(arrow::datatypes::TimeUnit::Microsecond, None)
+    } else if has_date {
+        DataType::Date32
+    } else {
+        DataType::Utf8
+    };
+
+    let array = build_array_for_type(&datatype, &cells);
+    (datatype, array)
 }
 
 #[allow(clippy::cast_precision_loss)]

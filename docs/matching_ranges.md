@@ -8,22 +8,24 @@ icon: lucide/target
 
 In many real-world spreadsheets, tables of interest are not nicely formatted or aligned. They might begin after arbitrary headers, contain multiline merged cells, or have variable numbers of columns and rows.
 
-To reliably locate and extract these tables, **Tabularix** provides the **Layex Pattern Matching Engine**. **Layex** stands for **Layout Expression**, a concept and syntax derived from regular expressions but tailored for layout-level structures of spreadsheets. With Layex, you define a structural pattern of cell sequences (called a `CellGroupPattern`) and row sequences (called a `RangeMatcher`) programmatically.
+To reliably locate and extract these tables, **Tabularix** provides the **Layex Pattern Matching Engine**. **Layex** stands for **Layout Expression**, a concept and syntax derived from regular expressions but tailored for layout-level structures of spreadsheets. With Layex, you define a structural pattern of cell sequences (called a `RangePattern1D`) and row sequences (called a `RangePattern2D`) programmatically, and then compile them into a `RangeMatcher`.
 
 ---
 
 ## 🏗️ Core Concepts
 
-The layout matcher uses two primary builders:
+The layout matcher uses two primary builders to construct patterns:
 
-1. **`CellGroupPattern`**: Represents the expected horizontal sequence of cells in a single row or nested cell group. It is constructed using cell-matching rules (`value`, `regex`, `empty`, `non_empty`, `any`) and cell-level cardinalities (how many columns match this rule).
-2. **`RangeMatcher`**: Represents the expected vertical sequence of rows. It compiles one or more `CellGroupPattern`s together, along with row-level cardinalities (how many times a row or block of rows repeats).
+1. **`RangePattern1D`**: Represents a one-dimensional sequence of cells or sub-groups. It is constructed using cell-matching rules (`value`, `regex`, `empty`, `non_empty`, `any`) and cell-level cardinalities (how many columns or cells match this rule).
+2. **`RangePattern2D`**: Represents a two-dimensional range pattern. It compiles one or more `RangePattern1D` row patterns together, along with row-level cardinalities (how many times a row repeats).
+
+Calling `.to_matcher()` compiles these patterns into a **`RangeMatcher`** object, which is then used by the sheet search APIs.
 
 ---
 
 ## 🛠️ Top-Level Helper Functions
 
-Tabularix exports top-level helper functions to cleanly start a new `CellGroupPattern` in Python:
+Tabularix exports top-level helper functions to cleanly construct cell rules inside `RangePattern1D`:
 
 - `value(val)`: Matches cells with the exact string value `val`.
 - `regex(pattern)`: Matches cells against a regular expression pattern (compiled or plain string).
@@ -35,7 +37,7 @@ Tabularix exports top-level helper functions to cleanly start a new `CellGroupPa
 
 ## 🔄 Cardinalities (Repetitions)
 
-Both `CellGroupPattern` (cells) and `RangeMatcher` (rows) support the same cardinality methods to control matches:
+Both cell rules inside `RangePattern1D` (horizontal columns) and row patterns inside `RangePattern2D` (vertical rows) support the same cardinality methods to control matches:
 
 - `.one_or_more()`: Matches 1 or more times (regex `+`).
 - `.zero_or_more()`: Matches 0 or more times (regex `*`).
@@ -44,7 +46,7 @@ Both `CellGroupPattern` (cells) and `RangeMatcher` (rows) support the same cardi
 
 <!-- prettier-ignore -->
 !!! important "Cardinality Exclusivity"
-    You can only configure a cardinality method once per cell or row pattern. Chaining multiple cardinalities (e.g. `.optional().one_or_more()`) will raise a `ValueError`.
+    You can only configure a cardinality method once per cell rule or row pattern. Chaining multiple cardinalities (e.g. `.optional().one_or_more()`) will raise a `ValueError`.
 
 ### 🪵 Greedy vs. Lazy Matching
 
@@ -54,7 +56,7 @@ When scanning a row, the matching engine will always attempt to match the **larg
 
 #### Configuring Lazy Matching
 
-If you want the matching engine to match the **smallest possible span** (lazy matching), you can pass `greedy=False` to any of the repetition methods on both `CellGroupPattern` and `RangeMatcher`:
+If you want the matching engine to match the **smallest possible span** (lazy matching), you can pass `greedy=False` to any of the repetition methods on both cell rules and row patterns:
 
 - `.one_or_more(greedy=False)`
 - `.zero_or_more(greedy=False)`
@@ -63,8 +65,8 @@ If you want the matching engine to match the **smallest possible span** (lazy ma
 
 This allows configuration of greediness for both directions:
 
-- **Horizontal Matching (Columns)**: Configured on `CellGroupPattern` builders. Controls how many columns are matched by repeating cell patterns.
-- **Vertical Matching (Rows)**: Configured on `RangeMatcher` builders. Controls how many repeating rows are matched.
+- **Horizontal Matching (Columns)**: Configured on cell rules in `RangePattern1D`. Controls how many columns are matched by repeating cell patterns.
+- **Vertical Matching (Rows)**: Configured on row patterns in `RangePattern2D`. Controls how many repeating rows are matched.
 
 When lazy matching is enabled, the engine starts by evaluating the minimum required columns/rows and only expands to match more elements if the remainder of the matcher rules fail. This is useful when you want to avoid matching too wide of a range, such as when parsing sub-table headers or optional separators.
 
@@ -83,16 +85,17 @@ For example, to match a tabular data row structured like this:
 We define a single row pattern starting with a date (regex `^\d{4}-\d{2}-\d{2}$`), followed by a non-empty text label, followed by exactly 4 currency amount values:
 
 ```python linenums="1"
-from tabularix import RangeMatcher, value, regex, non_empty
+from tabularix import RangePattern1D, regex, non_empty
 
-matcher = (
-    RangeMatcher()
-    .row(
-        regex(r"^\d{4}-\d{2}-\d{2}$")   # 1 date cell
-        .non_empty()                    # 1 description label
-        .regex(r"^\$\d+(?:\.\d{2})?$").repeat(4)  # Exactly 4 currency amounts
-    )
-)
+# Define a 1D pattern representing a row
+pattern = RangePattern1D([
+    regex(r"^\d{4}-\d{2}-\d{2}$"),              # 1 date cell
+    non_empty(),                                # 1 description label
+    regex(r"^\$\d+(?:\.\d{2})?$").repeat(4)     # Exactly 4 currency amounts
+])
+
+# Compile it into a 1D matcher
+matcher = pattern.to_matcher(direction="LR")
 ```
 
 ### 2. Multi-line Headers (Variable Columns)
@@ -104,25 +107,29 @@ Usually, spreadsheets have multiline headers where cells merge across columns. F
 | `Sales Report 2026` | `H1`       | _(empty)_ | `H2`       | _(empty)_ |
 | `Product`           | `Forecast` | `Actual`  | `Forecast` | `Actual`  |
 
-We can match this 2-line header sequence by combining different row patterns inside `RangeMatcher`:
+We can match this 2-line header sequence by combining different row patterns:
 
 ```python linenums="1"
-from tabularix import RangeMatcher, value, regex, empty
+from tabularix import RangePattern1D, RangePattern2D, value, regex, empty
 
-multiline_header_matcher = (
-    RangeMatcher()
-        # Header Row 1: The title block with half-year category headers
-        .row(
-            value("Sales Report 2026")
-            .value("H1").empty()
-            .value("H2").empty()
-        )
-        # Header Row 2: Product category followed by sub-columns
-        .row(
-            value("Product")
-            .regex(r"^(Forecast|Actual)$").repeat(4)
-        )
-)
+# Header Row 1: The title block with half-year category headers
+row1 = RangePattern1D([
+    value("Sales Report 2026"),
+    value("H1"),
+    empty(),
+    value("H2"),
+    empty()
+])
+
+# Header Row 2: Product category followed by sub-columns
+row2 = RangePattern1D([
+    value("Product"),
+    regex(r"^(Forecast|Actual)$").repeat(4)
+])
+
+# Combine into a 2D pattern and compile it
+pattern = RangePattern2D([row1, row2])
+multiline_header_matcher = pattern.to_matcher(outer_direction="TB", inner_direction="LR")
 ```
 
 ### 3. Check Row Matches Directly
@@ -130,15 +137,13 @@ multiline_header_matcher = (
 You can check if list data matches a configured range pattern using `matches_range`:
 
 ```python linenums="1"
-from tabularix import RangeMatcher, value, non_empty
+from tabularix import RangePattern1D, value, non_empty
 
-matcher = (
-    RangeMatcher()
-    .row(
-        value("Category")
-        .non_empty().one_or_more()
-    )
-)
+pattern = RangePattern1D([
+    value("Category"),
+    non_empty().one_or_more()
+])
+matcher = pattern.to_matcher(direction="LR")
 
 # Returns True (starts with "Category" followed by one or more non-empty cells)
 print(matcher.matches_range([["Category", "A", "B", "C"]]))
@@ -194,7 +199,7 @@ matched_range = sheet.search_range(
 
 Unlike regular expressions that match a full row, Tabularix's matching engine matches a row **for the table to extract** rather than the entire worksheet row. This means `search_range` performs **partial column matching** to find a table anywhere horizontally within the worksheet.
 
-For example, given a worksheet with 5 columns (A to E), if you define a 3-column `CellGroupPattern` matching `"Header #1"`, `"Header #2"`, and `"Header #3"`, the layout engine will check only the valid 3-column sub-spans:
+For example, given a worksheet with 5 columns (A to E), if you define a 3-column `RangePattern1D` matching `"Header #1"`, `"Header #2"`, and `"Header #3"`, the layout engine will check only the valid 3-column sub-spans:
 
 - `A:C` (columns 0 to 2)
 - `B:D` (columns 1 to 3)
