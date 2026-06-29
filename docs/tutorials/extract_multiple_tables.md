@@ -30,6 +30,14 @@ Then the **Financial Report** section begins with a metadata block at the top (*
 - A variable number of data rows for products.
 - A summary row starting with `"Total"`.
 
+Our goal is to extract all four territory tables and normalize them into a single, tidy DataFrame with the following columns:
+
+- `territory`: String indicating the territory (derived from the title row).
+- `product`: String indicating the product (derived from the data rows).
+- `year`: String indicating the fiscal year (unpivoted from the nested headers).
+- `expected`: Floating-point number indicating the expected sales amount.
+- `actual`: Floating-point number indicating the actual sales amount.
+
 ---
 
 ## 🛠️ Step 1: Extract Metadata as a Horizontal Table
