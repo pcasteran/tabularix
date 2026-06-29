@@ -72,6 +72,42 @@ Verify Table Extraction With Nested Multi-Row Header
     ${cols}=    Evaluate    $table.columns
     Should Be Equal As Strings    ${cols}    ['Product', 'Q1']
 
+Verify Table Extraction Horizontal Alignment
+    [Documentation]    Test extracting a horizontal table where headers are on the left and data is on the right.
+    ${sheet}=    Load Mutated Horizontal Table Sheet
+    ${header}=    Evaluate    tabularix.Range.from_a1("A1:A2")    modules=tabularix
+    ${data}=    Evaluate    tabularix.Range.from_a1("B1:B2")    modules=tabularix
+    ${table}=    Evaluate    $sheet.extract_table($data, $header)
+    ${cols}=    Evaluate    $table.columns
+    Should Be Equal As Strings    ${cols}    ['Date', 'Fiscal Year']
+    ${shape}=    Evaluate    $table.shape
+    Should Be Equal As Strings    ${shape}    (1, 2)
+    Assert Extracted Horizontal Table Values    ${table}
+
+Verify Table Extraction Horizontal Right Alignment
+    [Documentation]    Test extracting a horizontal table where headers are on the right and data is on the left.
+    ${sheet}=    Load Mutated Horizontal Right Table Sheet
+    ${data}=    Evaluate    tabularix.Range.from_a1("B1:B2")    modules=tabularix
+    ${header}=    Evaluate    tabularix.Range.from_a1("C1:C2")    modules=tabularix
+    ${table}=    Evaluate    $sheet.extract_table($data, $header)
+    ${cols}=    Evaluate    $table.columns
+    Should Be Equal As Strings    ${cols}    ['Date', 'Fiscal Year']
+    ${shape}=    Evaluate    $table.shape
+    Should Be Equal As Strings    ${shape}    (1, 2)
+    Assert Extracted Horizontal Table Values    ${table}
+
+Verify Table Extraction Vertical Bottom Alignment
+    [Documentation]    Test extracting a vertical table where headers are on the bottom and data is on the top.
+    ${sheet}=    Load Mutated Vertical Bottom Table Sheet
+    ${data}=    Evaluate    tabularix.Range.from_a1("A1:B1")    modules=tabularix
+    ${header}=    Evaluate    tabularix.Range.from_a1("A2:B2")    modules=tabularix
+    ${table}=    Evaluate    $sheet.extract_table($data, $header)
+    ${cols}=    Evaluate    $table.columns
+    Should Be Equal As Strings    ${cols}    ['Date', 'Fiscal Year']
+    ${shape}=    Evaluate    $table.shape
+    Should Be Equal As Strings    ${shape}    (1, 2)
+    Assert Extracted Horizontal Table Values    ${table}
+
 
 *** Keywords ***
 Load Mutated Multi-Row Header Sheet
@@ -84,3 +120,40 @@ Load Mutated Multi-Row Header Sheet
     Evaluate    $sheet.set_cell_value(1, 1, "Actual")
     Evaluate    $sheet.set_cell_value(1, 2, "Forecast")
     RETURN    ${sheet}
+
+Load Mutated Horizontal Table Sheet
+    [Documentation]    Loads the simple sheet and mutates it for horizontal table extraction.
+    ${sheet}=    Load Simple Sheet
+    Evaluate    $sheet.set_cell_value(0, 0, "Date")
+    Evaluate    $sheet.set_cell_value(0, 1, "2026-06-23")
+    Evaluate    $sheet.set_cell_value(1, 0, "Fiscal Year")
+    Evaluate    $sheet.set_cell_value(1, 1, "2025-2026")
+    RETURN    ${sheet}
+
+Load Mutated Horizontal Right Table Sheet
+    [Documentation]    Loads the simple sheet and mutates it for horizontal right table extraction.
+    ${sheet}=    Load Simple Sheet
+    Evaluate    $sheet.set_cell_value(0, 1, "2026-06-23")
+    Evaluate    $sheet.set_cell_value(0, 2, "Date")
+    Evaluate    $sheet.set_cell_value(1, 1, "2025-2026")
+    Evaluate    $sheet.set_cell_value(1, 2, "Fiscal Year")
+    RETURN    ${sheet}
+
+Load Mutated Vertical Bottom Table Sheet
+    [Documentation]    Loads the simple sheet and mutates it for vertical bottom table extraction.
+    ${sheet}=    Load Simple Sheet
+    Evaluate    $sheet.set_cell_value(0, 0, "2026-06-23")
+    Evaluate    $sheet.set_cell_value(0, 1, "2025-2026")
+    Evaluate    $sheet.set_cell_value(1, 0, "Date")
+    Evaluate    $sheet.set_cell_value(1, 1, "Fiscal Year")
+    RETURN    ${sheet}
+
+Assert Extracted Horizontal Table Values
+    [Documentation]    Asserts the cell values in the extracted horizontal table.
+    [Arguments]    ${table}
+    ${pydict}=    Evaluate    $table.to_arrow().to_pydict()
+    ${date_val}=    Get From Dictionary    ${pydict}    Date
+    ${fiscal_val}=    Get From Dictionary    ${pydict}    Fiscal Year
+    ${date_str}=    Evaluate    str($date_val[0])
+    Should Be Equal As Strings    ${date_str}    2026-06-23
+    Should Be Equal As Strings    ${fiscal_val}    ['2025-2026']

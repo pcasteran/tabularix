@@ -6,39 +6,34 @@ from tabularix import RangePattern1D, RangePattern2D, any, empty, non_empty, reg
 
 
 def extract_metadata(sheet: tx.Sheet) -> pl.DataFrame:
-    """Extracts key-value metadata from the worksheet dynamically, returning a transposed Polars DataFrame.
+    """Extracts key-value metadata from the worksheet dynamically.
 
-    We need to transpose the extracted table because the metadata is stored horizontally in the spreadsheet:
-    the first column (column_1) contains the headers/keys ('Date', 'Fiscal Year'), and the second column
-    (column_2) contains the corresponding values. Transposing maps the keys to DataFrame column names.
+    The metadata is stored horizontally in the spreadsheet: the first column
+    contains the headers/keys ('Date', 'Fiscal Year'), and the second column
+    contains the corresponding values. We match them using two vertical 1D patterns
+    and extract them directly as a horizontal table.
     """
-    # Define a RangePattern2D to locate the metadata block dynamically.
-    metadata_pattern = RangePattern2D(
-        [
-            # Row pattern: "Date" or "Fiscal Year" followed by a non-empty value.
-            RangePattern1D([regex(r"^(Date|Fiscal Year)$"), non_empty()]).one_or_more()
-        ]
-    )
+    # Matcher for the vertical header column
+    header_pattern = RangePattern1D([regex(r"^(Date|Fiscal Year)$").repeat(2, 2)])
+    header_matcher = header_pattern.to_matcher(direction="TB")
+    header_range = sheet.search_range(header_matcher)
+    if header_range is None:
+        raise ValueError("Metadata headers not found in the worksheet.")
 
-    metadata_matcher = metadata_pattern.to_matcher(outer_direction="TB", inner_direction="LR")
-    metadata_range = sheet.search_range(metadata_matcher)
-    if metadata_range is None:
-        raise ValueError("Metadata block not found in the worksheet.")
+    # Matcher for the vertical data column to the right
+    data_pattern = RangePattern1D([non_empty().repeat(2, 2)])
+    data_matcher = data_pattern.to_matcher(direction="TB")
+    data_range = sheet.search_range_relative(data_matcher, right=header_range)
+    if data_range is None:
+        raise ValueError("Metadata data values not found in the worksheet.")
 
-    # Extract the metadata as a Table (without a header, so columns will be default: column_1, column_2).
-    table = sheet.extract_table(metadata_range)
+    # Extract the metadata as a horizontal table directly using header and data ranges.
+    table = sheet.extract_table(data_range, header_range)
 
     # Convert the extracted Table to a Polars DataFrame.
     df = cast(pl.DataFrame, pl.from_arrow(table.to_arrow()))
 
-    # Transpose the DataFrame so keys in column_1 become column names.
-    df_transposed = df.transpose(column_names="column_1")
-
-    # If "Date" column exists, parse the ISO 8601 string to a native date type.
-    if "Date" in df_transposed.columns:
-        df_transposed = df_transposed.with_columns(pl.col("Date").str.to_date())
-
-    return df_transposed
+    return df
 
 
 def extract_territory_tables(sheet: tx.Sheet) -> pl.DataFrame:
