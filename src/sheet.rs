@@ -743,6 +743,15 @@ impl Sheet {
         &self.data[row][col]
     }
 
+    pub fn get_merged_top_left(&self, row: usize, col: usize) -> (usize, usize) {
+        for &((s_row, s_col), (e_row, e_col)) in &self.merged_regions {
+            if row >= s_row && row <= e_row && col >= s_col && col <= e_col {
+                return (s_row, s_col);
+            }
+        }
+        (row, col)
+    }
+
     #[allow(clippy::too_many_lines)]
     fn to_svg_impl(&self, path: &str, zero_based_indices: bool) -> std::io::Result<()> {
         let (rows, cols) = self.shape();
