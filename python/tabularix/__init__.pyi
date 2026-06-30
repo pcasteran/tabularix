@@ -1,4 +1,4 @@
-from typing import Any, List, Literal, Pattern, Union
+from typing import Any, Literal, Pattern
 
 import pyarrow as pa
 
@@ -118,7 +118,7 @@ class Sheet:
 
     def search_and_drop(
         self,
-        str_or_regex: Union[str, Pattern[str]],
+        str_or_regex: str | Pattern[str],
         drop_direction: Literal[
             "top", "bottom", "left", "right", "top_left", "top_right", "bottom_left", "bottom_right"
         ],
@@ -292,7 +292,7 @@ def value(val: str) -> CellRule:
     """
     ...
 
-def regex(pattern: Union[str, Pattern[str]]) -> CellRule:
+def regex(pattern: str | Pattern[str]) -> CellRule:
     """Creates a cell rule matching a regex pattern.
 
     Args:
@@ -330,7 +330,7 @@ def any() -> CellRule:
 class RangePattern1D:
     """A direction-agnostic one-dimensional sequence of cell pattern rules."""
 
-    def __init__(self, elements: List[Union[CellRule, RangePattern1D]]) -> None:
+    def __init__(self, *elements: CellRule | RangePattern1D) -> None:
         """Initializes a new 1D pattern with the given rules and nested 1D patterns."""
         ...
 
@@ -394,7 +394,7 @@ class RangePattern1D:
 class RangePattern2D:
     """A direction-agnostic two-dimensional pattern consisting of a sequence of one-dimensional patterns."""
 
-    def __init__(self, patterns: List[RangePattern1D]) -> None:
+    def __init__(self, *patterns: RangePattern1D) -> None:
         """Initializes a new 2D pattern with the given 1D pattern list."""
         ...
 
@@ -456,7 +456,7 @@ class RangeMatcher:
     """Represents a compiled pattern matcher bound to specific matching directions."""
 
     def __init__(
-        self, row_patterns: List[RangePattern1D], outer_direction: Direction, inner_direction: Direction
+        self, row_patterns: list[RangePattern1D], outer_direction: Direction, inner_direction: Direction
     ) -> None:
         """Initializes a RangeMatcher with a list of 1D patterns and the orthogonal outer and inner directions."""
         ...
@@ -505,3 +505,76 @@ class Table:
             A PyCapsule object named "arrow_array_stream".
         """
         ...
+
+group = RangePattern1D
+grid = RangePattern2D
+
+def extract_table_with_header_and_data(
+    sheet: Sheet,
+    header_pattern: group | grid,
+    data_pattern: group | grid,
+    *,
+    main_direction: Direction = "TB",
+    inner_direction: Direction = "LR",
+    clean_names: bool = True,
+    flatten_header: bool = True,
+    header_separator: str = "_",
+) -> Table:
+    """Extracts a structured Table using explicit header and data patterns.
+
+    This function locates the header row/columns in the worksheet and searches
+    for the matching data records situated relative to the header.
+
+    Args:
+        sheet: The worksheet to extract the table from.
+        header_pattern: The pattern representing the table's header.
+        data_pattern: The pattern representing the table's data rows/columns.
+        main_direction: The direction of record flow (e.g. "TB" for vertical tables).
+        inner_direction: The direction of cells inside each record (e.g. "LR" for row cells).
+        clean_names: If True, cleans header column names to lower snake_case.
+        flatten_header: If True, flattens multi-row/column headers into single strings
+            joined by header_separator.
+        header_separator: The separator used to join multi-row headers when flatten_header is True.
+
+    Returns:
+        The extracted structured Table.
+
+    Raises:
+        ValueError: If the header pattern or data pattern cannot be found.
+    """
+    ...
+
+def extract_table_between_header_and_footer(
+    sheet: Sheet,
+    header_pattern: group | grid,
+    footer_pattern: group | grid,
+    *,
+    main_direction: Direction = "TB",
+    inner_direction: Direction = "LR",
+    clean_names: bool = True,
+    flatten_header: bool = True,
+    header_separator: str = "_",
+) -> Table:
+    """Extracts a structured Table situated between a matched header and footer.
+
+    This function locates the header and footer in the worksheet and extracts the
+    region situated between them.
+
+    Args:
+        sheet: The worksheet to extract the table from.
+        header_pattern: The pattern representing the table's header.
+        footer_pattern: The pattern representing the table's footer.
+        main_direction: The direction of record flow (e.g. "TB" for vertical tables).
+        inner_direction: The direction of cells inside each record (e.g. "LR" for row cells).
+        clean_names: If True, cleans header column names to lower snake_case.
+        flatten_header: If True, flattens multi-row/column headers into single strings
+            joined by header_separator.
+        header_separator: The separator used to join multi-row headers when flatten_header is True.
+
+    Returns:
+        The extracted structured Table.
+
+    Raises:
+        ValueError: If the header pattern or footer pattern cannot be found.
+    """
+    ...
