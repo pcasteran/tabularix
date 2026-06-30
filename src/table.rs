@@ -167,8 +167,19 @@ impl Table {
                             .to_string_for_search()
                             .into_owned()
                     } else {
-                        (h.start_col..=h.end_col)
-                            .map(|c| sheet.get_merged_cell_value(r, c).to_string_for_search())
+                        let mut parts = Vec::new();
+                        let mut last_cell = None;
+                        for c in h.start_col..=h.end_col {
+                            let cell_coord = sheet.get_merged_top_left(r, c);
+                            if last_cell.is_some_and(|coord| coord == cell_coord) {
+                                continue;
+                            }
+                            last_cell = Some(cell_coord);
+                            parts.push(sheet.get_merged_cell_value(r, c).to_string_for_search());
+                        }
+                        parts
+                            .iter()
+                            .map(AsRef::as_ref)
                             .collect::<Vec<_>>()
                             .join(header_separator)
                     };
@@ -210,8 +221,19 @@ impl Table {
                             .to_string_for_search()
                             .into_owned()
                     } else {
-                        (h.start_row..=h.end_row)
-                            .map(|r| sheet.get_merged_cell_value(r, c).to_string_for_search())
+                        let mut parts = Vec::new();
+                        let mut last_cell = None;
+                        for r in h.start_row..=h.end_row {
+                            let cell_coord = sheet.get_merged_top_left(r, c);
+                            if last_cell.is_some_and(|coord| coord == cell_coord) {
+                                continue;
+                            }
+                            last_cell = Some(cell_coord);
+                            parts.push(sheet.get_merged_cell_value(r, c).to_string_for_search());
+                        }
+                        parts
+                            .iter()
+                            .map(AsRef::as_ref)
                             .collect::<Vec<_>>()
                             .join(header_separator)
                     };
