@@ -14,14 +14,14 @@ def extract_metadata(sheet: tx.Sheet) -> pl.DataFrame:
     and extract them directly as a horizontal table.
     """
     # Matcher for the vertical header column
-    header_pattern = RangePattern1D([regex(r"^(Date|Fiscal Year)$").repeat(2, 2)])
+    header_pattern = RangePattern1D(regex(r"^(Date|Fiscal Year)$").repeat(2, 2))
     header_matcher = header_pattern.to_matcher(direction="TB")
     header_range = sheet.search_range(header_matcher)
     if header_range is None:
         raise ValueError("Metadata headers not found in the worksheet.")
 
     # Matcher for the vertical data column to the right
-    data_pattern = RangePattern1D([non_empty().repeat(2, 2)])
+    data_pattern = RangePattern1D(non_empty().repeat(2, 2))
     data_matcher = data_pattern.to_matcher(direction="TB")
     data_range = sheet.search_range_relative(data_matcher, right=header_range)
     if data_range is None:
@@ -39,46 +39,36 @@ def extract_metadata(sheet: tx.Sheet) -> pl.DataFrame:
 def extract_territory_tables(sheet: tx.Sheet) -> pl.DataFrame:
     """Extracts and combines the four territory tables from the worksheet dynamically."""
     # Define RangePattern1D to locate any of the territory titles.
-    territory_pattern = RangePattern1D([regex(r"^(North|South|East|West)$")])
+    territory_pattern = RangePattern1D(regex(r"^(North|South|East|West)$"))
     territory_matcher = territory_pattern.to_matcher(direction="LR")
 
     # Define RangePattern2D for headers and footers using greedy matching rules
     # to dynamically capture the full width of the table.
     header_pattern = RangePattern2D(
-        [
-            # First header row.
+        # First header row.
+        RangePattern1D(
+            # The row starts with static text "Product".
+            value("Product"),
+            # Then we have zero or more occurrences of a group of two cells.
             RangePattern1D(
-                [
-                    # The row starts with static text "Product".
-                    value("Product"),
-                    # Then we have zero or more occurrences of a group of two cells.
-                    RangePattern1D(
-                        [
-                            regex(r"\d{4}"),  # The group starts with a year (4 digits).
-                            empty(),  # And finishes with an empty cell (merged with the one on the left).
-                        ]
-                    ).zero_or_more(),
-                ]
-            ),
-            # Second header row.
+                regex(r"\d{4}"),  # The group starts with a year (4 digits).
+                empty(),  # And finishes with an empty cell (merged with the one on the left).
+            ).zero_or_more(),
+        ),
+        # Second header row.
+        RangePattern1D(
+            # The row starts with an empty cell (merged with the one above).
+            empty(),
+            # Then we have zero or more occurrences of a group of two cells.
             RangePattern1D(
-                [
-                    # The row starts with an empty cell (merged with the one above).
-                    empty(),
-                    # Then we have zero or more occurrences of a group of two cells.
-                    RangePattern1D(
-                        [
-                            value("Expected"),  # The group starts with static text "Expected".
-                            value("Actual"),  # And finishes with static text "Actual".
-                        ]
-                    ).zero_or_more(),
-                ]
-            ),
-        ]
+                value("Expected"),  # The group starts with static text "Expected".
+                value("Actual"),  # And finishes with static text "Actual".
+            ).zero_or_more(),
+        ),
     )
     header_matcher = header_pattern.to_matcher(outer_direction="TB", inner_direction="LR")
 
-    footer_pattern = RangePattern1D([value("Total"), any().zero_or_more()])
+    footer_pattern = RangePattern1D(value("Total"), any().zero_or_more())
     footer_matcher = footer_pattern.to_matcher(direction="LR")
 
     dfs = []

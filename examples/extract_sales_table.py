@@ -10,10 +10,8 @@ def extract_table_below_header(sheet: Sheet) -> Table:
     # Define the pattern and matcher for the header row.
     # It starts with "Region", followed by 4 Quarter columns matching a regex pattern (e.g. Q1, Q2, etc.).
     header_pattern = RangePattern1D(
-        [
-            value("Region"),  # Static string
-            regex(r"^Q[1-4]$").repeat(4, max=4),  # Quarter header: Q1, Q2, Q3, Q4
-        ]
+        value("Region"),  # Static string
+        regex(r"^Q[1-4]$").repeat(4, max=4),  # Quarter header: Q1, Q2, Q3, Q4
     )
 
     header_matcher = header_pattern.to_matcher(direction="LR")
@@ -22,14 +20,10 @@ def extract_table_below_header(sheet: Sheet) -> Table:
     #   - start with a region name, i.e. a string different than `Total` (which is the marker of the table footer)
     #   - end by 4 non-empty data cells
     data_pattern = RangePattern2D(
-        [
-            RangePattern1D(
-                [
-                    regex(r"^(?!Total).*$"),  # Match any string except "Total"
-                    non_empty().repeat(4, max=4),  # Quarters amount
-                ]
-            ).one_or_more()
-        ]
+        RangePattern1D(
+            regex(r"^(?!Total).*$"),  # Match any string except "Total"
+            non_empty().repeat(4, max=4),  # Quarters amount
+        ).one_or_more()
     )
 
     data_matcher = data_pattern.to_matcher(outer_direction="TB", inner_direction="LR")
@@ -59,10 +53,8 @@ def extract_table_between_header_and_footer(sheet: Sheet) -> Table:
     # Define the pattern and matcher for the header row.
     # It starts with "Region", followed by 4 Quarter columns matching a regex pattern (e.g. Q1, Q2, etc.).
     header_pattern = RangePattern1D(
-        [
-            value("Region"),  # Static string
-            regex(r"^Q[1-4]$").repeat(4, max=4),  # Quarter header: Q1, Q2, Q3, Q4
-        ]
+        value("Region"),  # Static string
+        regex(r"^Q[1-4]$").repeat(4, max=4),  # Quarter header: Q1, Q2, Q3, Q4
     )
 
     header_matcher = header_pattern.to_matcher(direction="LR")
@@ -70,10 +62,8 @@ def extract_table_between_header_and_footer(sheet: Sheet) -> Table:
     # Define the pattern and matcher for the footer row.
     # It starts with "Total [YEAR]", followed by 4 non-empty cells.
     footer_pattern = RangePattern1D(
-        [
-            regex(r"^Total \d{4}$"),  # Yearly total
-            any().repeat(4, max=4),  # Quarters total amount
-        ]
+        regex(r"^Total \d{4}$"),  # Yearly total
+        any().repeat(4, max=4),  # Quarters total amount
     )
 
     footer_matcher = footer_pattern.to_matcher(direction="LR")
