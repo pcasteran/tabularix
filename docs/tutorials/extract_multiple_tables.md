@@ -30,6 +30,14 @@ Then the **Financial Report** section begins with a metadata block at the top (*
 - A variable number of data rows for products.
 - A summary row starting with `"Total"`.
 
+Our goal is to extract all four territory tables and normalize them into a single, tidy DataFrame with the following columns:
+
+- `territory`: String indicating the territory (derived from the title row).
+- `product`: String indicating the product (derived from the data rows).
+- `year`: String indicating the fiscal year (unpivoted from the nested headers).
+- `expected`: Floating-point number indicating the expected sales amount.
+- `actual`: Floating-point number indicating the actual sales amount.
+
 ---
 
 ## 🛠️ Step 1: Extract Metadata as a Horizontal Table
@@ -155,13 +163,27 @@ def extract_territory_tables(sheet: tx.Sheet) -> pl.DataFrame:
             data_range,
             header=header_range,
             clean_names=True,
-            flatten_header=True,
-            header_separator="_",
+            flatten_header=False,
         )
 
         # 5. Convert to Polars and insert territory as the first column
         df = cast(pl.DataFrame, pl.from_arrow(table.to_arrow()))
         df = df.select([pl.lit(territory).alias("territory"), pl.all()])
+
+        # 6. Unpack the product struct
+        df = df.with_columns(pl.col("product").struct.field("product"))
+
+        # 7. Unpivot the year columns to rows (all columns not in index are unpivoted)
+        df = df.unpivot(
+            on=None,
+            index=["territory", "product"],
+            variable_name="year",
+            value_name="metrics",
+        )
+
+        # 8. Unnest the metrics struct (containing expected and actual fields)
+        df = df.unnest("metrics")
+
         dfs.append(df)
 
         # Move the cursor below this table's footer
@@ -174,7 +196,7 @@ def extract_territory_tables(sheet: tx.Sheet) -> pl.DataFrame:
 
 ## 🧬 Step 4: Projecting Metadata (Cross Join)
 
-Once we have a single-row metadata DataFrame and a combined 12-row territory DataFrame, we can merge them. A Polars **cross join** acts as a broadcast join, appending the metadata fields (`Date` and `Fiscal Year`) to every row of the combined data dynamically.
+Once we have a single-row metadata DataFrame and a combined 24-row territory DataFrame, we can merge them. A Polars **cross join** acts as a broadcast join, appending the metadata fields (`Date` and `Fiscal Year`) to every row of the combined data dynamically.
 
 ```python
 # Broadcast metadata to all territory rows
@@ -209,55 +231,42 @@ shape: (1, 2)
 └────────────┴─────────────┘
 ----------------------------------------
 Combined Territories DataFrame:
-shape: (12, 6)
-┌───────────┬─────────────┬─────────────┬────────────┬────────────┬────────────┐
-│ territory ┆ product_pro ┆ 2025_expect ┆ 2025_actua ┆ 2026_expec ┆ 2026_actua │
-│ ---       ┆ duct        ┆ ed          ┆ l          ┆ ted        ┆ l          │
-│ str       ┆ ---         ┆ ---         ┆ ---        ┆ ---        ┆ ---        │
-│           ┆ str         ┆ f64         ┆ f64        ┆ f64        ┆ f64        │
-╞═══════════╪═════════════╪═════════════╪════════════╪════════════╪════════════╡
-│ North     ┆ Product A   ┆ 427.0       ┆ 147.0      ┆ 122.0      ┆ 479.0      │
-│ North     ┆ Product B   ┆ 240.0       ┆ 215.0      ┆ 224.0      ┆ 171.0      │
-│ North     ┆ Product C   ┆ 477.0       ┆ 142.0      ┆ 456.0      ┆ 479.0      │
-│ South     ┆ Product A   ┆ 379.0       ┆ 134.0      ┆ 412.0      ┆ 316.0      │
-│ South     ┆ Product B   ┆ 116.0       ┆ 105.0      ┆ 157.0      ┆ 211.0      │
-│ …         ┆ …           ┆ …           ┆ …          ┆ …          ┆ …          │
-│ East      ┆ Product A   ┆ 459.0       ┆ 369.0      ┆ 324.0      ┆ 212.0      │
-│ East      ┆ Product B   ┆ 329.0       ┆ 391.0      ┆ 252.0      ┆ 514.0      │
-│ West      ┆ Product A   ┆ 103.0       ┆ 478.0      ┆ 522.0      ┆ 181.0      │
-│ West      ┆ Product B   ┆ 457.0       ┆ 306.0      ┆ 284.0      ┆ 242.0      │
-│ West      ┆ Product C   ┆ 179.0       ┆ 200.0      ┆ 500.0      ┆ 272.0      │
-└───────────┴─────────────┴─────────────┴────────────┴────────────┴────────────┘
+shape: (24, 5)
+┌───────────┬───────────┬──────┬──────────┬────────┐
+│ territory ┆ product   ┆ year ┆ expected ┆ actual │
+│ ---       ┆ ---       ┆ ---  ┆ ---      ┆ ---    │
+│ str       ┆ str       ┆ str  ┆ f64      ┆ f64    │
+╞═══════════╪═══════════╪══════╪══════════╪════════╡
+│ North     ┆ Product A ┆ 2025 ┆ 427.0    ┆ 147.0  │
+│ North     ┆ Product B ┆ 2025 ┆ 240.0    ┆ 215.0  │
+│ North     ┆ Product C ┆ 2025 ┆ 477.0    ┆ 142.0  │
+│ North     ┆ Product A ┆ 2026 ┆ 122.0    ┆ 479.0  │
+│ North     ┆ Product B ┆ 2026 ┆ 224.0    ┆ 171.0  │
+│ …         ┆ …         ┆ …    ┆ …        ┆ …      │
+│ West      ┆ Product B ┆ 2025 ┆ 457.0    ┆ 306.0  │
+│ West      ┆ Product C ┆ 2025 ┆ 179.0    ┆ 200.0  │
+│ West      ┆ Product A ┆ 2026 ┆ 522.0    ┆ 181.0  │
+│ West      ┆ Product B ┆ 2026 ┆ 284.0    ┆ 242.0  │
+│ West      ┆ Product C ┆ 2026 ┆ 500.0    ┆ 272.0  │
+└───────────┴───────────┴──────┴──────────┴────────┘
 ----------------------------------------
 Projected DataFrame:
-shape: (12, 8)
-┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬────────┐
-│ territo ┆ product ┆ 2025_ex ┆ 2025_ac ┆ 2026_ex ┆ 2026_ac ┆ Date    ┆ Fiscal │
-│ ry      ┆ _produc ┆ pected  ┆ tual    ┆ pected  ┆ tual    ┆ ---     ┆ Year   │
-│ ---     ┆ t       ┆ ---     ┆ ---     ┆ ---     ┆ ---     ┆ date    ┆ ---    │
-│ str     ┆ ---     ┆ f64     ┆ f64     ┆ f64     ┆ f64     ┆         ┆ str    │
-│         ┆ str     ┆         ┆         ┆         ┆         ┆         ┆        │
-╞═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪════════╡
-│ North   ┆ Product ┆ 427.0   ┆ 147.0   ┆ 122.0   ┆ 479.0   ┆ 2026-06 ┆ 2025-2 │
-│         ┆ A       ┆         ┆         ┆         ┆         ┆ -23     ┆ 026    │
-│ North   ┆ Product ┆ 240.0   ┆ 215.0   ┆ 224.0   ┆ 171.0   ┆ 2026-06 ┆ 2025-2 │
-│         ┆ B       ┆         ┆         ┆         ┆         ┆ -23     ┆ 026    │
-│ North   ┆ Product ┆ 477.0   ┆ 142.0   ┆ 456.0   ┆ 479.0   ┆ 2026-06 ┆ 2025-2 │
-│         ┆ C       ┆         ┆         ┆         ┆         ┆ -23     ┆ 026    │
-│ South   ┆ Product ┆ 379.0   ┆ 134.0   ┆ 412.0   ┆ 316.0   ┆ 2026-06 ┆ 2025-2 │
-│         ┆ A       ┆         ┆         ┆         ┆         ┆ -23     ┆ 026    │
-│ South   ┆ Product ┆ 116.0   ┆ 105.0   ┆ 157.0   ┆ 211.0   ┆ 2026-06 ┆ 2025-2 │
-│         ┆ B       ┆         ┆         ┆         ┆         ┆ -23     ┆ 026    │
-│ …       ┆ …       ┆ …       ┆ …       ┆ …       ┆ …       ┆ …       ┆ …      │
-│ East    ┆ Product ┆ 459.0   ┆ 369.0   ┆ 324.0   ┆ 212.0   ┆ 2026-06 ┆ 2025-2 │
-│         ┆ A       ┆         ┆         ┆         ┆         ┆ -23     ┆ 026    │
-│ East    ┆ Product ┆ 329.0   ┆ 391.0   ┆ 252.0   ┆ 514.0   ┆ 2026-06 ┆ 2025-2 │
-│         ┆ B       ┆         ┆         ┆         ┆         ┆ -23     ┆ 026    │
-│ West    ┆ Product ┆ 103.0   ┆ 478.0   ┆ 522.0   ┆ 181.0   ┆ 2026-06 ┆ 2025-2 │
-│         ┆ A       ┆         ┆         ┆         ┆         ┆ -23     ┆ 026    │
-│ West    ┆ Product ┆ 457.0   ┆ 306.0   ┆ 284.0   ┆ 242.0   ┆ 2026-06 ┆ 2025-2 │
-│         ┆ B       ┆         ┆         ┆         ┆         ┆ -23     ┆ 026    │
-│ West    ┆ Product ┆ 179.0   ┆ 200.0   ┆ 500.0   ┆ 272.0   ┆ 2026-06 ┆ 2025-2 │
-│         ┆ C       ┆         ┆         ┆         ┆         ┆ -23     ┆ 026    │
-└─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴────────┘
+shape: (24, 7)
+┌───────────┬───────────┬──────┬──────────┬────────┬────────────┬─────────────┐
+│ territory ┆ product   ┆ year ┆ expected ┆ actual ┆ Date       ┆ Fiscal Year │
+│ ---       ┆ ---       ┆ ---  ┆ ---      ┆ ---    ┆ ---        ┆ ---         │
+│ str       ┆ str       ┆ str  ┆ f64      ┆ f64    ┆ date       ┆ str         │
+╞═══════════╪═══════════╪══════╪══════════╪════════╪════════════╪═════════════╡
+│ North     ┆ Product A ┆ 2025 ┆ 427.0    ┆ 147.0  ┆ 2026-06-23 ┆ 2025-2026   │
+│ North     ┆ Product B ┆ 2025 ┆ 240.0    ┆ 215.0  ┆ 2026-06-23 ┆ 2025-2026   │
+│ North     ┆ Product C ┆ 2025 ┆ 477.0    ┆ 142.0  ┆ 2026-06-23 ┆ 2025-2026   │
+│ North     ┆ Product A ┆ 2026 ┆ 122.0    ┆ 479.0  ┆ 2026-06-23 ┆ 2025-2026   │
+│ North     ┆ Product B ┆ 2026 ┆ 224.0    ┆ 171.0  ┆ 2026-06-23 ┆ 2025-2026   │
+│ …         ┆ …         ┆ …    ┆ …        ┆ …      ┆ …          ┆ …           │
+│ West      ┆ Product B ┆ 2025 ┆ 457.0    ┆ 306.0  ┆ 2026-06-23 ┆ 2025-2026   │
+│ West      ┆ Product C ┆ 2025 ┆ 179.0    ┆ 200.0  ┆ 2026-06-23 ┆ 2025-2026   │
+│ West      ┆ Product A ┆ 2026 ┆ 522.0    ┆ 181.0  ┆ 2026-06-23 ┆ 2025-2026   │
+│ West      ┆ Product B ┆ 2026 ┆ 284.0    ┆ 242.0  ┆ 2026-06-23 ┆ 2025-2026   │
+│ West      ┆ Product C ┆ 2026 ┆ 500.0    ┆ 272.0  ┆ 2026-06-23 ┆ 2025-2026   │
+└───────────┴───────────┴──────┴──────────┴────────┴────────────┴─────────────┘
 ```

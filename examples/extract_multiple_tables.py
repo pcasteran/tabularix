@@ -106,18 +106,32 @@ def extract_territory_tables(sheet: tx.Sheet) -> pl.DataFrame:
         # Get the data range situated between header and footer.
         data_range = sheet.get_range_between(header_range, footer_range)
 
-        # Extract the structured table, flattening the multi-row headers.
+        # Extract the structured table, without flattening the multi-row headers.
         table = sheet.extract_table(
             data_range,
             header=header_range,
             clean_names=True,
-            flatten_header=True,
-            header_separator="_",
+            flatten_header=False,
         )
 
         # Convert to a Polars DataFrame and insert the territory context column at the beginning.
         df = cast(pl.DataFrame, pl.from_arrow(table.to_arrow()))
         df = df.select([pl.lit(territory).alias("territory"), pl.all()])
+
+        # Unpack the product struct.
+        df = df.with_columns(pl.col("product").struct.field("product"))
+
+        # Unpivot the year columns to rows.
+        df = df.unpivot(
+            on=None,  # All columns that are not in index will be used
+            index=["territory", "product"],
+            variable_name="year",
+            value_name="metrics",
+        )
+
+        # Unnest the metrics struct (containing expected and actual fields).
+        df = df.unnest("metrics")
+
         dfs.append(df)
 
         # Advance search_row to scan below the current section in the next iteration.
