@@ -1,4 +1,6 @@
-from typing import TYPE_CHECKING, Any, List, Literal, Optional, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
     import pyarrow
@@ -30,48 +32,48 @@ class CellRule:
         self.max = 1
         self.greedy = True
 
-    def repeat(self, min: int, max: Optional[int] = -1, greedy: bool = True) -> "CellRule":
+    def repeat(self, min: int, max: int | None = -1, greedy: bool = True) -> CellRule:
         self.min = min
         self.max = max
         self.greedy = greedy
         return self
 
-    def one_or_more(self, greedy: bool = True) -> "CellRule":
+    def one_or_more(self, greedy: bool = True) -> CellRule:
         return self.repeat(1, None, greedy)
 
-    def zero_or_more(self, greedy: bool = True) -> "CellRule":
+    def zero_or_more(self, greedy: bool = True) -> CellRule:
         return self.repeat(0, None, greedy)
 
-    def optional(self, greedy: bool = True) -> "CellRule":
+    def optional(self, greedy: bool = True) -> CellRule:
         return self.repeat(0, 1, greedy)
 
 
 class RangePattern1D:
     """A direction-agnostic one-dimensional sequence of cell pattern rules."""
 
-    def __init__(self, elements: List[Union[CellRule, "RangePattern1D"]]):
+    def __init__(self, *elements: CellRule | RangePattern1D):
         """Initializes a new 1D pattern with the given cell rules or nested 1D patterns."""
-        self.elements = elements
+        self.elements = list(elements)
         self.min = 1
         self.max = 1
         self.greedy = True
 
-    def repeat(self, min: int, max: Optional[int] = -1, greedy: bool = True) -> "RangePattern1D":
+    def repeat(self, min: int, max: int | None = -1, greedy: bool = True) -> RangePattern1D:
         """Sets the cardinality of the 1D pattern to repeat a custom number of times or range."""
         self.min = min
         self.max = max
         self.greedy = greedy
         return self
 
-    def one_or_more(self, greedy: bool = True) -> "RangePattern1D":
+    def one_or_more(self, greedy: bool = True) -> RangePattern1D:
         """Sets the cardinality of this 1D pattern to one-or-more (+)."""
         return self.repeat(1, None, greedy)
 
-    def zero_or_more(self, greedy: bool = True) -> "RangePattern1D":
+    def zero_or_more(self, greedy: bool = True) -> RangePattern1D:
         """Sets the cardinality of this 1D pattern to zero-or-more (*)."""
         return self.repeat(0, None, greedy)
 
-    def optional(self, greedy: bool = True) -> "RangePattern1D":
+    def optional(self, greedy: bool = True) -> RangePattern1D:
         """Sets the cardinality of this 1D pattern to optional (?)."""
         return self.repeat(0, 1, greedy)
 
@@ -150,9 +152,9 @@ class RangePattern1D:
 class RangePattern2D:
     """A direction-agnostic two-dimensional pattern consisting of a sequence of one-dimensional patterns."""
 
-    def __init__(self, patterns: List[RangePattern1D]):
+    def __init__(self, *patterns: RangePattern1D):
         """Initializes a new 2D pattern with the given list of 1D patterns."""
-        self.patterns = patterns
+        self.patterns = list(patterns)
 
     def to_matcher(self, outer_direction: Direction = "TB", inner_direction: Direction = "LR") -> RangeMatcher:
         """Converts this 2D pattern to a RangeMatcher bound to the specified scanning directions."""
@@ -257,7 +259,7 @@ def search_range_relative(
 Sheet.search_range_relative = search_range_relative
 
 
-def to_arrow(self: Table) -> "pyarrow.Table":
+def to_arrow(self: Table) -> pyarrow.Table:
     """Converts the Table to a PyArrow Table."""
     import pyarrow as pa
 
@@ -266,6 +268,164 @@ def to_arrow(self: Table) -> "pyarrow.Table":
 
 
 Table.to_arrow = to_arrow
+
+
+# High-Level API Aliases
+group = RangePattern1D
+grid = RangePattern2D
+
+
+def _compile_pattern(
+    pattern: group | grid,
+    outer_dir: Direction,
+    inner_dir: Direction,
+) -> RangeMatcher:
+    """Compiles a 1D or 2D pattern into a RangeMatcher bound to layout directions.
+
+    Args:
+        pattern: The pattern (group or grid) to compile.
+        outer_dir: The direction of pattern sequence flow.
+        inner_dir: The direction of cell sequence flow.
+
+    Returns:
+        A compiled RangeMatcher.
+    """
+    if isinstance(pattern, grid):
+        return pattern.to_matcher(outer_direction=outer_dir, inner_direction=inner_dir)
+    else:
+        return pattern.to_matcher(direction=inner_dir)
+
+
+def _get_relative_constraint(direction: Direction, header_range: Range) -> dict[str, Range]:
+    """Maps a layout direction to the corresponding relative search constraint.
+
+    Args:
+        direction: The main table layout direction.
+        header_range: The matched header Range.
+
+    Returns:
+        A dict containing the relative search boundary (e.g. {"below": header_range}).
+    """
+    match direction:
+        case "TB":
+            return {"below": header_range}
+        case "BT":
+            return {"above": header_range}
+        case "LR":
+            return {"right": header_range}
+        case "RL":
+            return {"left": header_range}
+
+
+def extract_table_with_header_and_data(
+    sheet: Sheet,
+    header_pattern: group | grid,
+    data_pattern: group | grid,
+    *,
+    main_direction: Direction = "TB",
+    inner_direction: Direction = "LR",
+    clean_names: bool = True,
+    flatten_header: bool = True,
+    header_separator: str = "_",
+) -> Table:
+    """Extracts a structured Table using explicit header and data patterns.
+
+    This function locates the header row/columns in the worksheet and searches
+    for the matching data records situated relative to the header.
+
+    Args:
+        sheet: The worksheet to extract the table from.
+        header_pattern: The pattern representing the table's header.
+        data_pattern: The pattern representing the table's data rows/columns.
+        main_direction: The direction of record flow (e.g. "TB" for vertical tables).
+        inner_direction: The direction of cells inside each record (e.g. "LR" for row cells).
+        clean_names: If True, cleans header column names to lower snake_case.
+        flatten_header: If True, flattens multi-row/column headers into single strings
+            joined by header_separator.
+        header_separator: The separator used to join multi-row headers when flatten_header is True.
+
+    Returns:
+        The extracted structured Table.
+
+    Raises:
+        ValueError: If the header pattern or data pattern cannot be found.
+    """
+    header_matcher = _compile_pattern(header_pattern, main_direction, inner_direction)
+    header_range = sheet.search_range(header_matcher)
+    if header_range is None:
+        raise ValueError("Table header range not found.")
+
+    data_matcher = _compile_pattern(data_pattern, main_direction, inner_direction)
+    relative_kwargs = _get_relative_constraint(main_direction, header_range)
+
+    data_range = sheet.search_range_relative(data_matcher, **relative_kwargs)
+    if data_range is None:
+        raise ValueError("Table data range not found relative to header.")
+
+    return sheet.extract_table(
+        data_range,
+        header_range,
+        clean_names=clean_names,
+        flatten_header=flatten_header,
+        header_separator=header_separator,
+    )
+
+
+def extract_table_between_header_and_footer(
+    sheet: Sheet,
+    header_pattern: group | grid,
+    footer_pattern: group | grid,
+    *,
+    main_direction: Direction = "TB",
+    inner_direction: Direction = "LR",
+    clean_names: bool = True,
+    flatten_header: bool = True,
+    header_separator: str = "_",
+) -> Table:
+    """Extracts a structured Table situated between a matched header and footer.
+
+    This function locates the header and footer in the worksheet and extracts the
+    region situated between them.
+
+    Args:
+        sheet: The worksheet to extract the table from.
+        header_pattern: The pattern representing the table's header.
+        footer_pattern: The pattern representing the table's footer.
+        main_direction: The direction of record flow (e.g. "TB" for vertical tables).
+        inner_direction: The direction of cells inside each record (e.g. "LR" for row cells).
+        clean_names: If True, cleans header column names to lower snake_case.
+        flatten_header: If True, flattens multi-row/column headers into single strings
+            joined by header_separator.
+        header_separator: The separator used to join multi-row headers when flatten_header is True.
+
+    Returns:
+        The extracted structured Table.
+
+    Raises:
+        ValueError: If the header pattern or footer pattern cannot be found.
+    """
+    header_matcher = _compile_pattern(header_pattern, main_direction, inner_direction)
+    header_range = sheet.search_range(header_matcher)
+    if header_range is None:
+        raise ValueError("Table header range not found.")
+
+    footer_matcher = _compile_pattern(footer_pattern, main_direction, inner_direction)
+    relative_kwargs = _get_relative_constraint(main_direction, header_range)
+
+    footer_range = sheet.search_range_relative(footer_matcher, **relative_kwargs)
+    if footer_range is None:
+        raise ValueError("Table footer range not found relative to header.")
+
+    data_range = sheet.get_range_between(header_range, footer_range)
+
+    return sheet.extract_table(
+        data_range,
+        header_range,
+        clean_names=clean_names,
+        flatten_header=flatten_header,
+        header_separator=header_separator,
+    )
+
 
 __all__ = [
     "load_workbook",
@@ -281,4 +441,8 @@ __all__ = [
     "empty",
     "non_empty",
     "any",
+    "group",
+    "grid",
+    "extract_table_with_header_and_data",
+    "extract_table_between_header_and_footer",
 ]
