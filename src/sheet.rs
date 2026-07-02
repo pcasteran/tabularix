@@ -1,4 +1,4 @@
-use crate::matcher::{match_range, parse_cardinality, Range, RangeMatcher, VirtualGrid};
+use crate::matcher::{match_range, Range, RangeMatcher, VirtualGrid};
 use calamine::{open_workbook, Data, DataType, Reader, Xlsx};
 use chrono::{Datelike, Timelike};
 use pyo3::prelude::*;
@@ -251,10 +251,10 @@ impl Sheet {
         };
 
         // Perform the drop operations
-        let drop_top = drop_direction.contains("top") || drop_direction == "top";
-        let drop_bottom = drop_direction.contains("bottom") || drop_direction == "bottom";
-        let drop_left = drop_direction.contains("left") || drop_direction == "left";
-        let drop_right = drop_direction.contains("right") || drop_direction == "right";
+        let drop_top = drop_direction.contains("top");
+        let drop_bottom = drop_direction.contains("bottom");
+        let drop_left = drop_direction.contains("left");
+        let drop_right = drop_direction.contains("right");
 
         if drop_top {
             for _ in 0..matched_row {
@@ -673,8 +673,7 @@ impl Sheet {
         // Calculate minimum height required by the row patterns
         let mut min_height = 0;
         for pattern in &matcher.row_patterns {
-            let (min_rows, _) = parse_cardinality(&pattern.cardinality);
-            min_height += min_rows;
+            min_height += pattern.min;
         }
 
         let scan_rows_limit = rows_count.saturating_sub(min_height);
@@ -911,7 +910,10 @@ impl Sheet {
                 };
 
                 if !val_str.is_empty() {
-                    let max_chars = c_width * 2 / 13;
+                    // Divisor representing double the estimated character width in pixels (approx 6.5px)
+                    // for the 11px system-ui font. This determines the maximum characters that fit in the cell.
+                    const DOUBLE_CHAR_WIDTH_PX: usize = 13;
+                    let max_chars = c_width * 2 / DOUBLE_CHAR_WIDTH_PX;
                     let display_str = if val_str.chars().count() > max_chars && max_chars > 3 {
                         let mut truncated: String = val_str.chars().take(max_chars - 3).collect();
                         truncated.push_str("...");
@@ -978,6 +980,7 @@ impl Sheet {
 #[derive(Debug, Clone)]
 pub struct Workbook {
     pub sheets: HashMap<String, Sheet>,
+    pub sheet_names: Vec<String>,
     pub active_sheet_name: String,
 }
 
@@ -996,7 +999,7 @@ impl Workbook {
     }
 
     pub fn sheet_names(&self) -> Vec<String> {
-        self.sheets.keys().cloned().collect()
+        self.sheet_names.clone()
     }
 
     pub fn get_sheet(&self, name: &str) -> PyResult<Sheet> {
@@ -1023,12 +1026,13 @@ pub fn load_workbook_impl(path: &str) -> PyResult<Workbook> {
 
     let _ = excel.load_merged_regions();
 
-    let sheet_names = excel.sheet_names();
+    let calamine_sheet_names = excel.sheet_names();
     let mut sheets = HashMap::new();
+    let mut loaded_sheet_names = Vec::new();
     let mut active_sheet_name = String::new();
 
-    if !sheet_names.is_empty() {
-        active_sheet_name.clone_from(&sheet_names[0]);
+    if !calamine_sheet_names.is_empty() {
+        active_sheet_name.clone_from(&calamine_sheet_names[0]);
     }
 
     let all_merged_regions: Vec<_> = excel
@@ -1045,7 +1049,7 @@ pub fn load_workbook_impl(path: &str) -> PyResult<Workbook> {
         })
         .collect();
 
-    for name in sheet_names {
+    for name in calamine_sheet_names {
         if let Ok(range) = excel.worksheet_range(&name) {
             let (start_row, start_col) = range.start().unwrap_or((0, 0));
             let (end_row, end_col) = range.end().unwrap_or((0, 0));
@@ -1089,16 +1093,18 @@ pub fn load_workbook_impl(path: &str) -> PyResult<Workbook> {
             sheets.insert(
                 name.clone(),
                 Sheet {
-                    name,
+                    name: name.clone(),
                     data,
                     merged_regions: sheet_merges,
                 },
             );
+            loaded_sheet_names.push(name);
         }
     }
 
     Ok(Workbook {
         sheets,
+        sheet_names: loaded_sheet_names,
         active_sheet_name,
     })
 }
@@ -1133,9 +1139,8 @@ mod tests {
     #[test]
     fn test_load_workbook() {
         let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
-        let mut names = wb.sheet_names();
-        names.sort();
-        assert_eq!(names, vec!["complex", "multi-tables", "simple"]);
+        let names = wb.sheet_names();
+        assert_eq!(names, vec!["simple", "complex", "multi-tables"]);
 
         let sheet = wb.get_sheet("simple").unwrap();
         assert_eq!(sheet.name, "simple");

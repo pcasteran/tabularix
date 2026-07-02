@@ -143,3 +143,20 @@ Verify Row Cardinality Repeat Custom Range
     # Does not match 1 row
     ${res2}=    Evaluate    $matcher.matches_range([["A", "B"]])
     Should Be Equal    ${res2}    ${False}
+
+Verify Cell Cardinality Repeat Unbounded
+    [Documentation]    Verify cell rule repeat matches unbounded range (at least N).
+    ${pattern}=    Evaluate    tabularix.RangePattern1D(tabularix.non_empty().repeat(2, None))    modules=tabularix
+    ${matcher}=    Evaluate    $pattern.to_matcher(direction="LR")
+
+    # Matches with 2 cells
+    ${res1}=    Evaluate    $matcher.matches_range([["A", "B"]])
+    Should Be True    ${res1}
+
+    # Matches with 3 cells
+    ${res2}=    Evaluate    $matcher.matches_range([["A", "B", "C"]])
+    Should Be True    ${res2}
+
+    # Does not match with 1 cell
+    ${res3}=    Evaluate    $matcher.matches_range([["A"]])
+    Should Be Equal    ${res3}    ${False}

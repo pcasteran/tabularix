@@ -22,6 +22,22 @@ Direction = Literal["LR", "RL", "TB", "BT"]
 RuleType = Literal["exact", "regex", "empty", "non_empty", "any"]
 
 
+def _apply_cardinality(
+    rust_p: _RangePattern1D,
+    min: int,
+    max: int | None,
+    greedy: bool,
+) -> _RangePattern1D:
+    """Applies a (min, max, greedy) cardinality to a Rust pattern object."""
+    if min == 1 and max is None:
+        return rust_p.one_or_more(greedy)
+    if min == 0 and max is None:
+        return rust_p.zero_or_more(greedy)
+    if min == 0 and max == 1:
+        return rust_p.optional(greedy)
+    return rust_p.repeat(min, max, greedy)
+
+
 class CellRule:
     """Represents a rule for matching a single cell in a 1D sequence."""
 
@@ -32,7 +48,7 @@ class CellRule:
         self.max = 1
         self.greedy = True
 
-    def repeat(self, min: int, max: int | None = None, greedy: bool = True) -> CellRule:
+    def repeat(self, min: int, max: int | None = -1, greedy: bool = True) -> CellRule:
         self.min = min
         self.max = max
         self.greedy = greedy
@@ -58,7 +74,7 @@ class RangePattern1D:
         self.max = 1
         self.greedy = True
 
-    def repeat(self, min: int, max: int | None = None, greedy: bool = True) -> RangePattern1D:
+    def repeat(self, min: int, max: int | None = -1, greedy: bool = True) -> RangePattern1D:
         """Sets the cardinality of the 1D pattern to repeat a custom number of times or range."""
         self.min = min
         self.max = max
@@ -85,16 +101,7 @@ class RangePattern1D:
                 sub_rust = element.to_rust()
                 rust_p = rust_p.group(sub_rust)
                 if element.min != 1 or element.max != 1:
-                    if element.min == 1 and element.max is None:
-                        rust_p = rust_p.one_or_more(element.greedy)
-                    elif element.min == 0 and element.max is None:
-                        rust_p = rust_p.zero_or_more(element.greedy)
-                    elif element.min == 0 and element.max == 1:
-                        rust_p = rust_p.optional(element.greedy)
-                    else:
-                        rust_p = rust_p.repeat(
-                            element.min, element.max if element.max is not None else -1, element.greedy
-                        )
+                    rust_p = _apply_cardinality(rust_p, element.min, element.max, element.greedy)
             elif isinstance(element, CellRule):
                 if element.rule_type == "exact":
                     rust_p = rust_p.value(element.value)
@@ -108,39 +115,15 @@ class RangePattern1D:
                     rust_p = rust_p.any()
 
                 if element.min != 1 or element.max != 1:
-                    if element.min == 1 and element.max is None:
-                        rust_p = rust_p.one_or_more(element.greedy)
-                    elif element.min == 0 and element.max is None:
-                        rust_p = rust_p.zero_or_more(element.greedy)
-                    elif element.min == 0 and element.max == 1:
-                        rust_p = rust_p.optional(element.greedy)
-                    else:
-                        rust_p = rust_p.repeat(
-                            element.min, element.max if element.max is not None else -1, element.greedy
-                        )
+                    rust_p = _apply_cardinality(rust_p, element.min, element.max, element.greedy)
         return rust_p
 
     def _compile_rust_pattern(self) -> _RangePattern1D:
-        """Helper to compile this Python pattern and apply top-level cardinality metadata for Rust.
-
-        Note: the cardinality-applying logic here is structurally similar to the inner loop in
-        ``to_rust()``, but operates on a different Rust binding mechanism (attribute assignment
-        vs. method calls). These two blocks are intentionally kept separate.
-        """
+        """Helper to compile this Python pattern and apply top-level cardinality metadata for Rust."""
         rust_p = self.to_rust()
-        if self.min != 1 or self.max != 1:
-            if self.min == 1 and self.max is None:
-                rust_p.cardinality = "+"
-                rust_p.greedy = self.greedy
-            elif self.min == 0 and self.max is None:
-                rust_p.cardinality = "*"
-                rust_p.greedy = self.greedy
-            elif self.min == 0 and self.max == 1:
-                rust_p.cardinality = "?"
-                rust_p.greedy = self.greedy
-            else:
-                rust_p.cardinality = f"{{{self.min},{self.max if self.max is not None else ''}}}"
-                rust_p.greedy = self.greedy
+        rust_p.min = self.min
+        rust_p.max = self.max
+        rust_p.greedy = self.greedy
         return rust_p
 
     def to_matcher(self, direction: Direction = "LR") -> RangeMatcher:

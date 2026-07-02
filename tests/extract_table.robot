@@ -56,21 +56,25 @@ Verify Slicing Out of Bounds Error
 
 Verify Table Extraction With Flattened Multi-Row Header
     [Documentation]    Test extracting table with a multi-row header flattened.
-    ${sheet}=    Load Mutated Multi-Row Header Sheet
-    ${data}=    Evaluate    tabularix.Range.from_a1("A3:C5")    modules=tabularix
-    ${header}=    Evaluate    tabularix.Range.from_a1("A1:C2")    modules=tabularix
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
+    ${data}=    Evaluate    tabularix.Range.from_a1("B15:F17")    modules=tabularix
+    ${header}=    Evaluate    tabularix.Range.from_a1("B13:F14")    modules=tabularix
     ${table}=    Evaluate    $sheet.extract_table($data, $header, flatten_header=True, header_separator="::")
     ${cols}=    Evaluate    $table.columns
-    Should Be Equal As Strings    ${cols}    ['Product::Name', 'Q1::Actual', 'Q1::Forecast']
+    Should Be Equal As Strings
+    ...    ${cols}
+    ...    ['Product', '2025::Expected', '2025::Actual', '2026::Expected', '2026::Actual']
 
 Verify Table Extraction With Nested Multi-Row Header
     [Documentation]    Test extracting table with a nested (non-flattened) multi-row header.
-    ${sheet}=    Load Mutated Multi-Row Header Sheet
-    ${data}=    Evaluate    tabularix.Range.from_a1("A3:C5")    modules=tabularix
-    ${header}=    Evaluate    tabularix.Range.from_a1("A1:C2")    modules=tabularix
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
+    ${data}=    Evaluate    tabularix.Range.from_a1("B15:F17")    modules=tabularix
+    ${header}=    Evaluate    tabularix.Range.from_a1("B13:F14")    modules=tabularix
     ${table}=    Evaluate    $sheet.extract_table($data, $header, flatten_header=False)
     ${cols}=    Evaluate    $table.columns
-    Should Be Equal As Strings    ${cols}    ['Product', 'Q1']
+    Should Be Equal As Strings    ${cols}    ['Product', '2025', '2026']
 
 Verify Table Extraction Horizontal Alignment
     [Documentation]    Test extracting a horizontal table where headers are on the left and data is on the right.
@@ -110,17 +114,6 @@ Verify Table Extraction Vertical Bottom Alignment
 
 
 *** Keywords ***
-Load Mutated Multi-Row Header Sheet
-    [Documentation]    Loads the simple sheet and mutates its first two rows to form a multi-row header.
-    ${sheet}=    Load Simple Sheet
-    Evaluate    $sheet.set_cell_value(0, 0, "Product")
-    Evaluate    $sheet.set_cell_value(0, 1, "Q1")
-    Evaluate    $sheet.set_cell_value(0, 2, "Q1")
-    Evaluate    $sheet.set_cell_value(1, 0, "Name")
-    Evaluate    $sheet.set_cell_value(1, 1, "Actual")
-    Evaluate    $sheet.set_cell_value(1, 2, "Forecast")
-    RETURN    ${sheet}
-
 Load Mutated Horizontal Table Sheet
     [Documentation]    Loads the simple sheet and mutates it for horizontal table extraction.
     ${sheet}=    Load Simple Sheet
