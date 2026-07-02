@@ -182,8 +182,9 @@ def any() -> CellRule:
 # ==============================================================================
 # The following methods are injected dynamically onto PyO3-defined Rust classes
 # at import time to provide convenient Pythonic interfaces (e.g., PyArrow integration).
-# Note: Any methods added here must also be declared in `__init__.pyi` to ensure
-# type checking and autocompletion remain aligned.
+# Note: Any methods added here must also be declared in `__init__.pyi` to ensure type
+# checking and autocompletion remain aligned.
+
 
 def search_range_relative(
     self: Sheet,
