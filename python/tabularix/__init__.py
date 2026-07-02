@@ -32,7 +32,7 @@ class CellRule:
         self.max = 1
         self.greedy = True
 
-    def repeat(self, min: int, max: int | None = -1, greedy: bool = True) -> CellRule:
+    def repeat(self, min: int, max: int | None = None, greedy: bool = True) -> CellRule:
         self.min = min
         self.max = max
         self.greedy = greedy
@@ -58,7 +58,7 @@ class RangePattern1D:
         self.max = 1
         self.greedy = True
 
-    def repeat(self, min: int, max: int | None = -1, greedy: bool = True) -> RangePattern1D:
+    def repeat(self, min: int, max: int | None = None, greedy: bool = True) -> RangePattern1D:
         """Sets the cardinality of the 1D pattern to repeat a custom number of times or range."""
         self.min = min
         self.max = max
@@ -121,7 +121,12 @@ class RangePattern1D:
         return rust_p
 
     def _compile_rust_pattern(self) -> _RangePattern1D:
-        """Helper to compile this Python pattern and apply cardinality metadata for Rust."""
+        """Helper to compile this Python pattern and apply top-level cardinality metadata for Rust.
+
+        Note: the cardinality-applying logic here is structurally similar to the inner loop in
+        ``to_rust()``, but operates on a different Rust binding mechanism (attribute assignment
+        vs. method calls). These two blocks are intentionally kept separate.
+        """
         rust_p = self.to_rust()
         if self.min != 1 or self.max != 1:
             if self.min == 1 and self.max is None:
@@ -182,6 +187,8 @@ def non_empty() -> CellRule:
     return CellRule("non_empty")
 
 
+# Note: `any` intentionally shadows the Python built-in `builtins.any`. This module does not
+# need the built-in, and the name provides a clean, consistent API surface for cell rule builders.
 def any() -> CellRule:
     """Creates a wildcard cell rule matching any cell."""
     return CellRule("any")
@@ -315,6 +322,8 @@ def _get_relative_constraint(direction: Direction, header_range: Range) -> dict[
             return {"right": header_range}
         case "RL":
             return {"left": header_range}
+        case _:
+            raise ValueError(f"Invalid direction: {direction!r}. Must be one of 'TB', 'BT', 'LR', 'RL'.")
 
 
 def extract_table_with_header_and_data(
@@ -403,6 +412,12 @@ def extract_table_between_header_and_footer(
 
     Raises:
         ValueError: If the header pattern or footer pattern cannot be found.
+
+    Note:
+        The footer is searched relative to the **header** (not the data area). Any match
+        positioned after the header boundary — in the ``main_direction`` — is considered
+        a valid footer candidate. The data range is then computed as the region between
+        the header and footer.
     """
     header_matcher = _compile_pattern(header_pattern, main_direction, inner_direction)
     header_range = sheet.search_range(header_matcher)
