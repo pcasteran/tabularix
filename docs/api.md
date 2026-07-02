@@ -18,6 +18,26 @@ This page describes the public API exposed by the Tabularix library.
       heading_level: 3
 
 <!-- prettier-ignore -->
+::: tabularix.extract_table_with_header_and_data
+    options:
+      heading_level: 3
+
+<!-- prettier-ignore -->
+::: tabularix.extract_table_between_header_and_footer
+    options:
+      heading_level: 3
+
+<!-- prettier-ignore -->
+::: tabularix.group
+    options:
+      heading_level: 3
+
+<!-- prettier-ignore -->
+::: tabularix.grid
+    options:
+      heading_level: 3
+
+<!-- prettier-ignore -->
 ::: tabularix.value
     options:
       heading_level: 3

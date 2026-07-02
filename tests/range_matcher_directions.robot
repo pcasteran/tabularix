@@ -8,7 +8,7 @@ Library             Collections
 Verify 1D Match Direction LR
     [Documentation]    Test 1D matching pattern in LR direction.
     ${p}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("A"), tabularix.value("B"), tabularix.value("C")])
+    ...    tabularix.RangePattern1D(tabularix.value("A"), tabularix.value("B"), tabularix.value("C"))
     ...    modules=tabularix
     ${m}=    Evaluate    $p.to_matcher(direction="LR")
     ${res_ok}=    Evaluate    $m.matches_range([["A", "B", "C"]])
@@ -19,7 +19,7 @@ Verify 1D Match Direction LR
 Verify 1D Match Direction RL
     [Documentation]    Test 1D matching pattern in RL direction.
     ${p}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("A"), tabularix.value("B"), tabularix.value("C")])
+    ...    tabularix.RangePattern1D(tabularix.value("A"), tabularix.value("B"), tabularix.value("C"))
     ...    modules=tabularix
     ${m}=    Evaluate    $p.to_matcher(direction="RL")
     ${res_ok}=    Evaluate    $m.matches_range([["C", "B", "A"]])
@@ -30,7 +30,7 @@ Verify 1D Match Direction RL
 Verify 1D Match Direction TB
     [Documentation]    Test 1D matching pattern in TB direction.
     ${p}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("A"), tabularix.value("B"), tabularix.value("C")])
+    ...    tabularix.RangePattern1D(tabularix.value("A"), tabularix.value("B"), tabularix.value("C"))
     ...    modules=tabularix
     ${m}=    Evaluate    $p.to_matcher(direction="TB")
     ${res_ok}=    Evaluate    $m.matches_range([["A"], ["B"], ["C"]])
@@ -41,7 +41,7 @@ Verify 1D Match Direction TB
 Verify 1D Match Direction BT
     [Documentation]    Test 1D matching pattern in BT direction.
     ${p}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("A"), tabularix.value("B"), tabularix.value("C")])
+    ...    tabularix.RangePattern1D(tabularix.value("A"), tabularix.value("B"), tabularix.value("C"))
     ...    modules=tabularix
     ${m}=    Evaluate    $p.to_matcher(direction="BT")
     ${res_ok}=    Evaluate    $m.matches_range([["C"], ["B"], ["A"]])
@@ -141,7 +141,7 @@ Verify 2D Match Directions RL BT
 *** Keywords ***
 Get 2D Sample Pattern
     [Documentation]    Helper to build a 2D sample pattern [[1, 2], [3, 4]]
-    ${r1}=    Evaluate    tabularix.RangePattern1D([tabularix.value("1"), tabularix.value("2")])    modules=tabularix
-    ${r2}=    Evaluate    tabularix.RangePattern1D([tabularix.value("3"), tabularix.value("4")])    modules=tabularix
-    ${p}=    Evaluate    tabularix.RangePattern2D([$r1, $r2])    modules=tabularix
+    ${r1}=    Evaluate    tabularix.RangePattern1D(tabularix.value("1"), tabularix.value("2"))    modules=tabularix
+    ${r2}=    Evaluate    tabularix.RangePattern1D(tabularix.value("3"), tabularix.value("4"))    modules=tabularix
+    ${p}=    Evaluate    tabularix.RangePattern2D($r1, $r2)    modules=tabularix
     RETURN    ${p}

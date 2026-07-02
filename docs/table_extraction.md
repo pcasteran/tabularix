@@ -6,7 +6,9 @@ icon: lucide/table
 
 # 📋 Table Extraction
 
-This document provides a detailed explanation of the algorithm used by `Sheet.extract_table` to extract structured tables from coordinate layout ranges.
+This document provides a detailed explanation of the algorithm used by Tabularix to extract structured tables from coordinate layout ranges.
+
+While the **High-Level API** (`extract_table_with_header_and_data` and `extract_table_between_header_and_footer`) is the recommended entry point for most users, it serves as a wrapper that internally determines the matching layout coordinate ranges. Under the hood, both the high-level and low-level interfaces invoke the same core extraction pipeline, `Sheet.extract_table`.
 
 ---
 

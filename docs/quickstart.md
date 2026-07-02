@@ -32,17 +32,17 @@ uv run maturin develop
 
 Excel spreadsheets are often structured for humans to read, not for computers to parse. They frequently contain header titles, metadata rows, empty spacing rows, and multiple tables nested in a single worksheet.
 
-In this tutorial, we will take a messy spreadsheet and programmatically locate, extract and clean a table. We will then use it with modern data frameworks (Pandas, Polars, DuckDB).
+In this tutorial, we will take a messy spreadsheet and programmatically locate, extract and clean a table using Tabularix's **High-Level API**. We will then use it with modern data frameworks (Pandas, Polars, DuckDB).
 
 ### Step 1: Visual Structure Analysis
 
 The first step in extracting tables from a spreadsheet is understanding its layout. Tabularix allows you to render the worksheet's structure into a beautifully styled SVG layout file:
 
 ```python
-import tabularix as tx
+from tabularix import load_workbook
 
 # Load the workbook.
-workbook = tx.load_workbook("tests/data/sample.xlsx")
+workbook = load_workbook("tests/data/sample.xlsx")
 
 # Get the target worksheet.
 sheet = workbook.get_sheet("complex")
@@ -59,80 +59,61 @@ It highlights cell borders, merged regions, empty rows, and cell types (numeric,
 
 ---
 
-### Step 2: Define a Range Matcher
+### Step 2: Define Layout Patterns
 
-In this example, we need to extract the sales table located at the top of the sheet. Instead of hardcoding cell ranges like `A3:E8` (which break if a row is added or deleted at the top), Tabularix uses **Range Matchers** to find your table's boundaries dynamically.
+In this example, we need to extract the sales table located at the top of the sheet. Instead of hardcoding cell ranges like `A3:E8` (which break if a row is added or deleted at the top), Tabularix lets you define patterns using `group` (for 1D cell lists) and `grid` (for 2D row/column arrays).
 
 Let's define a match pattern for the header row and a match pattern for the data rows:
 
 ```python
-from tabularix import RangePattern1D, RangePattern2D, non_empty, regex, value
+from tabularix import grid, group, non_empty, regex, value
 
-# Define the 1D pattern for the header row.
+# Define the pattern for the header row.
 # It starts with "Region", followed by 4 Quarter columns matching
 # a regex pattern (e.g. Q1, Q2, etc.).
-header_pattern = RangePattern1D([
-    value("Region"), # Static string
-    regex(r"^Q[1-4]$").repeat(4, max=4) # Quarter header: Q1, Q2, Q3, Q4
-])
+header_pattern = group(
+    value("Region"),                        # Static string
+    regex(r"^Q[1-4]$").repeat(4, max=4)     # Quarter header: Q1, Q2, Q3, Q4
+)
 
-header_matcher = header_pattern.to_matcher(direction="LR")
-
-# Define the 1D pattern for a data row. The rows must:
+# Define the pattern for the data rows. The rows must:
 #   - start with a region name, i.e. a string different than `Total` (which
 #     is the marker of the table footer)
 #   - end by 4 non-empty data cells
-data_row_pattern = RangePattern1D([
-    regex(r"^(?!Total).*$"), # Match any string except "Total"
-    non_empty().repeat(4, max=4) # Quarters amount
-])
-
-data_matcher = RangePattern2D([data_row_pattern.one_or_more()]).to_matcher(
-    outer_direction="TB",
-    inner_direction="LR"
+data_pattern = grid(
+    group(
+        regex(r"^(?!Total).*$"),            # Match any string except "Total"
+        non_empty().repeat(4, max=4)        # Quarters amount
+    ).one_or_more()
 )
 ```
 
 ---
 
-### Step 3: Scan and Locate the Table Ranges
+### Step 3: Extract the Structured Table
 
-Now, scan the worksheet to locate the header row, and then scan for the data rows relative to it (using the `below` constraint). Tabularix executes this scan in Rust for high performance:
-
-```python
-# Search for the header row anywhere in the sheet (no location constraint).
-header_range = sheet.search_range(header_matcher)
-if header_range is None:
-    raise ValueError("Header not found")
-
-print(f"Table header found: {header_range}")
-
-# Search for the data rows located below the header.
-data_range = sheet.search_range_relative(data_matcher, below=header_range)
-if data_range is None:
-    raise ValueError("Data not found")
-
-print(f"Table data found: {data_range}")
-```
-
----
-
-### Step 4: Extract the Structured Table
-
-Using the coordinates returned by our search, we extract the structured `Table` object. We will also enable `clean_names` to clean our headers into standard Python identifiers:
+Using the defined patterns, we extract the structured `Table` object using the high-level helper `extract_table_with_header_and_data`. This helper automatically handles finding the header and locating the data range relative to it:
 
 ```python
-# Extract the table from the sheet
-table = sheet.extract_table(data_range, header_range, clean_names=True)
+from tabularix import extract_table_with_header_and_data
+
+# Extract the table from the sheet using the high-level API
+table = extract_table_with_header_and_data(
+    sheet,
+    header_pattern,
+    data_pattern,
+    clean_names=True
+)
 
 print("Columns:", table.columns)
 # Output: ['region', 'q1', 'q2', 'q3', 'q4']
 print("Table Shape:", table.shape)
+# Output: (4, 5)
 ```
 
 ---
 
-### Step 5: Zero-Copy Integration (Arrow, Polars, Pandas, DuckDB)
+### Step 4: Zero-Copy Integration (Arrow, Polars, Pandas, DuckDB)
 
 Tabularix fully supports the standard **Arrow PyCapsule Interface**, allowing you to export your parsed table to modern data frameworks with zero-copy overhead.
 
@@ -154,6 +135,55 @@ rel_duckdb = duckdb.from_arrow(table)
 res_duckdb = rel_duckdb.query("sales_table", "SELECT * FROM sales_table WHERE Q1 > 12000")
 print("DuckDB query result:")
 print(res_duckdb)
+```
+
+---
+
+## 🛠️ Low-Level Coordinate Control
+
+While the High-Level API is perfect for standard vertical or horizontal tables, some complex layouts require more control. In these situations, you can use Tabularix's **Low-Level API** to perform explicit range searches, inspect boundary coordinates, and construct matcher objects manually.
+
+Here is the equivalent workflow using the Low-Level API:
+
+### 1. Compile Matchers Manually
+
+Instead of passing patterns directly to high-level helpers, convert them into `RangeMatcher` objects bound to specific layout directions:
+
+```python
+# Compile the patterns into matchers
+header_matcher = header_pattern.to_matcher(direction="LR")
+data_matcher = data_pattern.to_matcher(outer_direction="TB", inner_direction="LR")
+```
+
+### 2. Search and Scan Ranges
+
+Scan the sheet dynamically to locate the boundaries of the matching regions. This returns `Range` coordinates:
+
+```python
+# Scan the sheet for the header row
+header_range = sheet.search_range(header_matcher)
+if header_range is None:
+    raise ValueError("Header not found")
+
+print(f"Table header found: {header_range}")
+# Output: Range(A3:E3, cols=0..4, rows=2..2)
+
+# Scan for data rows located below the matched header
+data_range = sheet.search_range_relative(data_matcher, below=header_range)
+if data_range is None:
+    raise ValueError("Data not found")
+
+print(f"Table data found: {data_range}")
+# Output: Range(A4:E7, cols=0..4, rows=3..6)
+```
+
+### 3. Extract via Ranges
+
+Once the header and data coordinate ranges are located, pass them to `sheet.extract_table` to retrieve the structured table:
+
+```python
+# Extract the table using explicit ranges
+table = sheet.extract_table(data_range, header_range, clean_names=True)
 ```
 
 ---
