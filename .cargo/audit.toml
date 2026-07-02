@@ -1,0 +1,8 @@
+# TODO: Remove these ignores when a new version of `calamine` (newer than v0.35.0)
+# is released on crates.io that updates its `quick-xml` dependency to >=0.41.0.
+
+[advisories]
+ignore = [
+    "RUSTSEC-2026-0194", # Quadratic run time when checking start tag (quick-xml < 0.41.0)
+    "RUSTSEC-2026-0195", # Unbounded namespace-declaration allocation (quick-xml < 0.41.0)
+]
