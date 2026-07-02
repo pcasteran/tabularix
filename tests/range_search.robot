@@ -10,7 +10,7 @@ Verify Absolute Range Search Basic
     [Documentation]    Test Sheet.search_range with default coordinates.
     ${sheet}=    Load Simple Sheet
     ${hdr_p}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.non_empty(), tabularix.any(), tabularix.any()])
+    ...    tabularix.RangePattern1D(tabularix.non_empty(), tabularix.any(), tabularix.any())
     ...    modules=tabularix
     ${matcher}=    Evaluate    $hdr_p.to_matcher(direction="LR")
 
@@ -25,7 +25,7 @@ Verify Absolute Range Search Sliced
     [Documentation]    Test Sheet.search_range within a sliced window.
     ${sheet}=    Load Simple Sheet
     ${hdr_p}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.non_empty(), tabularix.any(), tabularix.any()])
+    ...    tabularix.RangePattern1D(tabularix.non_empty(), tabularix.any(), tabularix.any())
     ...    modules=tabularix
     ${matcher}=    Evaluate    $hdr_p.to_matcher(direction="LR")
 
@@ -36,7 +36,7 @@ Verify Absolute Range Search Sliced
 Verify Absolute Range Search Bounds and Errors
     [Documentation]    Test negative and out of bounds errors in search_range.
     ${sheet}=    Load Simple Sheet
-    ${p}=    Evaluate    tabularix.RangePattern1D([tabularix.any()])    modules=tabularix
+    ${p}=    Evaluate    tabularix.RangePattern1D(tabularix.any())    modules=tabularix
     ${matcher}=    Evaluate    $p.to_matcher(direction="LR")
 
     Run Keyword And Expect Error    *IndexError*    Evaluate    $sheet.search_range($matcher, start_row=-1)
@@ -47,7 +47,7 @@ Verify Absolute Range Search Bounds and Errors
 Verify Absolute Range Search Inverted Bounds
     [Documentation]    Test inverted range errors in search_range.
     ${sheet}=    Load Simple Sheet
-    ${p}=    Evaluate    tabularix.RangePattern1D([tabularix.any()])    modules=tabularix
+    ${p}=    Evaluate    tabularix.RangePattern1D(tabularix.any())    modules=tabularix
     ${matcher}=    Evaluate    $p.to_matcher(direction="LR")
 
     Run Keyword And Expect Error
@@ -65,7 +65,7 @@ Verify Relative Range Search Below
     ${header_range}=    Find Range By Value In Simple Sheet    ${sheet}    Header #1
 
     ${abc_p}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("ABC"), tabularix.any(), tabularix.any()])
+    ...    tabularix.RangePattern1D(tabularix.value("ABC"), tabularix.any(), tabularix.any())
     ...    modules=tabularix
     ${abc_m}=    Evaluate    $abc_p.to_matcher(direction="LR")
     ${abc_range}=    Evaluate    $sheet.search_range_relative($abc_m, below=$header_range)
@@ -79,7 +79,7 @@ Verify Relative Range Search Below and Above
     ${def_range}=    Find Range By Value In Simple Sheet    ${sheet}    DEF
 
     ${abc_p}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("ABC"), tabularix.any(), tabularix.any()])
+    ...    tabularix.RangePattern1D(tabularix.value("ABC"), tabularix.any(), tabularix.any())
     ...    modules=tabularix
     ${abc_m}=    Evaluate    $abc_p.to_matcher(direction="LR")
     ${abc_range_both}=    Evaluate    $sheet.search_range_relative($abc_m, below=$header_range, above=$def_range)
@@ -93,7 +93,7 @@ Verify Relative Range Search Vertical Conflicts
     ${def_range}=    Find Range By Value In Simple Sheet    ${sheet}    DEF
 
     ${abc_p}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("ABC"), tabularix.any(), tabularix.any()])
+    ...    tabularix.RangePattern1D(tabularix.value("ABC"), tabularix.any(), tabularix.any())
     ...    modules=tabularix
     ${abc_m}=    Evaluate    $abc_p.to_matcher(direction="LR")
 
@@ -106,7 +106,7 @@ Verify Relative Range Search Vertical Conflicts - Row Spans
     [Documentation]    Test vertical boundary conflicts when column spans do not align.
     ${sheet}=    Load Simple Sheet
     ${abc_p}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("ABC"), tabularix.any(), tabularix.any()])
+    ...    tabularix.RangePattern1D(tabularix.value("ABC"), tabularix.any(), tabularix.any())
     ...    modules=tabularix
     ${abc_m}=    Evaluate    $abc_p.to_matcher(direction="LR")
 
@@ -123,7 +123,7 @@ Verify Relative Range Search Horizontal Bounds
     ${right_rg}=    Evaluate    tabularix.Range.from_a1("A2:A3")    modules=tabularix
     ${left_rg}=    Evaluate    tabularix.Range.from_a1("C2:C3")    modules=tabularix
 
-    ${val_p}=    Evaluate    tabularix.RangePattern1D([tabularix.non_empty()])    modules=tabularix
+    ${val_p}=    Evaluate    tabularix.RangePattern1D(tabularix.non_empty())    modules=tabularix
     ${val_m}=    Evaluate    $val_p.to_matcher(direction="LR")
 
     ${range}=    Evaluate    $sheet.search_range_relative($val_m, right=$right_rg, left=$left_rg)
@@ -136,7 +136,7 @@ Verify Relative Range Search Horizontal Conflicts
     ${right_rg}=    Evaluate    tabularix.Range.from_a1("A2:A3")    modules=tabularix
     ${left_rg}=    Evaluate    tabularix.Range.from_a1("C2:C3")    modules=tabularix
 
-    ${val_p}=    Evaluate    tabularix.RangePattern1D([tabularix.non_empty()])    modules=tabularix
+    ${val_p}=    Evaluate    tabularix.RangePattern1D(tabularix.non_empty())    modules=tabularix
     ${val_m}=    Evaluate    $val_p.to_matcher(direction="LR")
 
     Run Keyword And Expect Error
@@ -156,7 +156,7 @@ Verify Relative Range Search Above
     ${sheet}=    Load Simple Sheet
     ${def_range}=    Find Range By Value In Simple Sheet    ${sheet}    DEF
     ${abc_p}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("ABC"), tabularix.any(), tabularix.any()])
+    ...    tabularix.RangePattern1D(tabularix.value("ABC"), tabularix.any(), tabularix.any())
     ...    modules=tabularix
     ${abc_m}=    Evaluate    $abc_p.to_matcher(direction="LR")
     ${abc_range}=    Evaluate    $sheet.search_range_relative($abc_m, above=$def_range)
@@ -168,7 +168,7 @@ Verify Relative Range Search Left
     ${sheet}=    Load Simple Sheet
     ${left_rg}=    Evaluate    tabularix.Range.from_a1("C2:C3")    modules=tabularix
     ${def_p}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("DEF"), tabularix.any()])
+    ...    tabularix.RangePattern1D(tabularix.value("DEF"), tabularix.any())
     ...    modules=tabularix
     ${def_m}=    Evaluate    $def_p.to_matcher(direction="LR")
     ${def_range}=    Evaluate    $sheet.search_range_relative($def_m, left=$left_rg)
@@ -179,7 +179,7 @@ Verify Relative Range Search Right
     [Documentation]    Test search_range_relative right of a matched range.
     ${sheet}=    Load Simple Sheet
     ${right_rg}=    Evaluate    tabularix.Range.from_a1("A1:A4")    modules=tabularix
-    ${alice_p}=    Evaluate    tabularix.RangePattern1D([tabularix.value("Alice")])    modules=tabularix
+    ${alice_p}=    Evaluate    tabularix.RangePattern1D(tabularix.value("Alice"))    modules=tabularix
     ${alice_m}=    Evaluate    $alice_p.to_matcher(direction="LR")
     ${alice_range}=    Evaluate    $sheet.search_range_relative($alice_m, right=$right_rg)
     Should Not Be Equal    ${alice_range}    ${None}
@@ -190,7 +190,7 @@ Verify Partial Column Range Search
     ${sheet}=    Load Simple Sheet
     # Match Header #2 and Header #3 (columns 1 and 2)
     ${p}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("Header #2"), tabularix.value("Header #3")])
+    ...    tabularix.RangePattern1D(tabularix.value("Header #2"), tabularix.value("Header #3"))
     ...    modules=tabularix
     ${matcher}=    Evaluate    $p.to_matcher(direction="LR")
     ${range}=    Evaluate    $sheet.search_range($matcher)
@@ -202,19 +202,19 @@ Verify Greedy Range Search Matching
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
     ${sub}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("Expected"), tabularix.value("Actual")])
+    ...    tabularix.RangePattern1D(tabularix.value("Expected"), tabularix.value("Actual"))
     ...    modules=tabularix
     ${sub_hdr}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.regex(r"\\d{4}"), tabularix.empty()])
+    ...    tabularix.RangePattern1D(tabularix.regex(r"\\d{4}"), tabularix.empty())
     ...    modules=tabularix
     ${hdr1}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("Product"), $sub_hdr.zero_or_more(greedy=True)])
+    ...    tabularix.RangePattern1D(tabularix.value("Product"), $sub_hdr.zero_or_more(greedy=True))
     ...    modules=tabularix
     ${hdr2}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.empty(), $sub.zero_or_more(greedy=True)])
+    ...    tabularix.RangePattern1D(tabularix.empty(), $sub.zero_or_more(greedy=True))
     ...    modules=tabularix
     ${matcher}=    Evaluate
-    ...    tabularix.RangePattern2D([$hdr1, $hdr2]).to_matcher(outer_direction="TB", inner_direction="LR")
+    ...    tabularix.RangePattern2D($hdr1, $hdr2).to_matcher(outer_direction="TB", inner_direction="LR")
     ${range}=    Evaluate    $sheet.search_range($matcher)
     Should Not Be Equal    ${range}    ${None}
     Verify Range Coordinates    ${range}    12    13    1    5
@@ -224,19 +224,19 @@ Verify Lazy Range Search Matching
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
     ${sub}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("Expected"), tabularix.value("Actual")])
+    ...    tabularix.RangePattern1D(tabularix.value("Expected"), tabularix.value("Actual"))
     ...    modules=tabularix
     ${sub_hdr}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.regex(r"\\d{4}"), tabularix.empty()])
+    ...    tabularix.RangePattern1D(tabularix.regex(r"\\d{4}"), tabularix.empty())
     ...    modules=tabularix
     ${hdr1}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("Product"), $sub_hdr.zero_or_more(greedy=False)])
+    ...    tabularix.RangePattern1D(tabularix.value("Product"), $sub_hdr.zero_or_more(greedy=False))
     ...    modules=tabularix
     ${hdr2}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.empty(), $sub.zero_or_more(greedy=False)])
+    ...    tabularix.RangePattern1D(tabularix.empty(), $sub.zero_or_more(greedy=False))
     ...    modules=tabularix
     ${matcher}=    Evaluate
-    ...    tabularix.RangePattern2D([$hdr1, $hdr2]).to_matcher(outer_direction="TB", inner_direction="LR")
+    ...    tabularix.RangePattern2D($hdr1, $hdr2).to_matcher(outer_direction="TB", inner_direction="LR")
     ${range}=    Evaluate    $sheet.search_range($matcher)
     Should Not Be Equal    ${range}    ${None}
     Verify Range Coordinates    ${range}    12    13    1    1
@@ -245,8 +245,8 @@ Verify Greedy Row Repetition Search Matching
     [Documentation]    Verify vertical greedy row matching matches as many rows as possible.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
-    ${row_pat}=    Evaluate    tabularix.RangePattern1D([tabularix.regex(r"^Product .*$")])    modules=tabularix
-    ${pat}=    Evaluate    tabularix.RangePattern2D([$row_pat.one_or_more(greedy=True)])    modules=tabularix
+    ${row_pat}=    Evaluate    tabularix.RangePattern1D(tabularix.regex(r"^Product .*$"))    modules=tabularix
+    ${pat}=    Evaluate    tabularix.RangePattern2D($row_pat.one_or_more(greedy=True))    modules=tabularix
     ${matcher}=    Evaluate    $pat.to_matcher(outer_direction="TB", inner_direction="LR")
     ${range}=    Evaluate    $sheet.search_range($matcher, start_row=14, end_row=16, start_col=1, end_col=1)
     Should Not Be Equal    ${range}    ${None}
@@ -256,8 +256,8 @@ Verify Lazy Row Repetition Search Matching
     [Documentation]    Verify vertical lazy row matching matches as few rows as possible.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
-    ${row_pat}=    Evaluate    tabularix.RangePattern1D([tabularix.regex(r"^Product .*$")])    modules=tabularix
-    ${pat}=    Evaluate    tabularix.RangePattern2D([$row_pat.one_or_more(greedy=False)])    modules=tabularix
+    ${row_pat}=    Evaluate    tabularix.RangePattern1D(tabularix.regex(r"^Product .*$"))    modules=tabularix
+    ${pat}=    Evaluate    tabularix.RangePattern2D($row_pat.one_or_more(greedy=False))    modules=tabularix
     ${matcher}=    Evaluate    $pat.to_matcher(outer_direction="TB", inner_direction="LR")
     ${range}=    Evaluate    $sheet.search_range($matcher, start_row=14, end_row=16, start_col=1, end_col=1)
     Should Not Be Equal    ${range}    ${None}
@@ -267,8 +267,8 @@ Verify Greedy Row Repetition Backtracking Search Matching
     [Documentation]    Verify row repetition backtracks correctly when followed by a boundary row of the same type.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
-    ${row_pat}=    Evaluate    tabularix.RangePattern1D([tabularix.regex(r"^Product .*$")])    modules=tabularix
-    ${pat}=    Evaluate    tabularix.RangePattern2D([$row_pat.one_or_more(greedy=True), $row_pat])    modules=tabularix
+    ${row_pat}=    Evaluate    tabularix.RangePattern1D(tabularix.regex(r"^Product .*$"))    modules=tabularix
+    ${pat}=    Evaluate    tabularix.RangePattern2D($row_pat.one_or_more(greedy=True), $row_pat)    modules=tabularix
     ${matcher}=    Evaluate    $pat.to_matcher(outer_direction="TB", inner_direction="LR")
     ${range}=    Evaluate    $sheet.search_range($matcher, start_row=14, end_row=16, start_col=1, end_col=1)
     Should Not Be Equal    ${range}    ${None}
@@ -278,9 +278,9 @@ Verify Lazy Row Repetition Backtracking Search Matching (same type)
     [Documentation]    Verify lazy row repetition backtracks correctly when followed by same type boundary.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
-    ${row_pat}=    Evaluate    tabularix.RangePattern1D([tabularix.regex(r"^Product .*$")])    modules=tabularix
+    ${row_pat}=    Evaluate    tabularix.RangePattern1D(tabularix.regex(r"^Product .*$"))    modules=tabularix
     ${pat}=    Evaluate
-    ...    tabularix.RangePattern2D([$row_pat.one_or_more(greedy=False), $row_pat])
+    ...    tabularix.RangePattern2D($row_pat.one_or_more(greedy=False), $row_pat)
     ...    modules=tabularix
     ${matcher}=    Evaluate    $pat.to_matcher(outer_direction="TB", inner_direction="LR")
     ${range}=    Evaluate    $sheet.search_range($matcher, start_row=14, end_row=16, start_col=1, end_col=1)
@@ -291,10 +291,10 @@ Verify Lazy Row Repetition Backtracking Search Matching (different type)
     [Documentation]    Verify lazy row repetition backtracks correctly when followed by different type boundary.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.get_sheet("multi-tables")
-    ${row_pat}=    Evaluate    tabularix.RangePattern1D([tabularix.regex(r"^Product .*$")])    modules=tabularix
-    ${total_pat}=    Evaluate    tabularix.RangePattern1D([tabularix.value("Total")])    modules=tabularix
+    ${row_pat}=    Evaluate    tabularix.RangePattern1D(tabularix.regex(r"^Product .*$"))    modules=tabularix
+    ${total_pat}=    Evaluate    tabularix.RangePattern1D(tabularix.value("Total"))    modules=tabularix
     ${pat}=    Evaluate
-    ...    tabularix.RangePattern2D([$row_pat.one_or_more(greedy=False), $total_pat])
+    ...    tabularix.RangePattern2D($row_pat.one_or_more(greedy=False), $total_pat)
     ...    modules=tabularix
     ${matcher}=    Evaluate    $pat.to_matcher(outer_direction="TB", inner_direction="LR")
     ${range}=    Evaluate    $sheet.search_range($matcher, start_row=14, end_row=17, start_col=1, end_col=1)

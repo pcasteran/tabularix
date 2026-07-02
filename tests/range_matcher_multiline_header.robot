@@ -51,7 +51,7 @@ Get Multiline Header Matcher
     ${r1}=    Get Row Pattern 1
     ${r2}=    Get Row Pattern 2
     ${r3}=    Get Row Pattern 3
-    ${pat}=    Evaluate    tabularix.RangePattern2D([$r1, $r2, $r3])    modules=tabularix
+    ${pat}=    Evaluate    tabularix.RangePattern2D($r1, $r2, $r3)    modules=tabularix
     ${matcher}=    Evaluate    $pat.to_matcher(outer_direction="TB", inner_direction="LR")
     RETURN    ${matcher}
 
@@ -59,7 +59,7 @@ Get Row Pattern 1
     [Documentation]    Returns pattern for the first row of headers.
     ${title}=    Evaluate    tabularix.value("Sales Report 2026")    modules=tabularix
     ${r1_empty}=    Evaluate    tabularix.empty().zero_or_more()    modules=tabularix
-    ${r1}=    Evaluate    tabularix.RangePattern1D([$title, $r1_empty])    modules=tabularix
+    ${r1}=    Evaluate    tabularix.RangePattern1D($title, $r1_empty)    modules=tabularix
     RETURN    ${r1}
 
 Get Row Pattern 2
@@ -67,12 +67,12 @@ Get Row Pattern 2
     ${prod}=    Evaluate    tabularix.value("Product")    modules=tabularix
     ${quarters}=    Evaluate    tabularix.regex("^Q[1-4]$").repeat(2)    modules=tabularix
     ${r2_empty}=    Evaluate    tabularix.empty().zero_or_more()    modules=tabularix
-    ${r2}=    Evaluate    tabularix.RangePattern1D([$prod, $quarters, $r2_empty])    modules=tabularix
+    ${r2}=    Evaluate    tabularix.RangePattern1D($prod, $quarters, $r2_empty)    modules=tabularix
     RETURN    ${r2}
 
 Get Row Pattern 3
     [Documentation]    Returns pattern for the third row of headers.
     ${r3_empty}=    Evaluate    tabularix.empty()    modules=tabularix
     ${r3_forecast}=    Evaluate    tabularix.regex("^(Actual|Forecast)$").repeat(4)    modules=tabularix
-    ${r3}=    Evaluate    tabularix.RangePattern1D([$r3_empty, $r3_forecast])    modules=tabularix
+    ${r3}=    Evaluate    tabularix.RangePattern1D($r3_empty, $r3_forecast)    modules=tabularix
     RETURN    ${r3}

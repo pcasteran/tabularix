@@ -31,7 +31,7 @@ Find Range By Value In Simple Sheet
     [Documentation]    Searches for a 3-column row pattern starting with the cell value (specific to simple sheet).
     [Arguments]    ${sheet}    ${val}
     ${p}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value($val), tabularix.any(), tabularix.any()])
+    ...    tabularix.RangePattern1D(tabularix.value($val), tabularix.any(), tabularix.any())
     ...    modules=tabularix
     ${m}=    Evaluate    $p.to_matcher(direction="LR")
     ${range}=    Evaluate    $sheet.search_range($m)

@@ -7,7 +7,7 @@ Library             Collections
 *** Test Cases ***
 Verify Match Exact Values
     [Documentation]    Verify exact string match value rule.
-    ${pattern}=    Evaluate    tabularix.RangePattern1D([tabularix.value("Total")])    modules=tabularix
+    ${pattern}=    Evaluate    tabularix.RangePattern1D(tabularix.value("Total"))    modules=tabularix
     ${matcher}=    Evaluate    $pattern.to_matcher(direction="LR")
 
     ${res1}=    Evaluate    $matcher.matches_range([["Total"]])
@@ -18,7 +18,7 @@ Verify Match Exact Values
 
 Verify Match Non Empty
     [Documentation]    Verify non_empty matches any non-empty cell.
-    ${pattern}=    Evaluate    tabularix.RangePattern1D([tabularix.non_empty()])    modules=tabularix
+    ${pattern}=    Evaluate    tabularix.RangePattern1D(tabularix.non_empty())    modules=tabularix
     ${matcher}=    Evaluate    $pattern.to_matcher(direction="LR")
 
     ${res1}=    Evaluate    $matcher.matches_range([["Anything"]])
@@ -29,7 +29,7 @@ Verify Match Non Empty
 
 Verify Match Empty
     [Documentation]    Verify empty matches blank cells.
-    ${pattern}=    Evaluate    tabularix.RangePattern1D([tabularix.empty()])    modules=tabularix
+    ${pattern}=    Evaluate    tabularix.RangePattern1D(tabularix.empty())    modules=tabularix
     ${matcher}=    Evaluate    $pattern.to_matcher(direction="LR")
 
     ${res1}=    Evaluate    $matcher.matches_range([[None]])
@@ -40,7 +40,7 @@ Verify Match Empty
 
 Verify Match Regex String
     [Documentation]    Verify regex matching using a plain string regex pattern.
-    ${pattern}=    Evaluate    tabularix.RangePattern1D([tabularix.regex("^Q[1-4]$")])    modules=tabularix
+    ${pattern}=    Evaluate    tabularix.RangePattern1D(tabularix.regex("^Q[1-4]$"))    modules=tabularix
     ${matcher}=    Evaluate    $pattern.to_matcher(direction="LR")
 
     ${res1}=    Evaluate    $matcher.matches_range([["Q3"]])
@@ -52,7 +52,7 @@ Verify Match Regex String
 Verify Match Regex Compiled
     [Documentation]    Verify regex matching using a compiled Python regex object (re.compile).
     ${re}=    Evaluate    re.compile("^\\\\d{4}$")    modules=re
-    ${pattern}=    Evaluate    tabularix.RangePattern1D([tabularix.regex($re)])    modules=tabularix
+    ${pattern}=    Evaluate    tabularix.RangePattern1D(tabularix.regex($re))    modules=tabularix
     ${matcher}=    Evaluate    $pattern.to_matcher(direction="LR")
 
     ${res1}=    Evaluate    $matcher.matches_range([["2026"]])
@@ -64,10 +64,10 @@ Verify Match Regex Compiled
 Verify Match Nested Group
     [Documentation]    Verify matching a nested group pattern like (Expected Actual)+.
     ${sub}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("Expected"), tabularix.value("Actual")])
+    ...    tabularix.RangePattern1D(tabularix.value("Expected"), tabularix.value("Actual"))
     ...    modules=tabularix
     ${pattern}=    Evaluate
-    ...    tabularix.RangePattern1D([tabularix.value("Product"), $sub.one_or_more()])
+    ...    tabularix.RangePattern1D(tabularix.value("Product"), $sub.one_or_more())
     ...    modules=tabularix
     ${matcher}=    Evaluate    $pattern.to_matcher(direction="LR")
 
