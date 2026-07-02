@@ -10,8 +10,8 @@ In real-world spreadsheets, you will often find multiple independent tables stac
 
 This tutorial guides you through using **Tabularix** to programmatically:
 
-1. Locate and extract horizontal metadata, transposing it into a structured single-row DataFrame.
-2. Locate, extract, and combine multiple territory-specific tables from the `"multi-tables"` worksheet of `sample.xlsx` into a single unified DataFrame.
+1. Locate and extract horizontal metadata, transposing it into a structured single-row DataFrame using the **High-Level API**.
+2. Locate, extract, and combine multiple territory-specific tables from the `"multi-tables"` worksheet of `sample.xlsx` using the **Low-Level API** for coordinate control.
 3. Project the extracted metadata onto the combined territory rows using a Polars cross join.
 
 ---
@@ -42,44 +42,41 @@ Our goal is to extract all four territory tables and normalize them into a singl
 
 ## 🛠️ Step 1: Extract Metadata as a Horizontal Table
 
-Metadata is often stored horizontally: keys in one column and values in the adjacent column. To make this metadata usable as row-level dimensions, we extract it directly as a horizontal table by using two vertical matchers (one for the header and one for the data) with `extract_table`.
+Metadata is often stored horizontally: keys in one column and values in the adjacent column. Because this metadata block exists as a single self-contained horizontal table, we can use Tabularix's **High-Level API** (`extract_table_with_header_and_data`) to parse and extract it in a single step.
 
-### Define the Metadata Matchers
+### Define the Metadata Patterns
 
-We define a vertical matcher for the header column matching "Date" or "Fiscal Year", and another vertical matcher for the data column to the right:
+We define vertical patterns for the header column matching "Date" or "Fiscal Year", and the data column to the right:
 
 ```python
-from tabularix import RangePattern1D, regex, non_empty
+from tabularix import group, regex, non_empty
 
-# Matcher for the vertical header column
-header_pattern = RangePattern1D([regex(r"^(Date|Fiscal Year)$").repeat(2, 2)])
-header_matcher = header_pattern.to_matcher(direction="TB")
+# Pattern for the vertical header column (1D cell sequence)
+header_pattern = group(regex(r"^(Date|Fiscal Year)$").repeat(2, 2))
 
-# Matcher for the vertical data column
-data_pattern = RangePattern1D([non_empty().repeat(2, 2)])
-data_matcher = data_pattern.to_matcher(direction="TB")
+# Pattern for the vertical data column (1D cell sequence)
+data_pattern = group(non_empty().repeat(2, 2))
 ```
 
 ### Extracting the Horizontal Table
 
-We locate both the header range and the data range (restricting the search vertically to the right of the header range using `right=header_range`), extract them natively as a horizontal table, and convert them to a Polars DataFrame:
+We pass the patterns to the High-Level helper, specifying that the table columns flow Left-to-Right (`main_direction="LR"`) and cells inside each column flow Top-to-Bottom (`inner_direction="TB"`):
 
 ```python
 from typing import cast
 import polars as pl
-import tabularix as tx
+from tabularix import Sheet, extract_table_with_header_and_data
 
-def extract_metadata(sheet: tx.Sheet) -> pl.DataFrame:
-    header_range = sheet.search_range(header_matcher)
-    if header_range is None:
-        raise ValueError("Metadata headers not found.")
-
-    data_range = sheet.search_range_relative(data_matcher, right=header_range)
-    if data_range is None:
-        raise ValueError("Metadata data values not found.")
-
-    # Extract directly as a horizontal table
-    table = sheet.extract_table(data_range, header_range)
+def extract_metadata(sheet: Sheet) -> pl.DataFrame:
+    # Extract the metadata as a horizontal table directly
+    table = extract_table_with_header_and_data(
+        sheet,
+        header_pattern,
+        data_pattern,
+        main_direction="LR",
+        inner_direction="TB",
+        clean_names=False,  # Keep original capitalization ('Date', 'Fiscal Year')
+    )
 
     # Cast to pl.DataFrame to satisfy static type checkers
     df = cast(pl.DataFrame, pl.from_arrow(table.to_arrow()))
@@ -91,38 +88,38 @@ def extract_metadata(sheet: tx.Sheet) -> pl.DataFrame:
 
 ## 🛠️ Step 2: Define Territory Layout Patterns
 
-To match the territory tables dynamically, we define layout matchers for the headers and footers. Because of merged cells and empty cells representing empty values or un-cached formulas, we use **greedy cell matchers** to capture the full width of the table.
+To extract the stacked territory tables (North, South, East, West), we must dynamically loop down the sheet, scan for title cells, and extract each table relative to its landmarks. Because this requires dynamic scanning cursor management, we compile our patterns into low-level `RangeMatcher` objects.
 
 ```python
-from tabularix import RangePattern1D, RangePattern2D, any, empty, regex, value
+from tabularix import any, empty, grid, group, regex, value
 
-# Locate the territory title
-territory_pattern = RangePattern1D([regex(r"^(North|South|East|West)$")])
+# Locate the territory title (1D group pattern)
+territory_pattern = group(regex(r"^(North|South|East|West)$"))
 territory_matcher = territory_pattern.to_matcher(direction="LR")
 
-# Locate the two-row merged header
-header_row1 = RangePattern1D([
+# Locate the two-row merged header (2D grid pattern)
+header_row1 = group(
     value("Product"),
-    RangePattern1D([
+    group(
         regex(r"\d{4}"),
         empty()  # Matches the merged cell next to the year
-    ]).zero_or_more()
-])
-header_row2 = RangePattern1D([
+    ).zero_or_more()
+)
+header_row2 = group(
     empty(),  # Matches the merged cell below "Product"
-    RangePattern1D([
+    group(
         value("Expected"),
         value("Actual")
-    ]).zero_or_more()
-])
-header_pattern = RangePattern2D([header_row1, header_row2])
+    ).zero_or_more()
+)
+header_pattern = grid(header_row1, header_row2)
 header_matcher = header_pattern.to_matcher(outer_direction="TB", inner_direction="LR")
 
 # Locate the footer row using greedy wildcard matching
-footer_pattern = RangePattern1D([
+footer_pattern = group(
     value("Total"),
     any().zero_or_more()
-])
+)
 footer_matcher = footer_pattern.to_matcher(direction="LR")
 ```
 
@@ -130,12 +127,10 @@ footer_matcher = footer_pattern.to_matcher(direction="LR")
 
 ## 🔄 Step 3: Dynamic Scanning Loop
 
-To extract all territory tables, we scan the worksheet vertically using a `while` loop, advancing our search starting point (`search_row`) below the footer of each extracted table.
-
-We insert the `territory` context column as the **first column** of each DataFrame by using Polars' `select` syntax with `pl.all()`:
+We scan the worksheet vertically using a `while` loop, advancing our search starting point (`search_row`) below the footer of each extracted table. Because we have explicit boundary coordinates, we extract each sub-table using `sheet.extract_table`:
 
 ```python
-def extract_territory_tables(sheet: tx.Sheet) -> pl.DataFrame:
+def extract_territory_tables(sheet: Sheet) -> pl.DataFrame:
     dfs = []
     search_row = 0
 
