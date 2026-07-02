@@ -321,18 +321,7 @@ fn clean_name(name: &str) -> String {
     s.to_string()
 }
 
-#[allow(clippy::cast_precision_loss)]
-fn build_flat_array_horizontal(
-    sheet: &Sheet,
-    row: usize,
-    start_col: usize,
-    end_col: usize,
-) -> (DataType, ArrayRef) {
-    let mut cells = Vec::new();
-    for c in start_col..=end_col {
-        cells.push(sheet.get_merged_cell_value(row, c));
-    }
-
+fn infer_and_build_array(cells: &[&CellValue]) -> (DataType, ArrayRef) {
     let mut has_string = false;
     let mut has_float = false;
     let mut has_int = false;
@@ -340,7 +329,7 @@ fn build_flat_array_horizontal(
     let mut has_date = false;
     let mut has_datetime = false;
 
-    for cell in &cells {
+    for cell in cells {
         match cell {
             CellValue::String(_) => has_string = true,
             CellValue::Float(_) => has_float = true,
@@ -371,8 +360,21 @@ fn build_flat_array_horizontal(
         DataType::Utf8
     };
 
-    let array = build_array_for_type(&datatype, &cells);
+    let array = build_array_for_type(&datatype, cells);
     (datatype, array)
+}
+
+#[allow(clippy::cast_precision_loss)]
+fn build_flat_array_horizontal(
+    sheet: &Sheet,
+    row: usize,
+    start_col: usize,
+    end_col: usize,
+) -> (DataType, ArrayRef) {
+    let cells: Vec<&CellValue> = (start_col..=end_col)
+        .map(|c| sheet.get_merged_cell_value(row, c))
+        .collect();
+    infer_and_build_array(&cells)
 }
 
 #[allow(clippy::cast_precision_loss)]
@@ -382,51 +384,10 @@ fn build_flat_array(
     end_row: usize,
     col: usize,
 ) -> (DataType, ArrayRef) {
-    let mut cells = Vec::new();
-    for r in start_row..=end_row {
-        cells.push(sheet.get_merged_cell_value(r, col));
-    }
-
-    let mut has_string = false;
-    let mut has_float = false;
-    let mut has_int = false;
-    let mut has_bool = false;
-    let mut has_date = false;
-    let mut has_datetime = false;
-
-    for cell in &cells {
-        match cell {
-            CellValue::String(_) => has_string = true,
-            CellValue::Float(_) => has_float = true,
-            CellValue::Int(_) => has_int = true,
-            CellValue::Bool(_) => has_bool = true,
-            CellValue::Date(_) => has_date = true,
-            CellValue::DateTime(_) => has_datetime = true,
-            CellValue::Empty | CellValue::Error(_) => {}
-        }
-    }
-
-    let datatype = if has_string
-        || (has_bool && (has_int || has_float || has_date || has_datetime))
-        || ((has_date || has_datetime) && (has_int || has_float))
-    {
-        DataType::Utf8
-    } else if has_bool {
-        DataType::Boolean
-    } else if has_float {
-        DataType::Float64
-    } else if has_int {
-        DataType::Int64
-    } else if has_datetime {
-        DataType::Timestamp(arrow::datatypes::TimeUnit::Microsecond, None)
-    } else if has_date {
-        DataType::Date32
-    } else {
-        DataType::Utf8
-    };
-
-    let array = build_array_for_type(&datatype, &cells);
-    (datatype, array)
+    let cells: Vec<&CellValue> = (start_row..=end_row)
+        .map(|r| sheet.get_merged_cell_value(r, col))
+        .collect();
+    infer_and_build_array(&cells)
 }
 
 #[allow(clippy::cast_precision_loss)]
@@ -578,14 +539,13 @@ fn build_nested_fields_and_arrays(
                 .get_merged_cell_value(cur_header_row, c_start)
                 .to_string_for_search();
 
+            let anchor = ctx.sheet.get_merged_top_left(cur_header_row, c_start);
             let mut c_end = c_start;
-            while c_end < col_end
-                && ctx
-                    .sheet
-                    .get_merged_cell_value(cur_header_row, c_end + 1)
-                    .to_string_for_search()
-                    == raw_name
-            {
+            while c_end < col_end {
+                let next_anchor = ctx.sheet.get_merged_top_left(cur_header_row, c_end + 1);
+                if next_anchor != anchor {
+                    break;
+                }
                 c_end += 1;
             }
 
@@ -826,6 +786,75 @@ mod tests {
                     assert_eq!(subfields[1].name(), "q2");
                 }
                 _ => panic!("Expected Struct data type"),
+            }
+            assert_eq!(fields[1].name(), "2027");
+            match fields[1].data_type() {
+                arrow::datatypes::DataType::Struct(subfields) => {
+                    assert_eq!(subfields.len(), 2);
+                    assert_eq!(subfields[0].name(), "q1");
+                    assert_eq!(subfields[1].name(), "q2");
+                }
+                _ => panic!("Expected Struct data type"),
+            }
+        });
+    }
+
+    #[test]
+    fn test_extract_table_multi_row_unmerged_same_text() {
+        let sheet = Sheet {
+            name: "unmerged_same_text".to_string(),
+            data: vec![
+                vec![
+                    CellValue::String("Q1".to_string()),
+                    CellValue::String("Q1".to_string()),
+                ],
+                vec![
+                    CellValue::String("Jan".to_string()),
+                    CellValue::String("Feb".to_string()),
+                ],
+                vec![CellValue::Int(10), CellValue::Int(20)],
+                vec![CellValue::Int(15), CellValue::Int(25)],
+            ],
+            merged_regions: vec![],
+        };
+
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|_| {
+            let data = Range {
+                start_row: 2,
+                end_row: 3,
+                start_col: 0,
+                end_col: 1,
+            };
+            let header = Range {
+                start_row: 0,
+                end_row: 1,
+                start_col: 0,
+                end_col: 1,
+            };
+
+            let table =
+                Table::extract_from_sheet(&sheet, &data, Some(&header), true, false, "_").unwrap();
+            assert_eq!(table.shape(), (2, 2));
+            assert_eq!(table.columns(), vec!["q1", "q1_1"]);
+
+            let fields = table.schema.fields();
+            assert_eq!(fields[0].name(), "q1");
+            match fields[0].data_type() {
+                arrow::datatypes::DataType::Struct(subfields) => {
+                    assert_eq!(subfields.len(), 1);
+                    assert_eq!(subfields[0].name(), "jan");
+                }
+                _ => panic!("Expected Struct data type for first column"),
+            }
+
+            assert_eq!(fields[1].name(), "q1_1");
+            match fields[1].data_type() {
+                arrow::datatypes::DataType::Struct(subfields) => {
+                    assert_eq!(subfields.len(), 1);
+                    assert_eq!(subfields[0].name(), "feb");
+                }
+                _ => panic!("Expected Struct data type for second column"),
             }
         });
     }

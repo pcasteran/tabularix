@@ -63,7 +63,9 @@ impl CellPattern {
 pub struct RangePattern1D {
     pub cell_patterns: Vec<CellPattern>,
     #[pyo3(get, set)]
-    pub cardinality: String,
+    pub min: usize,
+    #[pyo3(get, set)]
+    pub max: Option<isize>,
     #[pyo3(get, set)]
     pub greedy: bool,
 }
@@ -91,15 +93,16 @@ impl RangePattern1D {
     pub fn new() -> Self {
         RangePattern1D {
             cell_patterns: Vec::new(),
-            cardinality: "1".to_string(),
+            min: 1,
+            max: Some(1),
             greedy: true,
         }
     }
 
     fn __repr__(&self) -> String {
         format!(
-            "RangePattern1D(cardinality='{}', greedy={}, cell_patterns={:?})",
-            self.cardinality, self.greedy, self.cell_patterns
+            "RangePattern1D(min={}, max={:?}, greedy={}, cell_patterns={:?})",
+            self.min, self.max, self.greedy, self.cell_patterns
         )
     }
 
@@ -509,7 +512,16 @@ fn cell_matches_rule(py: Python<'_>, rule: &CellMatchRule, val: &CellValue) -> P
             let match_obj = bound_regex.call_method1("search", (s.as_ref(),))?;
             Ok(!match_obj.is_none())
         }
-        CellMatchRule::Group(_) => Ok(false),
+        CellMatchRule::Group(_) => {
+            // Group patterns are intercepted and dispatched via match_group_reps()
+            // in match_cells() before this function is ever called for a Group rule.
+            // This arm should be unreachable in normal operation.
+            debug_assert!(
+                false,
+                "cell_matches_rule called with Group rule — this is a bug"
+            );
+            Ok(false)
+        }
     }
 }
 
@@ -923,45 +935,6 @@ fn match_cells(
     Ok(false)
 }
 
-pub(crate) fn parse_cardinality(card: &str) -> (usize, Option<usize>) {
-    match card {
-        "1" => (1, Some(1)),
-        "+" => (1, None),
-        "*" => (0, None),
-        "?" => (0, Some(1)),
-        s if s.starts_match("{") && s.ends_match("}") => {
-            let inner = &s[1..s.len() - 1];
-            let parts: Vec<&str> = inner.split(',').collect();
-            if parts.len() == 1 {
-                let val = parts[0].parse::<usize>().unwrap_or(0);
-                (val, Some(val))
-            } else {
-                let min = parts[0].parse::<usize>().unwrap_or(0);
-                let max = if parts[1].is_empty() {
-                    None
-                } else {
-                    Some(parts[1].parse::<usize>().unwrap_or(0))
-                };
-                (min, max)
-            }
-        }
-        _ => (1, Some(1)),
-    }
-}
-
-trait StringHelpers {
-    fn starts_match(&self, s: &str) -> bool;
-    fn ends_match(&self, s: &str) -> bool;
-}
-impl StringHelpers for str {
-    fn starts_match(&self, s: &str) -> bool {
-        self.starts_with(s)
-    }
-    fn ends_match(&self, s: &str) -> bool {
-        self.ends_with(s)
-    }
-}
-
 fn matches_row_pattern(
     py: Python<'_>,
     pattern: &RangePattern1D,
@@ -999,7 +972,12 @@ pub fn match_range(
     }
 
     let pattern = &patterns[pattern_idx];
-    let (min_rows, max_rows) = parse_cardinality(&pattern.cardinality);
+    let min_rows = pattern.min;
+    let max_rows = match pattern.max {
+        Some(-1) => Some(pattern.min),
+        Some(val) => usize::try_from(val).ok(),
+        None => None,
+    };
 
     let max_limit = match max_rows {
         Some(m) => std::cmp::min(m, grid.rows_count().saturating_sub(sheet_row_idx)),
@@ -1066,17 +1044,6 @@ pub fn match_range(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_parse_cardinality() {
-        assert_eq!(parse_cardinality("1"), (1, Some(1)));
-        assert_eq!(parse_cardinality("+"), (1, None));
-        assert_eq!(parse_cardinality("*"), (0, None));
-        assert_eq!(parse_cardinality("?"), (0, Some(1)));
-        assert_eq!(parse_cardinality("{3}"), (3, Some(3)));
-        assert_eq!(parse_cardinality("{2,5}"), (2, Some(5)));
-        assert_eq!(parse_cardinality("{4,}"), (4, None));
-    }
 
     #[test]
     fn test_backtracking_matcher_exact_and_non_empty() {
