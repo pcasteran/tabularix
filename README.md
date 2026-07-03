@@ -94,3 +94,14 @@ To ensure the "Black Box" does not accumulate technical debt or security flaws, 
 4. **Gate 4: Unit & Integration Tests** – Runs the developer's internal test suites (`cargo test`).
 5. **Gate 5: AI Code Reviewer** – An independent AI agent reviews the Pull Request against Clean Code, SOLID, and DRY principles, ensuring no hardcoded bypasses of acceptance tests exist.
 6. **Gate 6: Acceptance Tests** – Executes the User's Robot Framework tests to verify final data extraction behavior.
+
+## License
+
+Tabularix is dual-licensed under the Apache 2.0 and MIT licenses.
+
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+- MIT License ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+
+at your option.
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in Tabularix by you, as defined in the Apache-2.0 license, shall be dually licensed as above, without any additional terms or conditions.
