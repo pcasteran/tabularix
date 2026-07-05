@@ -6,7 +6,7 @@ icon: lucide/rocket
 
 # ⚡ Quickstart
 
-Getting started with **Tabularix** is easy. Tabularix is a fast, layout-independent engine for parsing Excel spreadsheets and extracting structured tables.
+Getting started with **Tabularix** is easy. Tabularix is a fast, layout-resilient engine for parsing Excel spreadsheets and extracting structured tables.
 
 Written in Rust for maximum speed, it integrates directly with Python to provide zero-copy sharing with frameworks like PyArrow, Polars, Pandas and DuckDB.
 

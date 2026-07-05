@@ -4,16 +4,41 @@ build-backend = "maturin"
 
 [project]
 name = "tabularix"
+description = "High-performance framework for layout-resilient Excel table extraction"
+version = "0.1.0"
+readme = "README.md"
+license = { text = "MIT OR Apache-2.0" }
+authors = [
+    { name = "Pascal Castéran", email = "15686972+pcasteran@users.noreply.github.com" }
+]
 requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
+    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
 ]
 dynamic = ["version"]
+keywords = [
+    "excel",
+    "pyarrow",
+    "arrow",
+    "pandas",
+    "polars",
+    "layout-resilient",
+    "data-extraction"
+]
 dependencies = [
     "pyarrow>=24.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/pcasteran/tabularix"
+Documentation = "https://pcasteran.github.io/tabularix"
+Repository = "https://github.com/pcasteran/tabularix"
+"Bug Tracker" = "https://github.com/pcasteran/tabularix/issues"
+"Changelog" = "https://github.com/pcasteran/tabularix/blob/main/CHANGELOG.md"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
