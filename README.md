@@ -52,29 +52,37 @@ Instead of hardcoding static cell coordinates (e.g., `A3:E8`) which break when c
 The following example shows how to define the header and data patterns, locate the table, and export it:
 
 ```python
-import tabularix as tx
 import polars as pl
+from tabularix import (
+    extract_table_with_header_and_data,
+    grid,
+    group,
+    load_workbook,
+    non_empty,
+    regex,
+    value,
+)
 
 # 1. Load the workbook and get the target worksheet.
-workbook = tx.load_workbook("tests/data/sample.xlsx")
+workbook = load_workbook("tests/data/sample.xlsx")
 sheet = workbook.get_sheet("complex")
 
 # 2. Define the header row pattern (starts with "Region", then 4 Quarters matching Q1-Q4 regex).
-header_pattern = tx.group(
-    tx.value("Region"),
-    tx.regex(r"^Q[1-4]$").repeat(min=4, max=4)
+header_pattern = group(
+    value("Region"),
+    regex(r"^Q[1-4]$").repeat(min=4, max=4)
 )
 
 # 3. Define the data row pattern (region name, then 4 non-empty numeric quarter cells).
-data_pattern = tx.grid(
-    tx.group(
-        tx.regex(r"^(?!Total).*$"),  # Match any string except "Total" (the footer marker).
-        tx.non_empty().repeat(min=4, max=4)
+data_pattern = grid(
+    group(
+        regex(r"^(?!Total).*$"),  # Match any string except "Total" (the footer marker).
+        non_empty().repeat(min=4, max=4)
     ).one_or_more()
 )
 
 # 4. Extract the structured Table with dynamic coordinate scanning.
-table = tx.extract_table_with_header_and_data(
+table = extract_table_with_header_and_data(
     sheet,
     header_pattern,
     data_pattern,

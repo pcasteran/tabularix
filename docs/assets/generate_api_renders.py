@@ -1,7 +1,6 @@
 import re
 
-import tabularix as tx
-from tabularix import Sheet
+from tabularix import Sheet, load_workbook
 
 ASSETS_DIR = "docs/assets"
 
@@ -58,7 +57,7 @@ def generate_search_and_drop_renders(sheet_complex: Sheet):
 def main():
     """Run all API documentation render generator functions."""
     # Load the sheets from the sample workbook.
-    wb = tx.load_workbook("tests/data/sample.xlsx")
+    wb = load_workbook("tests/data/sample.xlsx")
 
     sheet_simple = wb.get_sheet("simple")
     sheet_simple.to_svg(f"{ASSETS_DIR}/sheet_simple.svg")

@@ -1,10 +1,10 @@
-import tabularix as tx
+from tabularix import load_workbook
 
 
 def main():
     """Run a simple demonstration of Tabularix workbook loading and SVG export."""
-    # Load a workbook
-    wb = tx.load_workbook("tests/data/sample.xlsx")
+    # Load a workbook.
+    wb = load_workbook("tests/data/sample.xlsx")
     print(f"Sheets: {wb.sheet_names()}")
 
     sheet = wb.get_sheet("simple")
