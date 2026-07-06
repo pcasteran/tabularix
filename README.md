@@ -113,7 +113,7 @@ For full guides, detailed tutorials, and API reference, please visit our **[Offi
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our **[Development Guidelines](docs/contributing.md)** for details on local environment setup, testing, formatting checks, and repository workflows.
+Contributions are welcome! Please read our **[Development Guidelines](docs/contributing.md)** (or the root [CONTRIBUTING.md](CONTRIBUTING.md)) for details on local environment setup, testing, formatting checks, and repository workflows.
 
 ---
 
