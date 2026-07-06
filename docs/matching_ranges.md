@@ -88,7 +88,7 @@ We define a single row pattern starting with a date (regex `^\d{4}-\d{2}-\d{2}$`
 from tabularix import group, regex, non_empty
 
 # Define a 1D group pattern representing a row.
-row_pattern = group(
+pattern = group(
     regex(r"^\d{4}-\d{2}-\d{2}$"),              # 1 date cell.
     non_empty(),                                # 1 description label.
     regex(r"^\$\d+(?:\.\d{2})?$").repeat(4)     # Exactly 4 currency amounts.
