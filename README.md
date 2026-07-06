@@ -41,7 +41,15 @@ just build
 
 ## 💡 Quick Example
 
-Tabularix uses **Range Matchers** to dynamically locate table boundaries instead of hardcoding coordinate regions (e.g. `A3:E8`). This ensures your scripts never break when rows or columns are added or shifted.
+### The Scenario
+
+Suppose we have a spreadsheet containing a sales report table surrounded by empty rows, headers, and metadata, as shown in the layout analysis below:
+
+![Visual Structure of the Spreadsheet](docs/assets/sheet_complex.svg)
+
+Instead of hardcoding static cell coordinates (e.g., `A3:E8`) which break when columns or rows are added, deleted, or shifted, Tabularix uses **Range Matchers** to dynamically locate table boundaries relative to their visual markers.
+
+The following example shows how to define the header and data patterns, locate the table, and export it:
 
 ```python
 import tabularix as tx
@@ -97,7 +105,7 @@ For full guides, detailed tutorials, and API reference, please visit our **[Offi
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our **[Development Guidelines](docs/contributing.md)** (or the root [CONTRIBUTING.md](CONTRIBUTING.md)) for details on local environment setup, testing, formatting checks, and repository workflows.
+Contributions are welcome! Please read our **[Development Guidelines](docs/contributing.md)** for details on local environment setup, testing, formatting checks, and repository workflows.
 
 ---
 
