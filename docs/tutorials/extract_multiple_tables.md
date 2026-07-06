@@ -51,10 +51,10 @@ We define vertical patterns for the header column matching "Date" or "Fiscal Yea
 ```python
 from tabularix import group, regex, non_empty
 
-# Pattern for the vertical header column (1D cell sequence)
+# Pattern for the vertical header column (1D cell sequence).
 header_pattern = group(regex(r"^(Date|Fiscal Year)$").repeat(2, 2))
 
-# Pattern for the vertical data column (1D cell sequence)
+# Pattern for the vertical data column (1D cell sequence).
 data_pattern = group(non_empty().repeat(2, 2))
 ```
 
@@ -68,17 +68,17 @@ import polars as pl
 from tabularix import Sheet, extract_table_with_header_and_data
 
 def extract_metadata(sheet: Sheet) -> pl.DataFrame:
-    # Extract the metadata as a horizontal table directly
+    # Extract the metadata as a horizontal table directly.
     table = extract_table_with_header_and_data(
         sheet,
         header_pattern,
         data_pattern,
         main_direction="LR",
         inner_direction="TB",
-        clean_names=False,  # Keep original capitalization ('Date', 'Fiscal Year')
+        clean_names=False,  # Keep original capitalization ('Date', 'Fiscal Year').
     )
 
-    # Cast to pl.DataFrame to satisfy static type checkers
+    # Cast to pl.DataFrame to satisfy static type checkers.
     df = cast(pl.DataFrame, pl.from_arrow(table.to_arrow()))
 
     return df
@@ -93,20 +93,20 @@ To extract the stacked territory tables (North, South, East, West), we must dyna
 ```python
 from tabularix import any, empty, grid, group, regex, value
 
-# Locate the territory title (1D group pattern)
+# Locate the territory title (1D group pattern).
 territory_pattern = group(regex(r"^(North|South|East|West)$"))
 territory_matcher = territory_pattern.to_matcher(direction="LR")
 
-# Locate the two-row merged header (2D grid pattern)
+# Locate the two-row merged header (2D grid pattern).
 header_row1 = group(
     value("Product"),
     group(
         regex(r"\d{4}"),
-        empty()  # Matches the merged cell next to the year
+        empty()  # Matches the merged cell next to the year.
     ).zero_or_more()
 )
 header_row2 = group(
-    empty(),  # Matches the merged cell below "Product"
+    empty(),  # Matches the merged cell below "Product".
     group(
         value("Expected"),
         value("Actual")
@@ -115,7 +115,7 @@ header_row2 = group(
 header_pattern = grid(header_row1, header_row2)
 header_matcher = header_pattern.to_matcher(outer_direction="TB", inner_direction="LR")
 
-# Locate the footer row using greedy wildcard matching
+# Locate the footer row using greedy wildcard matching.
 footer_pattern = group(
     value("Total"),
     any().zero_or_more()
@@ -135,24 +135,24 @@ def extract_territory_tables(sheet: Sheet) -> pl.DataFrame:
     search_row = 0
 
     while search_row < sheet.shape[0]:
-        # 1. Match the territory name (e.g. "North")
+        # 1. Match the territory name (e.g. "North").
         territory_range = sheet.search_range(territory_matcher, start_row=search_row)
         if territory_range is None:
             break
 
         territory = str(sheet.get_cell_value(territory_range.start_row, territory_range.start_col))
 
-        # 2. Match the 2-row header range below the title
+        # 2. Match the 2-row header range below the title.
         header_range = sheet.search_range(header_matcher, start_row=territory_range.end_row + 1)
         if header_range is None:
             raise ValueError(f"Header not found for {territory}")
 
-        # 3. Match the footer relative to the header
+        # 3. Match the footer relative to the header.
         footer_range = sheet.search_range_relative(footer_matcher, below=header_range)
         if footer_range is None:
             raise ValueError(f"Footer not found for {territory}")
 
-        # 4. Extract data rows between header and footer
+        # 4. Extract data rows between header and footer.
         data_range = sheet.get_range_between(header_range, footer_range)
         table = sheet.extract_table(
             data_range,
@@ -161,14 +161,14 @@ def extract_territory_tables(sheet: Sheet) -> pl.DataFrame:
             flatten_header=False,
         )
 
-        # 5. Convert to Polars and insert territory as the first column
+        # 5. Convert to Polars and insert territory as the first column.
         df = cast(pl.DataFrame, pl.from_arrow(table.to_arrow()))
         df = df.select([pl.lit(territory).alias("territory"), pl.all()])
 
-        # 6. Unpack the product struct
+        # 6. Unpack the product struct.
         df = df.with_columns(pl.col("product").struct.field("product"))
 
-        # 7. Unpivot the year columns to rows (all columns not in index are unpivoted)
+        # 7. Unpivot the year columns to rows (all columns not in index are unpivoted).
         df = df.unpivot(
             on=None,
             index=["territory", "product"],
@@ -176,12 +176,12 @@ def extract_territory_tables(sheet: Sheet) -> pl.DataFrame:
             value_name="metrics",
         )
 
-        # 8. Unnest the metrics struct (containing expected and actual fields)
+        # 8. Unnest the metrics struct (containing expected and actual fields).
         df = df.unnest("metrics")
 
         dfs.append(df)
 
-        # Move the cursor below this table's footer
+        # Move the cursor below this table's footer.
         search_row = footer_range.end_row + 1
 
     return pl.concat(dfs)
@@ -194,7 +194,7 @@ def extract_territory_tables(sheet: Sheet) -> pl.DataFrame:
 Once we have a single-row metadata DataFrame and a combined 24-row territory DataFrame, we can merge them. A Polars **cross join** acts as a broadcast join, appending the metadata fields (`Date` and `Fiscal Year`) to every row of the combined data dynamically.
 
 ```python
-# Broadcast metadata to all territory rows
+# Broadcast metadata to all territory rows.
 projected_df = territories_df.join(metadata_df, how="cross")
 ```
 

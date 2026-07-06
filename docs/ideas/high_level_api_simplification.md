@@ -34,7 +34,7 @@ We will modify:
 Example usage comparison:
 
 ```python
-# Old Low-Level API
+# Old Low-Level API.
 header_pattern = RangePattern1D([value("Region"), regex(r"^Q[1-4]$").repeat(4, 4)])
 header_matcher = header_pattern.to_matcher(direction="LR")
 header_range = sheet.search_range(header_matcher)
@@ -46,7 +46,7 @@ data_matcher = data_pattern.to_matcher(outer_direction="TB", inner_direction="LR
 data_range = sheet.search_range_relative(data_matcher, below=header_range)
 table = sheet.extract_table(data_range, header_range)
 
-# New High-Level API (with clean varargs and aliases)
+# New High-Level API (with clean varargs and aliases).
 header = group(value("Region"), regex(r"^Q[1-4]$").repeat(4, 4))
 data = grid(group(regex(r"^(?!Total).*$"), non_empty().repeat(4, 4)).one_or_more())
 

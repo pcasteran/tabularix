@@ -20,11 +20,11 @@ When a worksheet contains key-value metadata scattered outside the main tables (
     ```python
     from tabularix import RangePattern1D, regex, non_empty
 
-    # Vertical header matcher
+    # Vertical header matcher.
     header_pattern = RangePattern1D([regex(r"^(Date|Fiscal Year)$").repeat(2, 2)])
     header_matcher = header_pattern.to_matcher(direction="TB")
 
-    # Vertical data matcher
+    # Vertical data matcher.
     data_pattern = RangePattern1D([non_empty().repeat(2, 2)])
     data_matcher = data_pattern.to_matcher(direction="TB")
     ```
@@ -108,7 +108,7 @@ When multiple tables are stacked vertically in a single sheet:
 - **Greedy Matchers for Dynamic Widths:** Use greedy cell repetitions like `any().zero_or_more()` to allow matched ranges to automatically expand horizontally up to the search area boundary.
 - **Cell Group Matching:** Group repeating cell sequences (e.g. Year + Empty merged columns) using nested `RangePattern1D` instances combined with repetition rules:
     ```python
-    # Matches a year cell followed by a merged/empty cell repeating zero or more times
+    # Matches a year cell followed by a merged/empty cell repeating zero or more times.
     RangePattern1D([
         regex(r"\d{4}"),
         empty()

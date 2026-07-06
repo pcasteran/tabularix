@@ -72,8 +72,8 @@ from tabularix import grid, group, non_empty, regex, value
 # It starts with "Region", followed by 4 Quarter columns matching
 # a regex pattern (e.g. Q1, Q2, etc.).
 header_pattern = group(
-    value("Region"),                        # Static string
-    regex(r"^Q[1-4]$").repeat(4, max=4)     # Quarter header: Q1, Q2, Q3, Q4
+    value("Region"),                        # Static string.
+    regex(r"^Q[1-4]$").repeat(min=4, max=4)     # Quarter header: Q1, Q2, Q3, Q4.
 )
 
 # Define the pattern for the data rows. The rows must:
@@ -82,8 +82,8 @@ header_pattern = group(
 #   - end by 4 non-empty data cells
 data_pattern = grid(
     group(
-        regex(r"^(?!Total).*$"),            # Match any string except "Total"
-        non_empty().repeat(4, max=4)        # Quarters amount
+        regex(r"^(?!Total).*$"),            # Match any string except "Total".
+        non_empty().repeat(min=4, max=4)        # Quarters amount.
     ).one_or_more()
 )
 ```
@@ -97,7 +97,7 @@ Using the defined patterns, we extract the structured `Table` object using the h
 ```python
 from tabularix import extract_table_with_header_and_data
 
-# Extract the table from the sheet using the high-level API
+# Extract the table from the sheet using the high-level API.
 table = extract_table_with_header_and_data(
     sheet,
     header_pattern,
@@ -150,7 +150,7 @@ Here is the equivalent workflow using the Low-Level API:
 Instead of passing patterns directly to high-level helpers, convert them into `RangeMatcher` objects bound to specific layout directions:
 
 ```python
-# Compile the patterns into matchers
+# Compile the patterns into matchers.
 header_matcher = header_pattern.to_matcher(direction="LR")
 data_matcher = data_pattern.to_matcher(outer_direction="TB", inner_direction="LR")
 ```
@@ -160,7 +160,7 @@ data_matcher = data_pattern.to_matcher(outer_direction="TB", inner_direction="LR
 Scan the sheet dynamically to locate the boundaries of the matching regions. This returns `Range` coordinates:
 
 ```python
-# Scan the sheet for the header row
+# Scan the sheet for the header row.
 header_range = sheet.search_range(header_matcher)
 if header_range is None:
     raise ValueError("Header not found")
@@ -168,7 +168,7 @@ if header_range is None:
 print(f"Table header found: {header_range}")
 # Output: Range(A3:E3, cols=0..4, rows=2..2)
 
-# Scan for data rows located below the matched header
+# Scan for data rows located below the matched header.
 data_range = sheet.search_range_relative(data_matcher, below=header_range)
 if data_range is None:
     raise ValueError("Data not found")
@@ -182,7 +182,7 @@ print(f"Table data found: {data_range}")
 Once the header and data coordinate ranges are located, pass them to `sheet.extract_table` to retrieve the structured table:
 
 ```python
-# Extract the table using explicit ranges
+# Extract the table using explicit ranges.
 table = sheet.extract_table(data_range, header_range, clean_names=True)
 ```
 

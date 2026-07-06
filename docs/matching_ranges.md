@@ -87,11 +87,11 @@ We define a single row pattern starting with a date (regex `^\d{4}-\d{2}-\d{2}$`
 ```python linenums="1"
 from tabularix import group, regex, non_empty
 
-# Define a 1D group pattern representing a row
-pattern = group(
-    regex(r"^\d{4}-\d{2}-\d{2}$"),              # 1 date cell
-    non_empty(),                                # 1 description label
-    regex(r"^\$\d+(?:\.\d{2})?$").repeat(4)     # Exactly 4 currency amounts
+# Define a 1D group pattern representing a row.
+row_pattern = group(
+    regex(r"^\d{4}-\d{2}-\d{2}$"),              # 1 date cell.
+    non_empty(),                                # 1 description label.
+    regex(r"^\$\d+(?:\.\d{2})?$").repeat(4)     # Exactly 4 currency amounts.
 )
 ```
 
@@ -109,7 +109,7 @@ We can match this 2-line header sequence by combining different row patterns:
 ```python linenums="1"
 from tabularix import grid, group, value, regex, empty
 
-# Header Row 1: The title block with half-year category headers
+# Header Row 1: The title block with half-year category headers.
 row1 = group(
     value("Sales Report 2026"),
     value("H1"),
@@ -124,7 +124,7 @@ row2 = group(
     regex(r"^(Forecast|Actual)$").repeat(4)
 )
 
-# Combine into a 2D grid pattern
+# Combine into a 2D grid pattern.
 pattern = grid(row1, row2)
 ```
 
@@ -141,10 +141,10 @@ pattern = group(
 )
 matcher = pattern.to_matcher(direction="LR")
 
-# Returns True (starts with "Category" followed by one or more non-empty cells)
+# Returns True (starts with "Category" followed by one or more non-empty cells).
 print(matcher.matches_range([["Category", "A", "B", "C"]]))
 
-# Returns False (does not match Category)
+# Returns False (does not match Category).
 print(matcher.matches_range([["Total", 123]]))
 ```
 
@@ -180,16 +180,16 @@ sheet = wb.get_sheet("simple")
 pattern = group(value("Header #1"))
 matcher = pattern.to_matcher(direction="LR")
 
-# Search the entire sheet
+# Search the entire sheet.
 matched_range = sheet.search_range(matcher)
 
-# Search within a specific sub-grid (all bounds are inclusive)
+# Search within a specific sub-grid (all bounds are inclusive).
 matched_range = sheet.search_range(
     matcher,
-    start_row=10,   # Start scanning from row 10
-    end_row=100,    # Stop scanning at row 100
-    start_col=2,    # Start scanning from column 2
-    end_col=8,      # Stop scanning at column 8
+    start_row=10,   # Start scanning from row 10.
+    end_row=100,    # Stop scanning at row 100.
+    start_col=2,    # Start scanning from column 2.
+    end_col=8,      # Stop scanning at column 8.
 )
 ```
 
@@ -227,16 +227,16 @@ In many layout structures, tables are located relative to other landmarks (such 
 You can combine opposing boundaries (e.g. `below` and `above` to search in between, or `left` and `right`) to restrict the search region:
 
 ```python
-# 1. Match the header first
+# 1. Match the header first.
 header_matcher = header_pattern.to_matcher(direction="LR")
 header_range = sheet.search_range(header_matcher)
 
-# 2. Match the footer
+# 2. Match the footer.
 footer_matcher = footer_pattern.to_matcher(direction="LR")
 footer_range = sheet.search_range(footer_matcher)
 
 # 3. Search for the data rows in between the header and footer,
-# inheriting the column span of the header/footer
+# inheriting the column span of the header/footer.
 data_matcher = data_pattern.to_matcher(outer_direction="TB", inner_direction="LR")
 data_range = sheet.search_range_relative(
     data_matcher,

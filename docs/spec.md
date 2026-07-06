@@ -64,7 +64,7 @@ pub fn extract_rows_between(start: usize, end: usize) -> Result<Range, Tabularix
 **Python:** PEP8 compliant, fully type-hinted, and ergonomic.
 
 ```python
-# Example of expected Python style
+# Example of expected Python style.
 def search_and_drop_before(self, marker: str, direction: str = "TOP") -> "Sheet":
     """Crops the sheet relative to a specified text marker."""
     self._rust_engine.search_and_drop_before(marker, direction)
