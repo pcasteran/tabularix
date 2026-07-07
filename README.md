@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/assets/logo_2.png" alt="Tabularix Logo" width="350"/>
+  <img src="docs/assets/logo_2.png" alt="Tabularix Logo" width="250"/>
   <p><strong>Smart, layout-resilient data extraction from Excel documents.</strong></p>
 </div>
 
