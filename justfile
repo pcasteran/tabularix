@@ -18,6 +18,19 @@ help:
 [group("misc")]
 upgrade-all: upgrade-toolchain prek-hooks-update gha_update
 
+# Prepare a new release (calculate version, create branch, update changelog and manifests)
+[group("misc")]
+prepare-release:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    VERSION=$(git-cliff --bump --unreleased | grep -m1 "## \[" | sed -E 's/## \[(.*)\].*/\1/')
+    echo "Preparing release v${VERSION}..."
+    git switch -c release/v${VERSION}
+    git-cliff --tag v${VERSION} --prepend CHANGELOG.md
+    uv version "${VERSION}" --frozen
+    sed -i 's/^version = "[0-9.]*"/version = "'"${VERSION}"'"/' Cargo.toml
+    echo "Release preparation complete. Review changes, commit, and push the branch."
+
 #
 # Development recipes
 #

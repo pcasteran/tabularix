@@ -40,22 +40,22 @@ The final output of any extraction pipeline is an **Apache Arrow Table**, allowi
 ```python
 import tabularix as tx
 
-# 1. Load and Active Mutator Cleaning
+# 1. Load and Active Mutator Cleaning.
 sheet = tx.load_workbook("report.xlsx").active_sheet()
 sheet.unmerge_cells(strategy="fill_down")
 sheet.search_and_drop_before(marker="Invoice Date", direction="TOP")
 
-# 2. RangeMatcher Pattern Definition (Using Dual API)
+# 2. RangeMatcher Pattern Definition (Using Dual API).
 header_matcher = tx.RangeMatcher.from_layex('"Date" "Description" "Amount"')
 data_matcher = tx.RangeMatcher().entity("date").type("string").type("numeric").one_or_more()
 footer_matcher = tx.RangeMatcher.from_layex('("Total" | "Subtotal") [type:numeric]')
 
-# 3. Search and Assemble
+# 3. Search and Assemble.
 header = sheet.search_range(header_matcher)
 footer = sheet.search_range(footer_matcher)
 data = sheet.extract_range_between(start=header, end=footer)
 
-# 4. Filter and Export to Apache Arrow
+# 4. Filter and Export to Apache Arrow.
 data = data.filter(lambda row: not row.matches(tx.RangeMatcher.from_layex('"Subtotal" *')))
 arrow_table = tx.build_table_from_ranges(header=header, data=data)
 ```
