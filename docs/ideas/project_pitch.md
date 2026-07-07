@@ -49,7 +49,7 @@ data = sheet.search_matching_range(layex="...")
 
 table = sheet.build_table_from_ranges(header=header, data=data)
 
-# Or, another possible strategy:
+# Or, another possible strategy.
 header = sheet.search_matching_range(layex="...")
 footer = sheet.search_matching_range(layex="...")
 data = sheet.extract_range_between(begin=header, end=footer)

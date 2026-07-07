@@ -43,7 +43,7 @@ Our approach allows you to implement distinct data extraction strategies that ca
 - **Blazing Fast**: Leverages Rust's zero-cost abstractions for lightning-fast workbook parsing and manipulation.
 - **Privacy-First**: Everything runs locally on your machine or within your private cloud. No data is sent to external APIs.
 - **Python Native**: Scripting extraction logic in Python offers incredible ergonomics and fits perfectly into standard data engineering pipelines.
-- **Interoperability**: (Planned) Direct exports of extracted tables to [Arrow](https://arrow.apache.org/), [Pandas](https://pandas.pydata.org/), and [Polars](https://pola.rs/).
+- **Interoperability**: Direct zero-copy exports of extracted tables to [Apache Arrow](https://arrow.apache.org/), [Pandas](https://pandas.pydata.org/), [Polars](https://pola.rs/), and [DuckDB](https://duckdb.org/).
 
 ## 📦 Getting Started
 
