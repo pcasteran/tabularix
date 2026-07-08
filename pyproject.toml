@@ -36,8 +36,8 @@ dependencies = [
 Homepage = "https://github.com/pcasteran/tabularix"
 Documentation = "https://pcasteran.github.io/tabularix"
 Repository = "https://github.com/pcasteran/tabularix"
-"Bug Tracker" = "https://github.com/pcasteran/tabularix/issues"
-"Changelog" = "https://github.com/pcasteran/tabularix/blob/main/CHANGELOG.md"
+Issues = "https://github.com/pcasteran/tabularix/issues"
+Changelog = "https://github.com/pcasteran/tabularix/blob/main/CHANGELOG.md"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]

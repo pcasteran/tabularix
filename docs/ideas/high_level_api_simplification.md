@@ -20,9 +20,9 @@ Tabularix has a highly expressive but low-level API. To reduce boilerplate and s
 
 We will modify:
 
-- [python/tabularix/**init**.py](file:///workspaces/tabularix/python/tabularix/__init__.py) -> To add aliases, modify constructors to accept varargs, and add function implementations.
-- [python/tabularix/**init**.pyi](file:///workspaces/tabularix/python/tabularix/__init__.pyi) -> To add type stubs.
-- [tests/](file:///workspaces/tabularix/tests) -> To add Robot Framework acceptance tests for the new API and refactor existing tests to use varargs.
+- [python/tabularix/**init**.py](https://github.com/pcasteran/tabularix/blob/main/python/tabularix/__init__.py) -> To add aliases, modify constructors to accept varargs, and add function implementations.
+- [python/tabularix/**init**.pyi](https://github.com/pcasteran/tabularix/blob/main/python/tabularix/__init__.pyi) -> To add type stubs.
+- [tests/](https://github.com/pcasteran/tabularix/tree/main/tests) -> To add Robot Framework acceptance tests for the new API and refactor existing tests to use varargs.
 
 ## Code Style
 
