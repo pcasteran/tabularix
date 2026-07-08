@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - "main"
-      # TODO: temp for test
-      - "docs/deploy_doc_to_github_pages"
 
 permissions:
   contents: read
