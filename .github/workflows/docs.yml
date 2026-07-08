@@ -1,11 +1,11 @@
 name: Documentation
 
 on:
-  # TODO: workflow deactivated for now (GitHub pages only available for public repositories).
-  workflow_dispatch:
-  # push:
-  #   branches:
-  #     - "main"
+  push:
+    branches:
+      - "main"
+      # TODO: temp for test
+      - "docs/deploy_doc_to_github_pages"
 
 permissions:
   contents: read
