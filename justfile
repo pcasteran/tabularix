@@ -100,7 +100,7 @@ acceptance-test: build
 # Build the documentation site
 [group("docs")]
 docs-build:
-    uvx --with mkdocstrings-python zensical build
+    uvx --with mkdocstrings-python zensical build --clean
 
 # Serve the documentation site locally
 [group("docs")]
