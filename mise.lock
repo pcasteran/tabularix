@@ -151,36 +151,36 @@ checksum = "sha256:8e0ee174f88edb14f207a68430c7a53c2883ed509cdbde9a3a26fffa140fa
 url = "https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-windows-x86_64.exe"
 
 [[tools.just]]
-version = "1.54.0"
+version = "1.55.1"
 backend = "aqua:casey/just"
 
 [tools.just."platforms.linux-arm64"]
-checksum = "sha256:2162accb54d087c6fbd165c1baedccb0f93b4953af7f00309b8f928016c49cae"
-url = "https://github.com/casey/just/releases/download/1.54.0/just-1.54.0-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:b0ee814c9656427408e339893541e30d9027828686839499b2a2a34dd61ad173"
+url = "https://github.com/casey/just/releases/download/1.55.1/just-1.55.1-aarch64-unknown-linux-musl.tar.gz"
 
 [tools.just."platforms.linux-arm64-musl"]
-checksum = "sha256:2162accb54d087c6fbd165c1baedccb0f93b4953af7f00309b8f928016c49cae"
-url = "https://github.com/casey/just/releases/download/1.54.0/just-1.54.0-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:b0ee814c9656427408e339893541e30d9027828686839499b2a2a34dd61ad173"
+url = "https://github.com/casey/just/releases/download/1.55.1/just-1.55.1-aarch64-unknown-linux-musl.tar.gz"
 
 [tools.just."platforms.linux-x64"]
-checksum = "sha256:193e2b04bac8ff3568ff81cf62f8c9db08f8083e16665e28d400dd35bac47ffd"
-url = "https://github.com/casey/just/releases/download/1.54.0/just-1.54.0-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:b0ef600f0df20d5ae91ae931627c499fc52b477ffe5f5ea7b7b3ec616b16c778"
+url = "https://github.com/casey/just/releases/download/1.55.1/just-1.55.1-x86_64-unknown-linux-musl.tar.gz"
 
 [tools.just."platforms.linux-x64-musl"]
-checksum = "sha256:193e2b04bac8ff3568ff81cf62f8c9db08f8083e16665e28d400dd35bac47ffd"
-url = "https://github.com/casey/just/releases/download/1.54.0/just-1.54.0-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:b0ef600f0df20d5ae91ae931627c499fc52b477ffe5f5ea7b7b3ec616b16c778"
+url = "https://github.com/casey/just/releases/download/1.55.1/just-1.55.1-x86_64-unknown-linux-musl.tar.gz"
 
 [tools.just."platforms.macos-arm64"]
-checksum = "sha256:a776fc5015491f84580875bc6dad3de59fa4f47a309ccac49d1287cb55f9b599"
-url = "https://github.com/casey/just/releases/download/1.54.0/just-1.54.0-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:0225e3899b1b555bc3f4122d0402ba931a6ee697d188c68e4d971468064c78f4"
+url = "https://github.com/casey/just/releases/download/1.55.1/just-1.55.1-aarch64-apple-darwin.tar.gz"
 
 [tools.just."platforms.macos-x64"]
-checksum = "sha256:3f1adefef12bcdf99134a44bde53b779e83726381e15de92113ce4bf2a3cf61f"
-url = "https://github.com/casey/just/releases/download/1.54.0/just-1.54.0-x86_64-apple-darwin.tar.gz"
+checksum = "sha256:74d7d0afc195df14d8e34636fb9b6a9c7d3d443622478dbe86140ffe41ad9192"
+url = "https://github.com/casey/just/releases/download/1.55.1/just-1.55.1-x86_64-apple-darwin.tar.gz"
 
 [tools.just."platforms.windows-x64"]
-checksum = "sha256:860e21474e956eaa9879d62f68cc24530254eefe14ac108eaf707c0daf56a6d0"
-url = "https://github.com/casey/just/releases/download/1.54.0/just-1.54.0-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:8106e6c036aea52dd1d5109bdf9357c37ba87a0e0ef1013d7327103942550c79"
+url = "https://github.com/casey/just/releases/download/1.55.1/just-1.55.1-x86_64-pc-windows-msvc.zip"
 
 [[tools.node]]
 version = "26.4.0"
@@ -254,42 +254,42 @@ url = "https://github.com/suzuki-shunsuke/pinact/releases/download/v4.1.0-2/pina
 provenance = "github-attestations"
 
 [[tools.prek]]
-version = "0.4.5"
+version = "0.4.6"
 backend = "aqua:j178/prek"
 
 [tools.prek."platforms.linux-arm64"]
-checksum = "sha256:9c3f0686b6f12995b2f9cbc2953a457987622a29bbcdeaa64f62527af851fc1e"
-url = "https://github.com/j178/prek/releases/download/v0.4.5/prek-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:f871abfb4f2782722dfd685360b100989c9323195dde641fadf2346a66f8ae51"
+url = "https://github.com/j178/prek/releases/download/v0.4.6/prek-aarch64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.prek."platforms.linux-arm64-musl"]
-checksum = "sha256:9c3f0686b6f12995b2f9cbc2953a457987622a29bbcdeaa64f62527af851fc1e"
-url = "https://github.com/j178/prek/releases/download/v0.4.5/prek-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:f871abfb4f2782722dfd685360b100989c9323195dde641fadf2346a66f8ae51"
+url = "https://github.com/j178/prek/releases/download/v0.4.6/prek-aarch64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.prek."platforms.linux-x64"]
-checksum = "sha256:94698d1cd74e7b462a017257efeab6f46142f4fb3da9a1314f06c1d55c26d614"
-url = "https://github.com/j178/prek/releases/download/v0.4.5/prek-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:820de4920c112e273aedff646ab47439d3320dfd9f2c468d35992a1055ff8afb"
+url = "https://github.com/j178/prek/releases/download/v0.4.6/prek-x86_64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.prek."platforms.linux-x64-musl"]
-checksum = "sha256:94698d1cd74e7b462a017257efeab6f46142f4fb3da9a1314f06c1d55c26d614"
-url = "https://github.com/j178/prek/releases/download/v0.4.5/prek-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:820de4920c112e273aedff646ab47439d3320dfd9f2c468d35992a1055ff8afb"
+url = "https://github.com/j178/prek/releases/download/v0.4.6/prek-x86_64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.prek."platforms.macos-arm64"]
-checksum = "sha256:ed4920762f0e3db07163c437af622a1d4905e1ad7053692a495551b9ce92549f"
-url = "https://github.com/j178/prek/releases/download/v0.4.5/prek-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:20495b109cef41f6d7188041e40c9382a830ff04706f7c02f30374a9035210ef"
+url = "https://github.com/j178/prek/releases/download/v0.4.6/prek-aarch64-apple-darwin.tar.gz"
 provenance = "github-attestations"
 
 [tools.prek."platforms.macos-x64"]
-checksum = "sha256:b0afc8bbea69d61bbfe49100394df99eed15a9c4675b06c9936417e65aa88b16"
-url = "https://github.com/j178/prek/releases/download/v0.4.5/prek-x86_64-apple-darwin.tar.gz"
+checksum = "sha256:b65f6a9497762e3dd55bf8ce1ee3b9d4e2014d47dd0cb2e2da9fe46d2bb81a73"
+url = "https://github.com/j178/prek/releases/download/v0.4.6/prek-x86_64-apple-darwin.tar.gz"
 provenance = "github-attestations"
 
 [tools.prek."platforms.windows-x64"]
-checksum = "sha256:1ee0d2b210acc805e0ccd1b00fa84eb1d0d939f1a79da37ae9f432e1c16c5986"
-url = "https://github.com/j178/prek/releases/download/v0.4.5/prek-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:775a6294333821d7af614201f1976b184a66c1036e529586c82e3c2dbf401f88"
+url = "https://github.com/j178/prek/releases/download/v0.4.6/prek-x86_64-pc-windows-msvc.zip"
 provenance = "github-attestations"
 
 [[tools.ripgrep]]
@@ -353,40 +353,40 @@ checksum = "sha256:3cd7995171854518873f84bf60be17c8e331cad1ca180e03911fac414a7a6
 url = "https://github.com/jdx/usage/releases/download/v3.5.3/usage-x86_64-pc-windows-msvc.zip"
 
 [[tools.uv]]
-version = "0.11.25"
+version = "0.11.26"
 backend = "aqua:astral-sh/uv"
 
 [tools.uv."platforms.linux-arm64"]
-checksum = "sha256:3d9c9a95f1868ff20ac880712f3a337d710ea4b65f135184b7a35635d1acbf84"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.25/uv-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:47418cfdb34b1ca42e503da72631ac8c475602e2411ac6c39aa84c2373fe6324"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-aarch64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-arm64-musl"]
-checksum = "sha256:3d9c9a95f1868ff20ac880712f3a337d710ea4b65f135184b7a35635d1acbf84"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.25/uv-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:47418cfdb34b1ca42e503da72631ac8c475602e2411ac6c39aa84c2373fe6324"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-aarch64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-x64"]
-checksum = "sha256:7195cfcc1785d0c559d4682ad9109f26664b8db4d828d42d66078ef454061891"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.25/uv-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:62bf1a53501adf4083224b69b33737450ac516935f5a5e483e9dfaf2665084de"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-x86_64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-x64-musl"]
-checksum = "sha256:7195cfcc1785d0c559d4682ad9109f26664b8db4d828d42d66078ef454061891"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.25/uv-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:62bf1a53501adf4083224b69b33737450ac516935f5a5e483e9dfaf2665084de"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-x86_64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.uv."platforms.macos-arm64"]
-checksum = "sha256:5fc334bb25d19806262efd1f6e7d380155c7e817d89bf426df4ba7ae873c9471"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.25/uv-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:8f7fbf1708399b921857bce71e1d60f0d3ccf52a30caebc1c1a2f175dce13ab6"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-aarch64-apple-darwin.tar.gz"
 provenance = "github-attestations"
 
 [tools.uv."platforms.macos-x64"]
-checksum = "sha256:65ff85b33212f75d34d7c0f0724aba9a742c74f62559f67dc0d6c543dc2fc52f"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.25/uv-x86_64-apple-darwin.tar.gz"
+checksum = "sha256:922b460202707dd5f4ccacbadbe7f6a546cc46e82a99bf50ca99a7977a78eddd"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-x86_64-apple-darwin.tar.gz"
 provenance = "github-attestations"
 
 [tools.uv."platforms.windows-x64"]
-checksum = "sha256:15bfd1423b7eaa7aae949922d4712ebaac2bb44a81af64ab59bbe007090cb0d0"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.25/uv-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:4e1278ede866be6c0bf32d2f466cc6de7a9fb399ecf20c9ce2d186e52424be47"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-x86_64-pc-windows-msvc.zip"
 provenance = "github-attestations"
