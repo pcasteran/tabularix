@@ -4,9 +4,6 @@ on:
   push:
     tags:
       - "v*"
-    # TODO: temp for test: 
-    branches:
-      - "ci/update_worflows"
 
 permissions:
   contents: read
