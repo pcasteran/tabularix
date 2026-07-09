@@ -25,7 +25,10 @@ prepare-release:
     set -euo pipefail
     VERSION=$(git-cliff --bump --unreleased | grep -m1 "## \[" | sed -E 's/## \[(.*)\].*/\1/')
     echo "Preparing release v${VERSION}..."
-    git switch -c chore/release-v${VERSION}
+    TARGET_BRANCH="chore/release-v${VERSION}"
+    if [ "$(git branch --show-current)" != "${TARGET_BRANCH}" ]; then
+        git switch -c "${TARGET_BRANCH}" || git switch "${TARGET_BRANCH}"
+    fi
     git-cliff --tag v${VERSION} --unreleased --prepend CHANGELOG.md
     uv version "${VERSION}" --frozen
     sed -i 's/^version = "[0-9.]*"/version = "'"${VERSION}"'"/' Cargo.toml
