@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "tabularix"
 description = "High-performance framework for layout-resilient Excel table extraction"
-version = "0.1.0"
+version = "0.3.1"
 readme = "README.md"
 license = { text = "MIT OR Apache-2.0" }
 authors = [
