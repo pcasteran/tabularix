@@ -55,7 +55,7 @@ It highlights cell borders, merged regions, empty rows, and cell types (numeric,
 
 ### Step 2: Define Layout Patterns
 
-In this example, we need to extract the sales table located at the top of the sheet. Instead of hardcoding cell ranges like `A3:E8` (which break if a row is added or deleted at the top), Tabularix lets you define patterns using `group` (for one-dimensional horizontal or vertical group of cells) and `grid` (for two-dimensional row/column arrays).
+In this example, we need to extract the sales table located at the top of the sheet. Instead of hardcoding cell ranges like `A3:E8` (which break if a row is added or deleted at the top), Tabularix lets you define patterns using `group` (for a one-dimensional horizontal or vertical sequence of cells) and `grid` (for a two-dimensional composition of multiple groups).
 
 Let's define a match pattern for the header row and a match pattern for the data rows:
 
