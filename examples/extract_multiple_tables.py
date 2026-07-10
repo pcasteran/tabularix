@@ -25,11 +25,11 @@ def extract_metadata(sheet: Sheet) -> pl.DataFrame:
     We use the High-Level API here because the metadata behaves as a single horizontal
     table. We define the patterns and let Tabularix locate and extract it in one call.
     """
-    # 1. Define the 1D patterns for the headers and values
+    # 1. Define the one-dimensional patterns for the headers and values
     header_pattern = group(regex(r"^(Date|Fiscal Year)$").repeat(2, 2))
     data_pattern = group(non_empty().repeat(2, 2))
 
-    # 2. Extract directly using the High-Level API.
+    # 2. Extract using the High-Level API.
     # main_direction="LR" (Left-to-Right) since the table flows horizontally.
     # inner_direction="TB" (Top-to-Bottom) since cells in each column flow vertically.
     table = extract_table_with_header_and_data(

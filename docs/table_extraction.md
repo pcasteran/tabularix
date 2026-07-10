@@ -8,13 +8,16 @@ icon: lucide/table
 
 This document provides a detailed explanation of the algorithm used by Tabularix to extract structured tables from coordinate layout ranges.
 
-While the **High-Level API** (`extract_table_with_header_and_data` and `extract_table_between_header_and_footer`) is the recommended entry point for most users, it serves as a wrapper that internally determines the matching layout coordinate ranges. Under the hood, both the high-level and low-level interfaces invoke the same core extraction pipeline, `Sheet.extract_table`.
+Tabularix provides two interfaces for table extraction: the **High-Level API** and the **Low-Level API**. Both interfaces invoke the same core extraction pipeline, `Sheet.extract_table`, under the hood:
+
+- **High-Level API** (`extract_table_with_header_and_data` and `extract_table_between_header_and_footer`): Automatically searches the worksheet to locate the matching layout coordinate ranges (header, footer and data). Once located, it passes these ranges to the core pipeline.
+- **Low-Level API**: Allows you to perform manual coordinate scans and pass the resulting coordinate ranges directly to `Sheet.extract_table`.
 
 ---
 
 ## 1. Algorithmic Workflow
 
-When `Sheet.extract_table` is called, the library executes a multi-step pipeline to transform row-oriented cell values into a strongly typed, structured `Table` object:
+When `Sheet.extract_table` is called, the library executes a multi-step pipeline to transform cell ranges into a strongly typed, structured `Table` object:
 
 ```mermaid
 graph TD
@@ -36,11 +39,15 @@ graph TD
 
 ## 2. Validation & Alignment
 
-To ensure data integrity, the library validates the coordinates before performing any operations:
+To ensure data integrity, the library validates the coordinates before performing any extraction operations. The verification rules support both **vertical layouts** (standard column-oriented tables) and **horizontal layouts** (transposed/row-oriented tables):
 
-1. **Dimension bounds check**: Verifies that both the `data` and `header` ranges exist within the actual column/row boundaries of the current spreadsheet.
-2. **Column alignment**: Ensures `header.start_col == data.start_col` and `header.end_col == data.end_col`. It is logically invalid to have columns in the header that do not align with columns in the data.
-3. **Vertical order & overlap**: Confirms that `header.end_row < data.start_row`. The header must reside strictly above the data range without overlapping.
+1.  **Dimension bounds check**: Verifies that both the `data` and `header` ranges exist within the actual column/row boundaries of the current spreadsheet.
+2.  **Range Alignment**: The header and data ranges must align along one of their axes:
+    - **Vertical Layouts** (data flows vertically in columns): The header and data must share the exact same column span (`header.start_col == data.start_col` and `header.end_col == data.end_col`).
+    - **Horizontal Layouts** (data flows horizontally in rows): The header and data must share the exact same row span (`header.start_row == data.start_row` and `header.end_row == data.end_row`).
+3.  **Non-overlapping Order**: The header and data ranges must not overlap along their non-aligned axis:
+    - **Vertical Layouts**: The header must reside strictly above or below the data range without overlapping (i.e., `header.end_row < data.start_row` or `data.end_row < header.start_row`).
+    - **Horizontal Layouts**: The header must reside strictly to the left or right of the data range without overlapping (i.e., `header.end_col < data.start_col` or `data.end_col < header.start_col`).
 
 Any violation of these rules immediately raises a `ValueError` or `IndexError`.
 

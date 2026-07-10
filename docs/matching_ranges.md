@@ -8,7 +8,7 @@ icon: lucide/target
 
 In many real-world spreadsheets, tables of interest are not nicely formatted or aligned. They might begin after arbitrary headers, contain multiline merged cells, or have variable numbers of columns and rows.
 
-To reliably locate and extract these tables, **Tabularix** provides the **Layex Pattern Matching Engine**. **Layex** stands for **Layout Expression**, a concept and syntax derived from regular expressions but tailored for layout-level structures of spreadsheets. With Layex, you define a structural pattern of cell sequences (called a `group`) and row sequences (called a `grid`) programmatically, which are then passed directly to the high-level extraction API or compiled into a `RangeMatcher` for advanced coordinate control.
+To reliably locate and extract these tables, **Tabularix** provides the **Layex Pattern Matching Engine**. **Layex** stands for **Layout Expression**, a concept derived from regular expressions but tailored for layout-level structures of spreadsheets. With Layex, you define a structural pattern of a sequence of cells (called a `group`) and a composition of multiple groups (called a `grid`) programmatically, which are then passed directly to the high-level extraction API or compiled into a `RangeMatcher` for advanced coordinate control.
 
 ---
 
@@ -16,8 +16,8 @@ To reliably locate and extract these tables, **Tabularix** provides the **Layex 
 
 The layout matcher uses two primary builders to construct patterns:
 
-1. **`group`** (also known as `RangePattern1D`): Represents a one-dimensional sequence of cells or sub-groups. It is constructed using cell-matching rules (`value`, `regex`, `empty`, `non_empty`, `any`) and cell-level cardinalities (how many columns or cells match this rule).
-2. **`grid`** (also known as `RangePattern2D`): Represents a two-dimensional range pattern. It compiles one or more `group` row patterns together, along with row-level cardinalities (how many times a row repeats).
+1. **`group`** (also known as `RangePattern1D`): Represents a one-dimensional horizontal or vertical sequence of cells or sub-groups. It is constructed using cell-matching rules (`value`, `regex`, `empty`, `non_empty`, `any`) and cell-level cardinalities (how many cells match this rule).
+2. **`grid`** (also known as `RangePattern2D`): Represents a two-dimensional composition of multiple groups. It compiles one or more `group` patterns together, with their respective cardinalities (how many times a group pattern repeats).
 
 When using the **High-Level API**, you pass these patterns directly to `extract_table_with_header_and_data` or `extract_table_between_header_and_footer` without needing to compile them manually.
 
@@ -37,7 +37,7 @@ Tabularix exports top-level helper functions to cleanly construct cell rules ins
 
 ## 🔄 Cardinalities (Repetitions)
 
-Both cell rules inside `group` (horizontal columns) and row patterns inside `grid` (vertical rows) support the same cardinality methods to control matches:
+Both `cell` rules inside `group` and `group` patterns inside `grid` support the same cardinality methods to control matches:
 
 - `.one_or_more()`: Matches 1 or more times (regex `+`).
 - `.zero_or_more()`: Matches 0 or more times (regex `*`).
@@ -46,27 +46,22 @@ Both cell rules inside `group` (horizontal columns) and row patterns inside `gri
 
 <!-- prettier-ignore -->
 !!! important "Cardinality Exclusivity"
-    You can only configure a cardinality method once per cell rule or row pattern. Chaining multiple cardinalities (e.g. `.optional().one_or_more()`) will raise a `ValueError`.
+    You can only configure a cardinality method once per `cell` rule or `group` pattern. Chaining multiple cardinalities (e.g. `.optional().one_or_more()`) will raise a `ValueError`.
 
 ### 🪵 Greedy vs. Lazy Matching
 
 By default, all repetition cardinalities in Tabularix (such as `.one_or_more()`, `.zero_or_more()`, `.optional()`, and `.repeat()`) match **greedily**.
 
-When scanning a row, the matching engine will always attempt to match the **largest possible horizontal span of cells (columns)** that satisfies the layout pattern. If a larger span fails to satisfy the entire vertical sequence of row patterns, the engine backtracks and automatically tries progressively smaller widths until a full match is found.
+When scanning a range, the matching engine will always attempt to match the **largest possible span of `cells` or `groups`** that satisfies the layout pattern. If a larger span fails to satisfy the entire `cell` or `group` sequence pattern, the engine backtracks and automatically tries progressively smaller spans until a full match is found.
 
 #### Configuring Lazy Matching
 
-If you want the matching engine to match the **smallest possible span** (lazy matching), you can pass `greedy=False` to any of the repetition methods on both cell rules and row patterns:
+If you want the matching engine to match the **smallest possible span** (lazy matching), you can pass `greedy=False` to any of the repetition methods on both `cell` rules and `group` patterns:
 
 - `.one_or_more(greedy=False)`
 - `.zero_or_more(greedy=False)`
 - `.optional(greedy=False)`
 - `.repeat(min, max=None, greedy=False)`
-
-This allows configuration of greediness for both directions:
-
-- **Horizontal Matching (Columns)**: Configured on cell rules in `group`. Controls how many columns are matched by repeating cell patterns.
-- **Vertical Matching (Rows)**: Configured on row patterns in `grid`. Controls how many repeating rows are matched.
 
 When lazy matching is enabled, the engine starts by evaluating the minimum required columns/rows and only expands to match more elements if the remainder of the matcher rules fail. This is useful when you want to avoid matching too wide of a range, such as when parsing sub-table headers or optional separators.
 
@@ -87,7 +82,7 @@ We define a single row pattern starting with a date (regex `^\d{4}-\d{2}-\d{2}$`
 ```python linenums="1"
 from tabularix import group, regex, non_empty
 
-# Define a 1D group pattern representing a row.
+# Define a one-dimensional group pattern representing a row.
 pattern = group(
     regex(r"^\d{4}-\d{2}-\d{2}$"),              # 1 date cell.
     non_empty(),                                # 1 description label.
@@ -97,7 +92,7 @@ pattern = group(
 
 ### 2. Multi-line Headers (Variable Columns)
 
-Usually, spreadsheets have multiline headers where cells merge across columns. For example, to match a 2-line header sequence structured like this:
+Often, spreadsheets have multiline headers where cells merge across columns. For example, to match a 2-line header sequence structured like this:
 
 | Column A            | Column B   | Column C  | Column D   | Column E  |
 | :------------------ | :--------- | :-------- | :--------- | :-------- |
@@ -199,20 +194,6 @@ matched_range = sheet.search_range(
 
 ---
 
-### 🧩 Partial Column Matching
-
-Unlike regular expressions that match a full row, Tabularix's matching engine matches a row **for the table to extract** rather than the entire worksheet row. This means `search_range` performs **partial column matching** to find a table anywhere horizontally within the worksheet.
-
-For example, given a worksheet with 5 columns (A to E), if you define a 3-column `group` matching `"Header #1"`, `"Header #2"`, and `"Header #3"`, the layout engine will check only the valid 3-column sub-spans:
-
-- `A:C` (columns 0 to 2)
-- `B:D` (columns 1 to 3)
-- `C:E` (columns 2 to 4)
-
-If a match is found on one of these spans, the returned `Range` will enclose only those matched columns.
-
----
-
 ### 🔗 Relational Search
 
 In many layout structures, tables are located relative to other landmarks (such as headers or footers) rather than at fixed indices. `search_range_relative` dynamically resolves coordinates and inherits boundaries from previously matched `Range` objects:
@@ -249,3 +230,33 @@ data_range = sheet.search_range_relative(
 !!! important "Boundary Rules"
     - If opposing bounds cross (e.g. `below` is set to a range that is physically below the `above` range), a `ValueError` is raised.
     - If opposing bounds are specified, their spans must align (e.g. `below` and `above` must share the same column spans), otherwise a `ValueError` is raised.
+
+---
+
+### 🧩 Sub-Span Matching (Sliding Window)
+
+Rather than forcing a pattern to match a full row or a full column in the worksheet, the Layex matching engine searches for a matching **sub-span** of cells. The engine evaluates the pattern by sliding a window of cell sequence size along the configured scanning axis.
+
+The direction in which the window slides is determined by the matcher's parameters:
+
+- **Horizontal Scan**: Slides a window of width `W` along the column axis in the configured direction:
+    - **Left-to-Right (`LR`)**: Evaluates spans from left to right.
+    - **Right-to-Left (`RL`)**: Evaluates spans in reverse order.
+- **Vertical Scan**: Slides a window of height `H` along the row axis in the configured direction:
+    - **Top-to-Bottom (`TB`)**: Evaluates spans from top to bottom.
+    - **Bottom-to-Top (`BT`)**: Evaluates spans in reverse order.
+
+<!-- prettier-ignore -->
+!!! example "Concrete Example"
+    Suppose we have a worksheet row with 5 columns (`A` to `E`), and we search for a horizontal `group` pattern of width 3 (e.g., matching `"Header #1"`, `"Header #2"`, and `"Header #3"`):
+
+    *   **Under Left-to-Right (`LR`)**: The engine slides the evaluation window from left to right, testing:
+        1.  `A:C` (columns 0 to 2)
+        2.  `B:D` (columns 1 to 3)
+        3.  `C:E` (columns 2 to 4)
+    *   **Under Right-to-Left (`RL`)**: The engine slides the evaluation window in reverse, testing:
+        1.  `C:E` (columns 2 to 4)
+        2.  `B:D` (columns 1 to 3)
+        3.  `A:C` (columns 0 to 2)
+
+    Once a match is successfully found, the returned `Range` object will enclose only the exact matched sub-span (e.g., `B4:D4`), rather than the entire row.

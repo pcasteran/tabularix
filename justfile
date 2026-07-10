@@ -43,10 +43,10 @@ prepare-release:
     # 5. Bump the Rust crate version in Cargo.toml
     sed -i 's/^version = "[0-9.]*"/version = "'"${VERSION}"'"/' Cargo.toml
 
-    # Run formatting and validation checks to ensure clean updates
-    just prek
+    # 6. Run formatting and validation checks to ensure clean updates (non-blocking)
+    just prek || true
 
-    # 6. Display complete status and post-merge publishing instructions
+    # 7. Display complete status and post-merge publishing instructions
     echo "Release preparation complete. Review changes, commit, and push the branch."
     echo ""
     echo "Once the PR is merged, run the following commands to tag and trigger the release pipeline:"

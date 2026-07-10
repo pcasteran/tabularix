@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/assets/logo_2.png" alt="Tabularix Logo" width="250"/>
+  <a href="https://github.com/pcasteran/tabularix/blob/main/docs/assets/logo_2.png"><img src="https://raw.githubusercontent.com/pcasteran/tabularix/main/docs/assets/logo_2.png" alt="Tabularix Logo" width="250"/></a>
   <p><strong>Smart, layout-resilient data extraction from Excel documents.</strong></p>
 </div>
 
@@ -15,26 +15,10 @@ Developed as a direct continuation of the [Archery](https://github.com/RomualdRo
 
 ## 🚀 Installation
 
-Install the stable package directly from PyPI:
+Install the stable package from PyPI:
 
 ```bash
 pip install tabularix
-```
-
-### Build from Source
-
-To compile the native Rust extension and install the package locally, make sure you have [mise](https://mise.jdx.dev/) and [just](https://github.com/casey/just) installed:
-
-```bash
-# Clone the repository
-git clone https://github.com/pcasteran/tabularix.git
-cd tabularix
-
-# Set up toolchains
-mise install
-
-# Compile the native bindings
-just build
 ```
 
 ---
@@ -45,7 +29,7 @@ just build
 
 Suppose we have a spreadsheet containing a sales report table surrounded by empty rows, headers, and metadata, as shown in the layout analysis below:
 
-![Visual Structure of the Spreadsheet](docs/assets/sheet_complex.svg)
+[<img src="https://raw.githubusercontent.com/pcasteran/tabularix/main/docs/assets/sheet_complex.svg" alt="Multi-tables Worksheet Layout" width="600" />](https://github.com/pcasteran/tabularix/blob/main/docs/assets/sheet_complex.svg)
 
 Instead of hardcoding static cell coordinates (e.g., `A3:E8`) which break when columns or rows are added, deleted, or shifted, Tabularix uses **Range Matchers** to dynamically locate table boundaries relative to their visual markers.
 
