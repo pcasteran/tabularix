@@ -8,7 +8,7 @@ icon: lucide/target
 
 In many real-world spreadsheets, tables of interest are not nicely formatted or aligned. They might begin after arbitrary headers, contain multiline merged cells, or have variable numbers of columns and rows.
 
-To reliably locate and extract these tables, **Tabularix** provides the **Layex Pattern Matching Engine**. **Layex** stands for **Layout Expression**, a concept and syntax derived from regular expressions but tailored for layout-level structures of spreadsheets. With Layex, you define a structural pattern of cell sequences (called a `group`) and row sequences (called a `grid`) programmatically, which are then passed directly to the high-level extraction API or compiled into a `RangeMatcher` for advanced coordinate control.
+To reliably locate and extract these tables, **Tabularix** provides the **Layex Pattern Matching Engine**. **Layex** stands for **Layout Expression**, a concept derived from regular expressions but tailored for layout-level structures of spreadsheets. With Layex, you define a structural pattern of `cell` sequences (called a `group`) and `group` sequences (called a `grid`) programmatically, which are then passed directly to the high-level extraction API or compiled into a `RangeMatcher` for advanced coordinate control.
 
 ---
 
