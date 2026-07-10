@@ -109,3 +109,43 @@ If you are preparing a new release, use the automated recipe to branch, update t
 # Calculate next version, branch, update CHANGELOG.md, and bump versions
 just prepare-release
 ```
+
+---
+
+## 🔄 Release Rollback Action Plan
+
+In the event of a critical issue discovered immediately after a package release, follow these steps to yank the release and prevent installation of the broken package version.
+
+### 1. Yank the Package on PyPI
+
+Yanking a package marks the version as broken. It prevents `pip install` from installing it by default, but does not break existing dependencies that explicitly pin to the exact version.
+
+- **Via PyPI Web Interface**:
+    1.  Log in to [PyPI](https://pypi.org/).
+    2.  Navigate to **Project** -> **tabularix** -> **Manage**.
+    3.  Select **Options** next to the specific version (e.g. `0.1.0`).
+    4.  Click **Yank Release** and provide a reason (e.g., critical regression).
+- **Via Twine CLI**:
+    ```bash
+    # Yank the specific release version
+    twine register --yank tabularix==0.1.0
+    ```
+
+### 2. Delete the Git Tag
+
+Delete the git tag locally and remotely to prevent the CI/CD pipeline from referencing the broken release tag:
+
+```bash
+# Delete local tag
+git tag -d v0.1.0
+
+# Delete remote tag
+git push --delete origin v0.1.0
+```
+
+### 3. Deploy a Hotfix Release
+
+1. Create a hotfix branch from `main` (e.g. `chore/release-v0.1.1`).
+2. Fix the regression and verify that all unit/acceptance tests pass cleanly.
+3. Update version metadata and CHANGELOG.
+4. Merge the PR, pull the changes to `main`, and push the new tag (e.g. `v0.1.1`) to trigger the CI/CD release workflow.
