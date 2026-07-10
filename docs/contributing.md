@@ -129,11 +129,6 @@ Yanking a package marks the version as broken. It prevents `pip install` from in
     2.  Navigate to **Project** -> **tabularix** -> **Manage**.
     3.  Select **Options** next to the specific version (e.g. `0.1.0`).
     4.  Click **Yank Release** and provide a reason (e.g., critical regression).
-- **Via Twine CLI**:
-    ```bash
-    # Yank the specific release version
-    twine register --yank tabularix==0.1.0
-    ```
 
 ### 2. Delete the Git Tag
 
