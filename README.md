@@ -29,10 +29,6 @@ pip install tabularix
 
 Suppose we have a spreadsheet containing a sales report table surrounded by empty rows, headers, and metadata, as shown in the layout analysis below:
 
-![Visual Structure of the Spreadsheet](docs/assets/sheet_complex.svg)
-
---
-
 [<img src="docs/assets/sheet_complex.svg" alt="Multi-tables Worksheet Layout" width="600" />](docs/assets/sheet_complex.svg)
 
 Instead of hardcoding static cell coordinates (e.g., `A3:E8`) which break when columns or rows are added, deleted, or shifted, Tabularix uses **Range Matchers** to dynamically locate table boundaries relative to their visual markers.
