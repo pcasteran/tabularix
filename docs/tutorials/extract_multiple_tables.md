@@ -6,7 +6,7 @@ icon: lucide/layers
 
 # 🗂️ Extract, Combine, and Project Multiple Tables
 
-In real-world spreadsheets, you will often find multiple independent tables stacked vertically on the same worksheet, alongside key-value metadata scattered outside the main tables (e.g., report dates, fiscal years, or run parameters).
+In real-world spreadsheets, you will sometimes find multiple independent tables stacked vertically on the same worksheet, alongside key-value metadata scattered outside the main tables (e.g., report dates, fiscal years, or run parameters).
 
 This tutorial guides you through using **Tabularix** to programmatically:
 
@@ -32,8 +32,8 @@ Then the **Financial Report** section begins with a metadata block at the top (*
 
 Our goal is to extract all four territory tables and normalize them into a single, tidy DataFrame with the following columns:
 
-- `territory`: String indicating the territory (derived from the title row).
-- `product`: String indicating the product (derived from the data rows).
+- `territory`: String indicating the territory (retrieved from the title row).
+- `product`: String indicating the product (retrieved from the data rows).
 - `year`: String indicating the fiscal year (unpivoted from the nested headers).
 - `expected`: Floating-point number indicating the expected sales amount.
 - `actual`: Floating-point number indicating the actual sales amount.
@@ -51,16 +51,16 @@ We define vertical patterns for the header column matching "Date" or "Fiscal Yea
 ```python
 from tabularix import group, regex, non_empty
 
-# Pattern for the vertical header column (1D cell sequence).
+# Pattern for the vertical header column (one-dimensional cell sequence).
 header_pattern = group(regex(r"^(Date|Fiscal Year)$").repeat(2, 2))
 
-# Pattern for the vertical data column (1D cell sequence).
+# Pattern for the vertical data column (one-dimensional cell sequence).
 data_pattern = group(non_empty().repeat(2, 2))
 ```
 
 ### Extracting the Horizontal Table
 
-We pass the patterns to the High-Level helper, specifying that the table columns flow Left-to-Right (`main_direction="LR"`) and cells inside each column flow Top-to-Bottom (`inner_direction="TB"`):
+We pass the patterns to the High-Level API helper, specifying that the table flows primarily from left to right (`main_direction="LR"`) and then from top to bottom (`inner_direction="TB"`):
 
 ```python
 from typing import cast
@@ -68,7 +68,7 @@ import polars as pl
 from tabularix import Sheet, extract_table_with_header_and_data
 
 def extract_metadata(sheet: Sheet) -> pl.DataFrame:
-    # Extract the metadata as a horizontal table directly.
+    # Extract the metadata as a horizontal table.
     table = extract_table_with_header_and_data(
         sheet,
         header_pattern,
@@ -93,11 +93,11 @@ To extract the stacked territory tables (North, South, East, West), we must dyna
 ```python
 from tabularix import any, empty, grid, group, regex, value
 
-# Locate the territory title (1D group pattern).
+# Locate the territory title (one-dimensional group pattern).
 territory_pattern = group(regex(r"^(North|South|East|West)$"))
 territory_matcher = territory_pattern.to_matcher(direction="LR")
 
-# Locate the two-row merged header (2D grid pattern).
+# Locate the two-row merged header (two-dimensional grid pattern).
 header_row1 = group(
     value("Product"),
     group(
@@ -115,7 +115,7 @@ header_row2 = group(
 header_pattern = grid(header_row1, header_row2)
 header_matcher = header_pattern.to_matcher(outer_direction="TB", inner_direction="LR")
 
-# Locate the footer row using greedy wildcard matching.
+# Locate the footer row.
 footer_pattern = group(
     value("Total"),
     any().zero_or_more()

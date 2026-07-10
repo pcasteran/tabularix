@@ -27,7 +27,7 @@ The easiest and recommended way to get started is by using [VS Code Dev Containe
 
 ### 2. Manual Environment Setup (Alternative)
 
-If you prefer to configure your environment manually, local toolchains and run recipes are managed using [mise](https://mise.jdx.dev/).
+If you prefer to configure your environment manually, local toolchains installation is managed using [mise](https://mise.jdx.dev/).
 
 1.  **Install Global Prerequisites**:
     - [Mise Installation Guide](https://mise.jdx.dev/getting-started.html)

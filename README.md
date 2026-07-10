@@ -15,7 +15,7 @@ Developed as a direct continuation of the [Archery](https://github.com/RomualdRo
 
 ## 🚀 Installation
 
-Install the stable package directly from PyPI:
+Install the stable package from PyPI:
 
 ```bash
 pip install tabularix

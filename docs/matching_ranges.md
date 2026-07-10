@@ -82,7 +82,7 @@ We define a single row pattern starting with a date (regex `^\d{4}-\d{2}-\d{2}$`
 ```python linenums="1"
 from tabularix import group, regex, non_empty
 
-# Define a 1D group pattern representing a row.
+# Define a one-dimensional group pattern representing a row.
 pattern = group(
     regex(r"^\d{4}-\d{2}-\d{2}$"),              # 1 date cell.
     non_empty(),                                # 1 description label.
