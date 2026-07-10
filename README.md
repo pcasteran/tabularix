@@ -21,22 +21,6 @@ Install the stable package directly from PyPI:
 pip install tabularix
 ```
 
-### Build from Source
-
-To compile the native Rust extension and install the package locally, make sure you have [mise](https://mise.jdx.dev/) and [just](https://github.com/casey/just) installed:
-
-```bash
-# Clone the repository
-git clone https://github.com/pcasteran/tabularix.git
-cd tabularix
-
-# Set up toolchains
-mise install
-
-# Compile the native bindings
-just build
-```
-
 ---
 
 ## 💡 Quick Example

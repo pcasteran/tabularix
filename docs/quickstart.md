@@ -14,16 +14,10 @@ Written in Rust for maximum speed, it integrates directly with Python to provide
 
 ## 📦 Installation
 
-Currently, Tabularix is in active development. You can compile and install it from source using `uv` and `maturin`:
+Install the stable package directly from PyPI:
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/pcasteran/tabularix.git
-cd tabularix
-
-# 2. Create a virtual environment and compile the Rust bindings
-uv venv
-uv run maturin develop
+pip install tabularix
 ```
 
 ---
@@ -61,7 +55,7 @@ It highlights cell borders, merged regions, empty rows, and cell types (numeric,
 
 ### Step 2: Define Layout Patterns
 
-In this example, we need to extract the sales table located at the top of the sheet. Instead of hardcoding cell ranges like `A3:E8` (which break if a row is added or deleted at the top), Tabularix lets you define patterns using `group` (for 1D cell lists) and `grid` (for 2D row/column arrays).
+In this example, we need to extract the sales table located at the top of the sheet. Instead of hardcoding cell ranges like `A3:E8` (which break if a row is added or deleted at the top), Tabularix lets you define patterns using `group` (for one-dimensional horizontal or vertical group of cells) and `grid` (for two-dimensional row/column arrays).
 
 Let's define a match pattern for the header row and a match pattern for the data rows:
 
@@ -69,21 +63,18 @@ Let's define a match pattern for the header row and a match pattern for the data
 from tabularix import grid, group, non_empty, regex, value
 
 # Define the pattern for the header row.
-# It starts with "Region", followed by 4 Quarter columns matching
-# a regex pattern (e.g. Q1, Q2, etc.).
+# The header row starts with "Region" and is followed by four Quarter columns.
 header_pattern = group(
-    value("Region"),                        # Static string.
-    regex(r"^Q[1-4]$").repeat(min=4, max=4)     # Quarter header: Q1, Q2, Q3, Q4.
+    value("Region"),                           # Match the static string.
+    regex(r"^Q[1-4]$").repeat(min=4, max=4)    # Match the quarter headers.
 )
 
-# Define the pattern for the data rows. The rows must:
-#   - start with a region name, i.e. a string different than `Total` (which
-#     is the marker of the table footer)
-#   - end by 4 non-empty data cells
+# Define the pattern for the data rows.
+# Each data row starts with a region name and ends with four non-empty cells.
 data_pattern = grid(
     group(
         regex(r"^(?!Total).*$"),            # Match any string except "Total".
-        non_empty().repeat(min=4, max=4)        # Quarters amount.
+        non_empty().repeat(min=4, max=4)    # Match the quarterly sales amounts.
     ).one_or_more()
 )
 ```
@@ -115,7 +106,7 @@ print("Table Shape:", table.shape)
 
 ### Step 4: Zero-Copy Integration (Arrow, Polars, Pandas, DuckDB)
 
-Tabularix fully supports the standard **Arrow PyCapsule Interface**, allowing you to export your parsed table to modern data frameworks with zero-copy overhead.
+Tabularix fully supports the standard **[Arrow PyCapsule Interface](https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html)**, allowing you to export your parsed table to modern data frameworks with zero-copy overhead.
 
 ```python
 # Zero-copy load into a Pandas dataframe.
@@ -143,7 +134,7 @@ print(res_duckdb)
 
 While the High-Level API is perfect for standard vertical or horizontal tables, some complex layouts require more control. In these situations, you can use Tabularix's **Low-Level API** to perform explicit range searches, inspect boundary coordinates, and construct matcher objects manually.
 
-Here is the equivalent workflow using the Low-Level API:
+Here is the equivalent workflow using the Low-Level API.
 
 ### 1. Compile Matchers Manually
 
@@ -151,7 +142,11 @@ Instead of passing patterns directly to high-level helpers, convert them into `R
 
 ```python
 # Compile the patterns into matchers.
+
+# Match the header row scanning from left to right.
 header_matcher = header_pattern.to_matcher(direction="LR")
+
+# Match data rows scanning top to bottom, and columns left to right.
 data_matcher = data_pattern.to_matcher(outer_direction="TB", inner_direction="LR")
 ```
 

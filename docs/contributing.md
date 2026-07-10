@@ -27,11 +27,15 @@ The easiest and recommended way to get started is by using [VS Code Dev Containe
 
 ### 2. Manual Environment Setup (Alternative)
 
-If you prefer to configure your environment manually, local toolchains are managed using [mise](https://mise.jdx.dev/) and recipes are run using [just](https://github.com/casey/just).
+If you prefer to configure your environment manually, local toolchains and run recipes are managed using [mise](https://mise.jdx.dev/).
 
-1.  **Install Global Prerequisites**: Make sure you have `mise` and `just` installed globally:
+1.  **Install Global Prerequisites**:
     - [Mise Installation Guide](https://mise.jdx.dev/getting-started.html)
-    - [Just Installation Guide](https://github.com/casey/just#installation)
+
+<!-- prettier-ignore -->
+!!! tip "Mise usage"
+    To run development commands directly (e.g. `just build`), you can activate `mise` in your current shell session by running `eval "$(mise activate bash)"` (or equivalent for your shell). Otherwise, prefix the commands with `mise exec --` (e.g. `mise exec -- just build`). The examples below assume `mise` has been activated.
+
 2.  **Clone the Repository**:
 
     ```bash
@@ -57,10 +61,10 @@ If you prefer to configure your environment manually, local toolchains are manag
 We enforce strict formatting and quality checks across all files. Always run the static analysis suite before submitting code:
 
 ```bash
-# Execute all pre-commit hooks, formatting, and linters
+# Execute all pre-commit hooks, formatting, and linters.
 just prek
 
-# Update the static analysis engine and hook versions
+# Update the static analysis engine and hook versions.
 just prek-hooks-update
 ```
 
@@ -78,10 +82,10 @@ The `just prek` command validates:
 All contributions must pass the entire test suite before merging.
 
 ```bash
-# Run Rust unit tests
+# Run Rust unit tests.
 just unit-test
 
-# Run Robot Framework acceptance tests
+# Run Robot Framework acceptance tests.
 just acceptance-test
 ```
 
@@ -92,10 +96,10 @@ just acceptance-test
 The documentation site is powered by **Zensical**.
 
 ```bash
-# Run a local development documentation server
+# Run a local development documentation server.
 just docs-serve
 
-# Build the static HTML site (output to site/ directory)
+# Build the static HTML site (output to site/ directory).
 just docs-build
 ```
 
@@ -106,7 +110,7 @@ just docs-build
 If you are preparing a new release, use the automated recipe to branch, update the changelog, and bump versions:
 
 ```bash
-# Calculate next version, branch, update CHANGELOG.md, and bump versions
+# Calculate next version, branch, update CHANGELOG.md, and bump versions.
 just prepare-release
 ```
 
