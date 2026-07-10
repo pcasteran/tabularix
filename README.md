@@ -1,5 +1,5 @@
 <div align="center">
-  [<img src="https://raw.githubusercontent.com/pcasteran/tabularix/main/docs/assets/logo_2.png" alt="Tabularix Logo" width="250"/>](https://github.com/pcasteran/tabularix/blob/main/docs/assets/logo_2.png)
+  <a href="https://github.com/pcasteran/tabularix/blob/main/docs/assets/logo_2.png"><img src="https://raw.githubusercontent.com/pcasteran/tabularix/main/docs/assets/logo_2.png" alt="Tabularix Logo" width="250"/></a>
   <p><strong>Smart, layout-resilient data extraction from Excel documents.</strong></p>
 </div>
 
