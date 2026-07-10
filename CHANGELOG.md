@@ -1,3 +1,9 @@
+## [0.3.4] - 2026-07-10
+
+### 📚 Documentation
+
+- Updates following initial release (#36)
+
 ## [0.3.3] - 2026-07-09
 
 ### ⚙️ Miscellaneous Tasks
