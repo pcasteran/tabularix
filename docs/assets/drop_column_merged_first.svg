@@ -51,6 +51,14 @@
   .rect-error {
     fill: #fee2e2;
   }
+  .rect-formula {
+    fill: #f3f4f6;
+  }
+  .val-formula {
+    text-anchor: middle;
+    fill: #9ca3af;
+    font-style: italic;
+  }
 </style>
   <rect x="40" y="25" width="120" height="30" class="cell-rect" />
   <text x="48" y="44" class="val-string">Header #2</text>

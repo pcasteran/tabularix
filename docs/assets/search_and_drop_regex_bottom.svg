@@ -51,6 +51,14 @@
   .rect-error {
     fill: #fee2e2;
   }
+  .rect-formula {
+    fill: #f3f4f6;
+  }
+  .val-formula {
+    text-anchor: middle;
+    fill: #9ca3af;
+    font-style: italic;
+  }
 </style>
   <rect x="40" y="25" width="600" height="30" class="cell-rect cell-merged" />
   <text x="48" y="44" class="val-string">Financial Report 2026</text>
@@ -111,10 +119,14 @@
   <text x="632" y="224" class="val-number">14500</text>
   <rect x="40" y="235" width="120" height="30" class="cell-rect" />
   <text x="48" y="254" class="val-string">Total 2026</text>
-  <rect x="160" y="235" width="120" height="30" class="cell-rect" />
-  <rect x="280" y="235" width="120" height="30" class="cell-rect" />
-  <rect x="400" y="235" width="120" height="30" class="cell-rect" />
-  <rect x="520" y="235" width="120" height="30" class="cell-rect" />
+  <rect x="160" y="235" width="120" height="30" class="cell-rect rect-formula" />
+  <text x="220" y="254" class="val-formula">&lt;formula&gt;</text>
+  <rect x="280" y="235" width="120" height="30" class="cell-rect rect-formula" />
+  <text x="340" y="254" class="val-formula">&lt;formula&gt;</text>
+  <rect x="400" y="235" width="120" height="30" class="cell-rect rect-formula" />
+  <text x="460" y="254" class="val-formula">&lt;formula&gt;</text>
+  <rect x="520" y="235" width="120" height="30" class="cell-rect rect-formula" />
+  <text x="580" y="254" class="val-formula">&lt;formula&gt;</text>
   <rect x="40" y="0" width="120" height="25" class="hdr-rect" />
   <text x="100" y="16" class="hdr-text">A (0)</text>
   <rect x="160" y="0" width="120" height="25" class="hdr-rect" />
