@@ -330,7 +330,7 @@ fn infer_and_build_array(cells: &[&CellValue]) -> (DataType, ArrayRef) {
     let mut has_datetime = false;
 
     for cell in cells {
-        match cell {
+        match cell.resolve() {
             CellValue::String(_) => has_string = true,
             CellValue::Float(_) => has_float = true,
             CellValue::Int(_) => has_int = true,
@@ -338,6 +338,7 @@ fn infer_and_build_array(cells: &[&CellValue]) -> (DataType, ArrayRef) {
             CellValue::Date(_) => has_date = true,
             CellValue::DateTime(_) => has_datetime = true,
             CellValue::Empty | CellValue::Error(_) => {}
+            CellValue::Formula(_, _) => unreachable!(),
         }
     }
 
@@ -396,7 +397,7 @@ fn build_array_for_type(datatype: &DataType, cells: &[&CellValue]) -> ArrayRef {
         DataType::Int64 => {
             let mut builder = Int64Builder::new();
             for cell in cells {
-                match cell {
+                match cell.resolve() {
                     CellValue::Int(v) => builder.append_value(*v),
                     _ => builder.append_null(),
                 }
@@ -406,7 +407,7 @@ fn build_array_for_type(datatype: &DataType, cells: &[&CellValue]) -> ArrayRef {
         DataType::Float64 => {
             let mut builder = Float64Builder::new();
             for cell in cells {
-                match cell {
+                match cell.resolve() {
                     CellValue::Float(v) => builder.append_value(*v),
                     CellValue::Int(v) => builder.append_value(*v as f64),
                     _ => builder.append_null(),
@@ -417,7 +418,7 @@ fn build_array_for_type(datatype: &DataType, cells: &[&CellValue]) -> ArrayRef {
         DataType::Boolean => {
             let mut builder = BooleanBuilder::new();
             for cell in cells {
-                match cell {
+                match cell.resolve() {
                     CellValue::Bool(v) => builder.append_value(*v),
                     _ => builder.append_null(),
                 }
@@ -427,7 +428,7 @@ fn build_array_for_type(datatype: &DataType, cells: &[&CellValue]) -> ArrayRef {
         DataType::Date32 => {
             let mut builder = Date32Builder::new();
             for cell in cells {
-                match cell {
+                match cell.resolve() {
                     CellValue::Date(d) => {
                         let days = arrow::datatypes::Date32Type::from_naive_date(*d);
                         builder.append_value(days);
@@ -440,7 +441,7 @@ fn build_array_for_type(datatype: &DataType, cells: &[&CellValue]) -> ArrayRef {
         DataType::Timestamp(arrow::datatypes::TimeUnit::Microsecond, None) => {
             let mut builder = TimestampMicrosecondBuilder::new();
             for cell in cells {
-                match cell {
+                match cell.resolve() {
                     CellValue::DateTime(dt) => {
                         builder.append_value(dt.and_utc().timestamp_micros());
                     }
@@ -459,7 +460,7 @@ fn build_array_for_type(datatype: &DataType, cells: &[&CellValue]) -> ArrayRef {
         DataType::Utf8 => {
             let mut builder = StringBuilder::new();
             for cell in cells {
-                match cell {
+                match cell.resolve() {
                     CellValue::String(v) => builder.append_value(v),
                     CellValue::Int(v) => builder.append_value(v.to_string()),
                     CellValue::Float(v) => builder.append_value(v.to_string()),

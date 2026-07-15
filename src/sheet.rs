@@ -18,6 +18,7 @@ pub enum CellValue {
     Error(String),
     Date(chrono::NaiveDate),
     DateTime(chrono::NaiveDateTime),
+    Formula(String, Box<CellValue>),
 }
 
 impl From<calamine::Data> for CellValue {
@@ -60,6 +61,21 @@ impl From<calamine::Data> for CellValue {
 }
 
 impl CellValue {
+    pub fn resolve(&self) -> &CellValue {
+        match self {
+            CellValue::Formula(_, inner) => inner.resolve(),
+            _ => self,
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        match self {
+            CellValue::Empty => true,
+            CellValue::Formula(_, inner) => inner.is_empty(),
+            _ => false,
+        }
+    }
+
     pub fn to_string_for_search(&self) -> std::borrow::Cow<'_, str> {
         match self {
             CellValue::Empty => std::borrow::Cow::Borrowed(""),
@@ -78,6 +94,7 @@ impl CellValue {
             CellValue::DateTime(dt) => {
                 std::borrow::Cow::Owned(dt.format("%Y-%m-%dT%H:%M:%S%.f").to_string())
             }
+            CellValue::Formula(_, inner) => inner.to_string_for_search(),
         }
     }
 }
@@ -118,6 +135,7 @@ impl<'py> IntoPyObject<'py> for CellValue {
                 )?;
                 Ok(py_dt.into_any())
             }
+            CellValue::Formula(_, inner) => inner.into_pyobject(py),
         }
     }
 }
@@ -822,6 +840,14 @@ impl Sheet {
   .rect-error {
     fill: #fee2e2;
   }
+  .rect-formula {
+    fill: #f3f4f6;
+  }
+  .val-formula {
+    text-anchor: middle;
+    fill: #9ca3af;
+    font-style: italic;
+  }
 </style>
 "#);
 
@@ -884,6 +910,10 @@ impl Sheet {
                     CellValue::Float(_) | CellValue::Int(_) => {
                         text_class.push_str("val-number");
                     }
+                    CellValue::Formula(_, _) => {
+                        rect_class.push_str(" rect-formula");
+                        text_class.push_str("val-formula");
+                    }
                     CellValue::Empty => {}
                 }
 
@@ -907,6 +937,7 @@ impl Sheet {
                     CellValue::Error(e) => format!("ERROR: {e}"),
                     CellValue::Date(d) => d.to_string(),
                     CellValue::DateTime(dt) => dt.format("%Y-%m-%dT%H:%M:%S%.f").to_string(),
+                    CellValue::Formula(_, _) => "<formula>".to_string(),
                 };
 
                 if !val_str.is_empty() {
@@ -924,7 +955,9 @@ impl Sheet {
 
                     let text_x = match val {
                         CellValue::Float(_) | CellValue::Int(_) => cell_x + c_width - 8,
-                        CellValue::Bool(_) | CellValue::Error(_) => cell_x + c_width / 2,
+                        CellValue::Bool(_) | CellValue::Error(_) | CellValue::Formula(_, _) => {
+                            cell_x + c_width / 2
+                        }
                         _ => cell_x + 8,
                     };
                     let text_y = cell_y + c_height / 2 + 4;
@@ -1013,6 +1046,30 @@ impl Workbook {
     }
 }
 
+fn populate_formulas(data: &mut [Vec<CellValue>], f_range: &calamine::Range<String>) {
+    let Some((f_start_row, f_start_col)) = f_range.start() else {
+        return;
+    };
+    let (f_end_row, f_end_col) = f_range.end().unwrap_or((0, 0));
+
+    for (r_idx, row) in data.iter_mut().enumerate() {
+        if r_idx >= f_start_row as usize && r_idx <= f_end_row as usize {
+            for (c_idx, cell) in row.iter_mut().enumerate() {
+                if c_idx >= f_start_col as usize && c_idx <= f_end_col as usize {
+                    if let (Ok(r_u32), Ok(c_u32)) = (u32::try_from(r_idx), u32::try_from(c_idx)) {
+                        if let Some(f_str) = f_range.get_value((r_u32, c_u32)) {
+                            if !f_str.is_empty() {
+                                let current_val = std::mem::replace(cell, CellValue::Empty);
+                                *cell = CellValue::Formula(f_str.clone(), Box::new(current_val));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 pub fn load_workbook_impl(path: &str) -> PyResult<Workbook> {
     let path_buf = Path::new(path);
     if !path_buf.exists() {
@@ -1054,6 +1111,8 @@ pub fn load_workbook_impl(path: &str) -> PyResult<Workbook> {
             let (start_row, start_col) = range.start().unwrap_or((0, 0));
             let (end_row, end_col) = range.end().unwrap_or((0, 0));
 
+            let formulas = excel.worksheet_formula(&name).ok();
+
             let mut height = if range.start().is_none() {
                 0
             } else {
@@ -1064,6 +1123,18 @@ pub fn load_workbook_impl(path: &str) -> PyResult<Workbook> {
             } else {
                 end_col as usize + 1
             };
+
+            if let Some(ref f_range) = formulas {
+                if f_range.start().is_some() {
+                    let (f_end_row, f_end_col) = f_range.end().unwrap_or((0, 0));
+                    if f_end_row as usize + 1 > height {
+                        height = f_end_row as usize + 1;
+                    }
+                    if f_end_col as usize + 1 > width {
+                        width = f_end_col as usize + 1;
+                    }
+                }
+            }
 
             let sheet_merges: Vec<((usize, usize), (usize, usize))> = all_merged_regions
                 .iter()
@@ -1088,6 +1159,10 @@ pub fn load_workbook_impl(path: &str) -> PyResult<Workbook> {
                     let abs_col = col_idx + start_col as usize;
                     data[abs_row][abs_col] = CellValue::from(cell.clone());
                 }
+            }
+
+            if let Some(ref f_range) = formulas {
+                populate_formulas(&mut data, f_range);
             }
 
             sheets.insert(

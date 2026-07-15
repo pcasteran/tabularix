@@ -500,8 +500,8 @@ fn py_any_to_cell_value(val: &Bound<'_, PyAny>) -> CellValue {
 fn cell_matches_rule(py: Python<'_>, rule: &CellMatchRule, val: &CellValue) -> PyResult<bool> {
     match rule {
         CellMatchRule::Any => Ok(true),
-        CellMatchRule::Empty => Ok(matches!(val, CellValue::Empty)),
-        CellMatchRule::NonEmpty => Ok(!matches!(val, CellValue::Empty)),
+        CellMatchRule::Empty => Ok(val.is_empty()),
+        CellMatchRule::NonEmpty => Ok(!val.is_empty()),
         CellMatchRule::Exact(expected) => {
             let s = val.to_string_for_search();
             Ok(s.as_ref() == expected)
