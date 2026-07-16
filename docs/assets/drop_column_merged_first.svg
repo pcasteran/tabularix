@@ -61,22 +61,22 @@
   }
 </style>
   <g class="data-cells">
-    <rect x="40" y="25" width="120" height="30" class="cell-rect" data-original-range="A1:A1" />
+    <rect x="40" y="25" width="120" height="30" class="cell-rect" data-original-range="A1" />
     <text x="48" y="44" class="val-string">Header #2</text>
-    <rect x="160" y="25" width="120" height="30" class="cell-rect" data-original-range="B1:B1" />
+    <rect x="160" y="25" width="120" height="30" class="cell-rect" data-original-range="B1" />
     <text x="168" y="44" class="val-string">Header #3</text>
-    <rect x="40" y="55" width="120" height="30" class="cell-rect" data-original-range="A2:A2" />
+    <rect x="40" y="55" width="120" height="30" class="cell-rect" data-original-range="A2" />
     <text x="152" y="74" class="val-number">123.45</text>
-    <rect x="160" y="55" width="120" height="30" class="cell-rect" data-original-range="B2:B2" />
+    <rect x="160" y="55" width="120" height="30" class="cell-rect" data-original-range="B2" />
     <text x="168" y="74" class="val-string">Alice</text>
-    <rect x="40" y="85" width="120" height="30" class="cell-rect" data-original-range="A3:A3" />
+    <rect x="40" y="85" width="120" height="30" class="cell-rect" data-original-range="A3" />
     <text x="152" y="104" class="val-number">678</text>
-    <rect x="160" y="85" width="120" height="30" class="cell-rect" data-original-range="B3:B3" />
+    <rect x="160" y="85" width="120" height="30" class="cell-rect" data-original-range="B3" />
     <text x="168" y="104" class="val-string">Bob</text>
     <rect x="40" y="115" width="120" height="60" class="cell-rect cell-merged" data-original-range="A4:A5" />
-    <rect x="160" y="115" width="120" height="30" class="cell-rect" data-original-range="B4:B4" />
+    <rect x="160" y="115" width="120" height="30" class="cell-rect" data-original-range="B4" />
     <text x="168" y="134" class="val-string">Charlie</text>
-    <rect x="160" y="145" width="120" height="30" class="cell-rect" data-original-range="B5:B5" />
+    <rect x="160" y="145" width="120" height="30" class="cell-rect" data-original-range="B5" />
     <text x="168" y="164" class="val-string">David</text>
   </g>
   <g class="headers">

@@ -63,70 +63,70 @@
   <g class="data-cells">
     <rect x="40" y="25" width="600" height="30" class="cell-rect cell-merged" data-original-range="A1:E1" />
     <text x="48" y="44" class="val-string">Financial Report 2026</text>
-    <rect x="40" y="55" width="120" height="30" class="cell-rect" data-original-range="A2:A2" />
-    <rect x="160" y="55" width="120" height="30" class="cell-rect" data-original-range="B2:B2" />
-    <rect x="280" y="55" width="120" height="30" class="cell-rect" data-original-range="C2:C2" />
-    <rect x="400" y="55" width="120" height="30" class="cell-rect" data-original-range="D2:D2" />
-    <rect x="520" y="55" width="120" height="30" class="cell-rect" data-original-range="E2:E2" />
-    <rect x="40" y="85" width="120" height="30" class="cell-rect" data-original-range="A3:A3" />
+    <rect x="40" y="55" width="120" height="30" class="cell-rect" data-original-range="A2" />
+    <rect x="160" y="55" width="120" height="30" class="cell-rect" data-original-range="B2" />
+    <rect x="280" y="55" width="120" height="30" class="cell-rect" data-original-range="C2" />
+    <rect x="400" y="55" width="120" height="30" class="cell-rect" data-original-range="D2" />
+    <rect x="520" y="55" width="120" height="30" class="cell-rect" data-original-range="E2" />
+    <rect x="40" y="85" width="120" height="30" class="cell-rect" data-original-range="A3" />
     <text x="48" y="104" class="val-string">Region</text>
-    <rect x="160" y="85" width="120" height="30" class="cell-rect" data-original-range="B3:B3" />
+    <rect x="160" y="85" width="120" height="30" class="cell-rect" data-original-range="B3" />
     <text x="168" y="104" class="val-string">Q1</text>
-    <rect x="280" y="85" width="120" height="30" class="cell-rect" data-original-range="C3:C3" />
+    <rect x="280" y="85" width="120" height="30" class="cell-rect" data-original-range="C3" />
     <text x="288" y="104" class="val-string">Q2</text>
-    <rect x="400" y="85" width="120" height="30" class="cell-rect" data-original-range="D3:D3" />
+    <rect x="400" y="85" width="120" height="30" class="cell-rect" data-original-range="D3" />
     <text x="408" y="104" class="val-string">Q3</text>
-    <rect x="520" y="85" width="120" height="30" class="cell-rect" data-original-range="E3:E3" />
+    <rect x="520" y="85" width="120" height="30" class="cell-rect" data-original-range="E3" />
     <text x="528" y="104" class="val-string">Q4</text>
-    <rect x="40" y="115" width="120" height="30" class="cell-rect" data-original-range="A4:A4" />
+    <rect x="40" y="115" width="120" height="30" class="cell-rect" data-original-range="A4" />
     <text x="48" y="134" class="val-string">North</text>
-    <rect x="160" y="115" width="120" height="30" class="cell-rect" data-original-range="B4:B4" />
+    <rect x="160" y="115" width="120" height="30" class="cell-rect" data-original-range="B4" />
     <text x="272" y="134" class="val-number">12000.5</text>
-    <rect x="280" y="115" width="120" height="30" class="cell-rect" data-original-range="C4:C4" />
+    <rect x="280" y="115" width="120" height="30" class="cell-rect" data-original-range="C4" />
     <text x="392" y="134" class="val-number">15000.75</text>
-    <rect x="400" y="115" width="120" height="30" class="cell-rect" data-original-range="D4:D4" />
+    <rect x="400" y="115" width="120" height="30" class="cell-rect" data-original-range="D4" />
     <text x="512" y="134" class="val-number">13000</text>
-    <rect x="520" y="115" width="120" height="30" class="cell-rect" data-original-range="E4:E4" />
+    <rect x="520" y="115" width="120" height="30" class="cell-rect" data-original-range="E4" />
     <text x="632" y="134" class="val-number">18000.25</text>
-    <rect x="40" y="145" width="120" height="30" class="cell-rect" data-original-range="A5:A5" />
+    <rect x="40" y="145" width="120" height="30" class="cell-rect" data-original-range="A5" />
     <text x="48" y="164" class="val-string">South</text>
-    <rect x="160" y="145" width="120" height="30" class="cell-rect" data-original-range="B5:B5" />
+    <rect x="160" y="145" width="120" height="30" class="cell-rect" data-original-range="B5" />
     <text x="272" y="164" class="val-number">9500</text>
-    <rect x="280" y="145" width="120" height="30" class="cell-rect" data-original-range="C5:C5" />
+    <rect x="280" y="145" width="120" height="30" class="cell-rect" data-original-range="C5" />
     <text x="392" y="164" class="val-number">11000.5</text>
-    <rect x="400" y="145" width="120" height="30" class="cell-rect" data-original-range="D5:D5" />
+    <rect x="400" y="145" width="120" height="30" class="cell-rect" data-original-range="D5" />
     <text x="512" y="164" class="val-number">10500.2</text>
-    <rect x="520" y="145" width="120" height="30" class="cell-rect" data-original-range="E5:E5" />
+    <rect x="520" y="145" width="120" height="30" class="cell-rect" data-original-range="E5" />
     <text x="632" y="164" class="val-number">12000.8</text>
-    <rect x="40" y="175" width="120" height="30" class="cell-rect" data-original-range="A6:A6" />
+    <rect x="40" y="175" width="120" height="30" class="cell-rect" data-original-range="A6" />
     <text x="48" y="194" class="val-string">East</text>
-    <rect x="160" y="175" width="120" height="30" class="cell-rect" data-original-range="B6:B6" />
+    <rect x="160" y="175" width="120" height="30" class="cell-rect" data-original-range="B6" />
     <text x="272" y="194" class="val-number">14000.1</text>
-    <rect x="280" y="175" width="120" height="30" class="cell-rect" data-original-range="C6:C6" />
+    <rect x="280" y="175" width="120" height="30" class="cell-rect" data-original-range="C6" />
     <text x="392" y="194" class="val-number">16500.3</text>
-    <rect x="400" y="175" width="120" height="30" class="cell-rect" data-original-range="D6:D6" />
+    <rect x="400" y="175" width="120" height="30" class="cell-rect" data-original-range="D6" />
     <text x="512" y="194" class="val-number">15000</text>
-    <rect x="520" y="175" width="120" height="30" class="cell-rect" data-original-range="E6:E6" />
+    <rect x="520" y="175" width="120" height="30" class="cell-rect" data-original-range="E6" />
     <text x="632" y="194" class="val-number">21000.5</text>
-    <rect x="40" y="205" width="120" height="30" class="cell-rect" data-original-range="A7:A7" />
+    <rect x="40" y="205" width="120" height="30" class="cell-rect" data-original-range="A7" />
     <text x="48" y="224" class="val-string">West</text>
-    <rect x="160" y="205" width="120" height="30" class="cell-rect" data-original-range="B7:B7" />
+    <rect x="160" y="205" width="120" height="30" class="cell-rect" data-original-range="B7" />
     <text x="272" y="224" class="val-number">11000</text>
-    <rect x="280" y="205" width="120" height="30" class="cell-rect" data-original-range="C7:C7" />
+    <rect x="280" y="205" width="120" height="30" class="cell-rect" data-original-range="C7" />
     <text x="392" y="224" class="val-number">12500</text>
-    <rect x="400" y="205" width="120" height="30" class="cell-rect" data-original-range="D7:D7" />
+    <rect x="400" y="205" width="120" height="30" class="cell-rect" data-original-range="D7" />
     <text x="512" y="224" class="val-number">13000</text>
-    <rect x="520" y="205" width="120" height="30" class="cell-rect" data-original-range="E7:E7" />
+    <rect x="520" y="205" width="120" height="30" class="cell-rect" data-original-range="E7" />
     <text x="632" y="224" class="val-number">14500</text>
-    <rect x="40" y="235" width="120" height="30" class="cell-rect" data-original-range="A8:A8" />
+    <rect x="40" y="235" width="120" height="30" class="cell-rect" data-original-range="A8" />
     <text x="48" y="254" class="val-string">Total 2026</text>
-    <rect x="160" y="235" width="120" height="30" class="cell-rect rect-formula" data-original-range="B8:B8" />
+    <rect x="160" y="235" width="120" height="30" class="cell-rect rect-formula" data-original-range="B8" />
     <text x="220" y="254" class="val-formula">&lt;formula&gt;</text>
-    <rect x="280" y="235" width="120" height="30" class="cell-rect rect-formula" data-original-range="C8:C8" />
+    <rect x="280" y="235" width="120" height="30" class="cell-rect rect-formula" data-original-range="C8" />
     <text x="340" y="254" class="val-formula">&lt;formula&gt;</text>
-    <rect x="400" y="235" width="120" height="30" class="cell-rect rect-formula" data-original-range="D8:D8" />
+    <rect x="400" y="235" width="120" height="30" class="cell-rect rect-formula" data-original-range="D8" />
     <text x="460" y="254" class="val-formula">&lt;formula&gt;</text>
-    <rect x="520" y="235" width="120" height="30" class="cell-rect rect-formula" data-original-range="E8:E8" />
+    <rect x="520" y="235" width="120" height="30" class="cell-rect rect-formula" data-original-range="E8" />
     <text x="580" y="254" class="val-formula">&lt;formula&gt;</text>
   </g>
   <g class="headers">

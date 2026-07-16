@@ -61,44 +61,44 @@
   }
 </style>
   <g class="data-cells">
-    <rect x="40" y="25" width="120" height="30" class="cell-rect" data-original-range="A1:A1" />
+    <rect x="40" y="25" width="120" height="30" class="cell-rect" data-original-range="A1" />
     <text x="48" y="44" class="val-string">Name</text>
-    <rect x="160" y="25" width="120" height="30" class="cell-rect" data-original-range="B1:B1" />
+    <rect x="160" y="25" width="120" height="30" class="cell-rect" data-original-range="B1" />
     <text x="168" y="44" class="val-string">Role</text>
-    <rect x="280" y="25" width="120" height="30" class="cell-rect" data-original-range="C1:C1" />
+    <rect x="280" y="25" width="120" height="30" class="cell-rect" data-original-range="C1" />
     <text x="288" y="44" class="val-string">Active</text>
-    <rect x="400" y="25" width="120" height="30" class="cell-rect" data-original-range="D1:D1" />
+    <rect x="400" y="25" width="120" height="30" class="cell-rect" data-original-range="D1" />
     <text x="408" y="44" class="val-string">Start Date</text>
-    <rect x="520" y="25" width="120" height="30" class="cell-rect" data-original-range="E1:E1" />
-    <rect x="40" y="55" width="120" height="30" class="cell-rect" data-original-range="A2:A2" />
+    <rect x="520" y="25" width="120" height="30" class="cell-rect" data-original-range="E1" />
+    <rect x="40" y="55" width="120" height="30" class="cell-rect" data-original-range="A2" />
     <text x="48" y="74" class="val-string">Alice</text>
-    <rect x="160" y="55" width="120" height="30" class="cell-rect" data-original-range="B2:B2" />
+    <rect x="160" y="55" width="120" height="30" class="cell-rect" data-original-range="B2" />
     <text x="168" y="74" class="val-string">Engineer</text>
-    <rect x="280" y="55" width="120" height="30" class="cell-rect rect-bool" data-original-range="C2:C2" />
+    <rect x="280" y="55" width="120" height="30" class="cell-rect rect-bool" data-original-range="C2" />
     <text x="340" y="74" class="val-bool">TRUE</text>
-    <rect x="400" y="55" width="120" height="30" class="cell-rect" data-original-range="D2:D2" />
+    <rect x="400" y="55" width="120" height="30" class="cell-rect" data-original-range="D2" />
     <text x="408" y="74" class="val-string">2023-01-15</text>
-    <rect x="520" y="55" width="120" height="30" class="cell-rect" data-original-range="E2:E2" />
-    <rect x="40" y="85" width="120" height="30" class="cell-rect" data-original-range="A3:A3" />
+    <rect x="520" y="55" width="120" height="30" class="cell-rect" data-original-range="E2" />
+    <rect x="40" y="85" width="120" height="30" class="cell-rect" data-original-range="A3" />
     <text x="48" y="104" class="val-string">Bob</text>
-    <rect x="160" y="85" width="120" height="30" class="cell-rect" data-original-range="B3:B3" />
+    <rect x="160" y="85" width="120" height="30" class="cell-rect" data-original-range="B3" />
     <text x="168" y="104" class="val-string">Manager</text>
-    <rect x="280" y="85" width="120" height="30" class="cell-rect rect-bool" data-original-range="C3:C3" />
+    <rect x="280" y="85" width="120" height="30" class="cell-rect rect-bool" data-original-range="C3" />
     <text x="340" y="104" class="val-bool">FALSE</text>
-    <rect x="400" y="85" width="120" height="30" class="cell-rect" data-original-range="D3:D3" />
+    <rect x="400" y="85" width="120" height="30" class="cell-rect" data-original-range="D3" />
     <text x="408" y="104" class="val-string">2021-06-01</text>
-    <rect x="520" y="85" width="120" height="30" class="cell-rect" data-original-range="E3:E3" />
-    <rect x="40" y="115" width="120" height="30" class="cell-rect" data-original-range="A4:A4" />
-    <rect x="160" y="115" width="120" height="30" class="cell-rect" data-original-range="B4:B4" />
-    <rect x="280" y="115" width="120" height="30" class="cell-rect" data-original-range="C4:C4" />
-    <rect x="400" y="115" width="120" height="30" class="cell-rect" data-original-range="D4:D4" />
-    <rect x="520" y="115" width="120" height="30" class="cell-rect" data-original-range="E4:E4" />
-    <rect x="40" y="145" width="120" height="30" class="cell-rect" data-original-range="A5:A5" />
+    <rect x="520" y="85" width="120" height="30" class="cell-rect" data-original-range="E3" />
+    <rect x="40" y="115" width="120" height="30" class="cell-rect" data-original-range="A4" />
+    <rect x="160" y="115" width="120" height="30" class="cell-rect" data-original-range="B4" />
+    <rect x="280" y="115" width="120" height="30" class="cell-rect" data-original-range="C4" />
+    <rect x="400" y="115" width="120" height="30" class="cell-rect" data-original-range="D4" />
+    <rect x="520" y="115" width="120" height="30" class="cell-rect" data-original-range="E4" />
+    <rect x="40" y="145" width="120" height="30" class="cell-rect" data-original-range="A5" />
     <rect x="160" y="145" width="360" height="60" class="cell-rect cell-merged" data-original-range="B5:D6" />
     <text x="168" y="179" class="val-string">Confidential - Internal Use Only</text>
-    <rect x="520" y="145" width="120" height="30" class="cell-rect" data-original-range="E5:E5" />
-    <rect x="40" y="175" width="120" height="30" class="cell-rect" data-original-range="A6:A6" />
-    <rect x="520" y="175" width="120" height="30" class="cell-rect" data-original-range="E6:E6" />
+    <rect x="520" y="145" width="120" height="30" class="cell-rect" data-original-range="E5" />
+    <rect x="40" y="175" width="120" height="30" class="cell-rect" data-original-range="A6" />
+    <rect x="520" y="175" width="120" height="30" class="cell-rect" data-original-range="E6" />
   </g>
   <g class="headers">
     <rect x="40" y="0" width="120" height="25" class="hdr-rect" />
