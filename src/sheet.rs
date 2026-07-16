@@ -318,9 +318,15 @@ impl Sheet {
         Ok(((matched_row, matched_col), (new_row, new_col)))
     }
 
-    #[pyo3(signature = (path, zero_based_indices = true))]
-    pub fn to_svg(&self, path: &str, zero_based_indices: bool) -> PyResult<()> {
-        self.to_svg_impl(path, zero_based_indices)
+    #[pyo3(signature = (path, zero_based_indices = true, anonymise_ranges = None))]
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn to_svg(
+        &self,
+        path: &str,
+        zero_based_indices: bool,
+        anonymise_ranges: Option<Vec<Range>>,
+    ) -> PyResult<()> {
+        self.to_svg_impl(path, zero_based_indices, anonymise_ranges.as_deref())
             .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("Failed to write SVG: {e}")))
     }
 
@@ -770,7 +776,12 @@ impl Sheet {
     }
 
     #[allow(clippy::too_many_lines)]
-    fn to_svg_impl(&self, path: &str, zero_based_indices: bool) -> std::io::Result<()> {
+    fn to_svg_impl(
+        &self,
+        path: &str,
+        zero_based_indices: bool,
+        anonymise_ranges: Option<&[Range]>,
+    ) -> std::io::Result<()> {
         let (rows, cols) = self.shape();
 
         let cell_width = 120;
@@ -859,6 +870,13 @@ impl Sheet {
             return Ok(());
         }
 
+        let seed = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(123_456_789, |d| {
+                d.as_secs().wrapping_add(u64::from(d.subsec_nanos()))
+            });
+        let mut string_placeholders = HashMap::<String, String>::new();
+
         svg.push_str("  <g class=\"data-cells\">\n");
 
         for r in 0..rows {
@@ -893,6 +911,29 @@ impl Sheet {
                 let cell_y = col_hdr_height + r * cell_height;
 
                 let val = &self.data[r][c];
+
+                let in_anonymise_range = if let Some(ranges) = anonymise_ranges {
+                    ranges.iter().any(|range| {
+                        r >= range.start_row
+                            && r <= range.end_row
+                            && c >= range.start_col
+                            && c <= range.end_col
+                    })
+                } else {
+                    false
+                };
+
+                let mut cell_seed = seed.wrapping_add((r as u64) << 32).wrapping_add(c as u64);
+                lcg(&mut cell_seed);
+
+                let anonymised_holder;
+                let val = if in_anonymise_range {
+                    anonymised_holder =
+                        anonymise_cell_value(val, &mut cell_seed, &mut string_placeholders);
+                    &anonymised_holder
+                } else {
+                    val
+                };
 
                 let mut rect_class = "cell-rect".to_string();
                 let mut text_class = String::new();
@@ -945,7 +986,7 @@ impl Sheet {
                     CellValue::String(s) => s.clone(),
                     CellValue::Float(f) => f.to_string(),
                     CellValue::Int(i) => i.to_string(),
-                    CellValue::Bool(b) => {
+                    CellValue::Bool(ref b) => {
                         if *b {
                             "TRUE".to_string()
                         } else {
@@ -1030,6 +1071,69 @@ impl Sheet {
 
         std::fs::write(path, svg)?;
         Ok(())
+    }
+}
+
+fn lcg(seed: &mut u64) -> u64 {
+    *seed = seed
+        .wrapping_mul(6_364_136_223_846_793_005)
+        .wrapping_add(1_442_695_040_888_963_407);
+    *seed
+}
+
+#[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
+fn anonymise_cell_value(
+    val: &CellValue,
+    cell_seed: &mut u64,
+    string_placeholders: &mut HashMap<String, String>,
+) -> CellValue {
+    match val {
+        CellValue::Int(i) => {
+            let r_val = lcg(cell_seed);
+            let r_val_32 = (r_val & 0xFFFF_FFFF) as u32;
+            let factor = 0.1 + (f64::from(r_val_32) / f64::from(u32::MAX)) * 9.9;
+            CellValue::Int(((*i as f64) * factor).round() as i64)
+        }
+        CellValue::Float(f) => {
+            let r_val = lcg(cell_seed);
+            let r_val_32 = (r_val & 0xFFFF_FFFF) as u32;
+            let factor = 0.1 + (f64::from(r_val_32) / f64::from(u32::MAX)) * 9.9;
+            CellValue::Float(f * factor)
+        }
+        CellValue::String(s) => {
+            let placeholder = if let Some(existing) = string_placeholders.get(s) {
+                existing.clone()
+            } else {
+                let next_idx = string_placeholders.len() + 1;
+                let placeholder = format!("Text_{next_idx}");
+                string_placeholders.insert(s.clone(), placeholder.clone());
+                placeholder
+            };
+            CellValue::String(placeholder)
+        }
+        CellValue::Date(d) => {
+            let r_val = lcg(cell_seed);
+            let days_offset = -365 + i64::try_from(r_val % 731).unwrap_or(0);
+            let shifted = d
+                .checked_add_signed(chrono::Duration::days(days_offset))
+                .unwrap_or(*d);
+            CellValue::Date(shifted)
+        }
+        CellValue::DateTime(dt) => {
+            let r_val = lcg(cell_seed);
+            let days_offset = -365 + i64::try_from(r_val % 731).unwrap_or(0);
+            let shifted = dt
+                .checked_add_signed(chrono::Duration::days(days_offset))
+                .unwrap_or(*dt);
+            CellValue::DateTime(shifted)
+        }
+        CellValue::Formula(f_str, inner) => {
+            let anon_inner = anonymise_cell_value(inner, cell_seed, string_placeholders);
+            CellValue::Formula(f_str.clone(), Box::new(anon_inner))
+        }
+        CellValue::Bool(b) => CellValue::Bool(*b),
+        CellValue::Error(e) => CellValue::Error(e.clone()),
+        CellValue::Empty => CellValue::Empty,
     }
 }
 
