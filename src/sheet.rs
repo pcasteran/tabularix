@@ -859,16 +859,22 @@ impl Sheet {
             return Ok(());
         }
 
+        svg.push_str("  <g class=\"data-cells\">\n");
+
         for r in 0..rows {
             for c in 0..cols {
                 let mut is_merged = false;
                 let mut draw_cell = true;
                 let mut c_width = cell_width;
                 let mut c_height = cell_height;
+                let mut merged_start = (0, 0);
+                let mut merged_end = (0, 0);
 
                 for &(start, end) in &self.merged_regions {
                     if r >= start.0 && r <= end.0 && c >= start.1 && c <= end.1 {
                         is_merged = true;
+                        merged_start = start;
+                        merged_end = end;
                         if r == start.0 && c == start.1 {
                             c_width = (end.1 - start.1 + 1) * cell_width;
                             c_height = (end.0 - start.0 + 1) * cell_height;
@@ -917,9 +923,21 @@ impl Sheet {
                     CellValue::Empty => {}
                 }
 
+                let cell_range = if is_merged {
+                    let start_letter = index_to_col_letters(merged_start.1);
+                    let start_row = merged_start.0 + 1;
+                    let end_letter = index_to_col_letters(merged_end.1);
+                    let end_row = merged_end.0 + 1;
+                    format!("{start_letter}{start_row}:{end_letter}{end_row}")
+                } else {
+                    let cell_letter = index_to_col_letters(c);
+                    let cell_row = r + 1;
+                    format!("{cell_letter}{cell_row}")
+                };
+
                 let _ = writeln!(
                     svg,
-                    r#"  <rect x="{cell_x}" y="{cell_y}" width="{c_width}" height="{c_height}" class="{rect_class}" />"#
+                    r#"    <rect x="{cell_x}" y="{cell_y}" width="{c_width}" height="{c_height}" class="{rect_class}" data-original-range="{cell_range}" />"#
                 );
 
                 let val_str = match val {
@@ -965,11 +983,15 @@ impl Sheet {
                     let escaped = html_escape(&display_str);
                     let _ = writeln!(
                         svg,
-                        r#"  <text x="{text_x}" y="{text_y}" class="{text_class}">{escaped}</text>"#
+                        r#"    <text x="{text_x}" y="{text_y}" class="{text_class}">{escaped}</text>"#
                     );
                 }
             }
         }
+
+        svg.push_str("  </g>\n");
+
+        svg.push_str("  <g class=\"headers\">\n");
 
         for c in 0..cols {
             let cell_x = row_hdr_width + c * cell_width;
@@ -980,8 +1002,8 @@ impl Sheet {
             let text_y = col_hdr_height / 2 + 4;
             let _ = writeln!(
                 svg,
-                r#"  <rect x="{cell_x}" y="0" width="{cell_width}" height="{col_hdr_height}" class="hdr-rect" />
-  <text x="{text_x}" y="{text_y}" class="hdr-text">{col_label}</text>"#
+                r#"    <rect x="{cell_x}" y="0" width="{cell_width}" height="{col_hdr_height}" class="hdr-rect" />
+    <text x="{text_x}" y="{text_y}" class="hdr-text">{col_label}</text>"#
             );
         }
 
@@ -992,15 +1014,17 @@ impl Sheet {
             let text_y = cell_y + cell_height / 2 + 4;
             let _ = writeln!(
                 svg,
-                r#"  <rect x="0" y="{cell_y}" width="{row_hdr_width}" height="{cell_height}" class="hdr-rect" />
-  <text x="{text_x}" y="{text_y}" class="hdr-text">{label}</text>"#
+                r#"    <rect x="0" y="{cell_y}" width="{row_hdr_width}" height="{cell_height}" class="hdr-rect" />
+    <text x="{text_x}" y="{text_y}" class="hdr-text">{label}</text>"#
             );
         }
 
         let _ = writeln!(
             svg,
-            r#"  <rect x="0" y="0" width="{row_hdr_width}" height="{col_hdr_height}" class="hdr-rect" />"#
+            r#"    <rect x="0" y="0" width="{row_hdr_width}" height="{col_hdr_height}" class="hdr-rect" />"#
         );
+
+        svg.push_str("  </g>\n");
 
         svg.push_str("</svg>\n");
 

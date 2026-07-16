@@ -57,15 +57,20 @@ Export Sheet With Formulas To SVG
     [Documentation]    Verify formula placeholders in exported SVG.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.get_sheet("complex")
-
-    # Export to SVG
     Evaluate    $sheet.to_svg("results/complex_formulas.svg")
-
-    # Verify file exists and has formula placeholders
     File Should Exist    results/complex_formulas.svg
     ${content}=    Get File    results/complex_formulas.svg
-    # Should contain formula text placeholder (html escaped)
     Should Contain    ${content}    &lt;formula&gt;
-    # Should contain formula visual styles
     Should Contain    ${content}    rect-formula
     Should Contain    ${content}    val-formula
+
+Export Sheet With Groups And Ranges To SVG
+    [Documentation]    Verify semantic grouping and data-original-range properties.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("complex")
+    Evaluate    $sheet.to_svg("results/complex_groups.svg")
+    ${content}=    Get File    results/complex_groups.svg
+    Should Contain    ${content}    data-original-range="A8"
+    Should Contain    ${content}    data-original-range="B8"
+    Should Contain    ${content}    <g class="data-cells">
+    Should Contain    ${content}    <g class="headers">
