@@ -1098,7 +1098,23 @@ fn anonymise_cell_value(
             let r_val = lcg(cell_seed);
             let r_val_32 = (r_val & 0xFFFF_FFFF) as u32;
             let factor = 0.1 + (f64::from(r_val_32) / f64::from(u32::MAX)) * 9.9;
-            CellValue::Float(f * factor)
+            let scaled = f * factor;
+
+            let s = f.to_string();
+            let decimal_places = if let Some(dot_idx) = s.find('.') {
+                (s.len() - dot_idx - 1).min(6)
+            } else {
+                0
+            };
+
+            let rounded = if decimal_places > 0 {
+                let multiplier = 10f64.powi(i32::try_from(decimal_places).unwrap_or(0));
+                (scaled * multiplier).round() / multiplier
+            } else {
+                scaled.round()
+            };
+
+            CellValue::Float(rounded)
         }
         CellValue::String(s) => {
             let placeholder = if let Some(existing) = string_placeholders.get(s) {
