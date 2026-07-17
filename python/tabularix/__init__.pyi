@@ -62,12 +62,19 @@ class Sheet:
         """
         ...
 
-    def to_svg(self, path: str, zero_based_indices: bool = True) -> None:
+    def to_svg(
+        self,
+        path: str,
+        zero_based_indices: bool = True,
+        anonymise_ranges: list[Range | str] | None = None,
+    ) -> None:
         """Renders the worksheet to a beautifully styled SVG file.
 
         Args:
             path: Target file path where the SVG should be saved.
             zero_based_indices: If True, uses 0-based indexing for headers (default); otherwise 1-based.
+            anonymise_ranges: Optional list of Range objects or A1 notation strings
+                defining regions to anonymise.
 
         Raises:
             IOError: If writing to the destination path fails.

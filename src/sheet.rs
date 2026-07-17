@@ -18,6 +18,7 @@ pub enum CellValue {
     Error(String),
     Date(chrono::NaiveDate),
     DateTime(chrono::NaiveDateTime),
+    Formula(String, Box<CellValue>),
 }
 
 impl From<calamine::Data> for CellValue {
@@ -60,6 +61,21 @@ impl From<calamine::Data> for CellValue {
 }
 
 impl CellValue {
+    pub fn resolve(&self) -> &CellValue {
+        match self {
+            CellValue::Formula(_, inner) => inner.resolve(),
+            _ => self,
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        match self {
+            CellValue::Empty => true,
+            CellValue::Formula(_, inner) => inner.is_empty(),
+            _ => false,
+        }
+    }
+
     pub fn to_string_for_search(&self) -> std::borrow::Cow<'_, str> {
         match self {
             CellValue::Empty => std::borrow::Cow::Borrowed(""),
@@ -78,6 +94,7 @@ impl CellValue {
             CellValue::DateTime(dt) => {
                 std::borrow::Cow::Owned(dt.format("%Y-%m-%dT%H:%M:%S%.f").to_string())
             }
+            CellValue::Formula(_, inner) => inner.to_string_for_search(),
         }
     }
 }
@@ -118,6 +135,7 @@ impl<'py> IntoPyObject<'py> for CellValue {
                 )?;
                 Ok(py_dt.into_any())
             }
+            CellValue::Formula(_, inner) => inner.into_pyobject(py),
         }
     }
 }
@@ -300,9 +318,15 @@ impl Sheet {
         Ok(((matched_row, matched_col), (new_row, new_col)))
     }
 
-    #[pyo3(signature = (path, zero_based_indices = true))]
-    pub fn to_svg(&self, path: &str, zero_based_indices: bool) -> PyResult<()> {
-        self.to_svg_impl(path, zero_based_indices)
+    #[pyo3(signature = (path, zero_based_indices = true, anonymise_ranges = None))]
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn to_svg(
+        &self,
+        path: &str,
+        zero_based_indices: bool,
+        anonymise_ranges: Option<Vec<Range>>,
+    ) -> PyResult<()> {
+        self.to_svg_impl(path, zero_based_indices, anonymise_ranges.as_deref())
             .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("Failed to write SVG: {e}")))
     }
 
@@ -752,7 +776,12 @@ impl Sheet {
     }
 
     #[allow(clippy::too_many_lines)]
-    fn to_svg_impl(&self, path: &str, zero_based_indices: bool) -> std::io::Result<()> {
+    fn to_svg_impl(
+        &self,
+        path: &str,
+        zero_based_indices: bool,
+        anonymise_ranges: Option<&[Range]>,
+    ) -> std::io::Result<()> {
         let (rows, cols) = self.shape();
 
         let cell_width = 120;
@@ -822,6 +851,14 @@ impl Sheet {
   .rect-error {
     fill: #fee2e2;
   }
+  .rect-formula {
+    fill: #f3f4f6;
+  }
+  .val-formula {
+    text-anchor: middle;
+    fill: #9ca3af;
+    font-style: italic;
+  }
 </style>
 "#);
 
@@ -833,16 +870,29 @@ impl Sheet {
             return Ok(());
         }
 
+        let seed = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(123_456_789, |d| {
+                d.as_secs().wrapping_add(u64::from(d.subsec_nanos()))
+            });
+        let mut string_placeholders = HashMap::<String, String>::new();
+
+        svg.push_str("  <g class=\"data-cells\">\n");
+
         for r in 0..rows {
             for c in 0..cols {
                 let mut is_merged = false;
                 let mut draw_cell = true;
                 let mut c_width = cell_width;
                 let mut c_height = cell_height;
+                let mut merged_start = (0, 0);
+                let mut merged_end = (0, 0);
 
                 for &(start, end) in &self.merged_regions {
                     if r >= start.0 && r <= end.0 && c >= start.1 && c <= end.1 {
                         is_merged = true;
+                        merged_start = start;
+                        merged_end = end;
                         if r == start.0 && c == start.1 {
                             c_width = (end.1 - start.1 + 1) * cell_width;
                             c_height = (end.0 - start.0 + 1) * cell_height;
@@ -861,6 +911,29 @@ impl Sheet {
                 let cell_y = col_hdr_height + r * cell_height;
 
                 let val = &self.data[r][c];
+
+                let in_anonymise_range = if let Some(ranges) = anonymise_ranges {
+                    ranges.iter().any(|range| {
+                        r >= range.start_row
+                            && r <= range.end_row
+                            && c >= range.start_col
+                            && c <= range.end_col
+                    })
+                } else {
+                    false
+                };
+
+                let mut cell_seed = seed.wrapping_add((r as u64) << 32).wrapping_add(c as u64);
+                lcg(&mut cell_seed);
+
+                let anonymised_holder;
+                let val = if in_anonymise_range {
+                    anonymised_holder =
+                        anonymise_cell_value(val, &mut cell_seed, &mut string_placeholders);
+                    &anonymised_holder
+                } else {
+                    val
+                };
 
                 let mut rect_class = "cell-rect".to_string();
                 let mut text_class = String::new();
@@ -884,12 +957,28 @@ impl Sheet {
                     CellValue::Float(_) | CellValue::Int(_) => {
                         text_class.push_str("val-number");
                     }
+                    CellValue::Formula(_, _) => {
+                        rect_class.push_str(" rect-formula");
+                        text_class.push_str("val-formula");
+                    }
                     CellValue::Empty => {}
                 }
 
+                let cell_range = if is_merged {
+                    let start_letter = index_to_col_letters(merged_start.1);
+                    let start_row = merged_start.0 + 1;
+                    let end_letter = index_to_col_letters(merged_end.1);
+                    let end_row = merged_end.0 + 1;
+                    format!("{start_letter}{start_row}:{end_letter}{end_row}")
+                } else {
+                    let cell_letter = index_to_col_letters(c);
+                    let cell_row = r + 1;
+                    format!("{cell_letter}{cell_row}")
+                };
+
                 let _ = writeln!(
                     svg,
-                    r#"  <rect x="{cell_x}" y="{cell_y}" width="{c_width}" height="{c_height}" class="{rect_class}" />"#
+                    r#"    <rect x="{cell_x}" y="{cell_y}" width="{c_width}" height="{c_height}" class="{rect_class}" data-original-range="{cell_range}" />"#
                 );
 
                 let val_str = match val {
@@ -897,7 +986,7 @@ impl Sheet {
                     CellValue::String(s) => s.clone(),
                     CellValue::Float(f) => f.to_string(),
                     CellValue::Int(i) => i.to_string(),
-                    CellValue::Bool(b) => {
+                    CellValue::Bool(ref b) => {
                         if *b {
                             "TRUE".to_string()
                         } else {
@@ -907,6 +996,7 @@ impl Sheet {
                     CellValue::Error(e) => format!("ERROR: {e}"),
                     CellValue::Date(d) => d.to_string(),
                     CellValue::DateTime(dt) => dt.format("%Y-%m-%dT%H:%M:%S%.f").to_string(),
+                    CellValue::Formula(_, _) => "<formula>".to_string(),
                 };
 
                 if !val_str.is_empty() {
@@ -924,7 +1014,9 @@ impl Sheet {
 
                     let text_x = match val {
                         CellValue::Float(_) | CellValue::Int(_) => cell_x + c_width - 8,
-                        CellValue::Bool(_) | CellValue::Error(_) => cell_x + c_width / 2,
+                        CellValue::Bool(_) | CellValue::Error(_) | CellValue::Formula(_, _) => {
+                            cell_x + c_width / 2
+                        }
                         _ => cell_x + 8,
                     };
                     let text_y = cell_y + c_height / 2 + 4;
@@ -932,11 +1024,15 @@ impl Sheet {
                     let escaped = html_escape(&display_str);
                     let _ = writeln!(
                         svg,
-                        r#"  <text x="{text_x}" y="{text_y}" class="{text_class}">{escaped}</text>"#
+                        r#"    <text x="{text_x}" y="{text_y}" class="{text_class}">{escaped}</text>"#
                     );
                 }
             }
         }
+
+        svg.push_str("  </g>\n");
+
+        svg.push_str("  <g class=\"headers\">\n");
 
         for c in 0..cols {
             let cell_x = row_hdr_width + c * cell_width;
@@ -947,8 +1043,8 @@ impl Sheet {
             let text_y = col_hdr_height / 2 + 4;
             let _ = writeln!(
                 svg,
-                r#"  <rect x="{cell_x}" y="0" width="{cell_width}" height="{col_hdr_height}" class="hdr-rect" />
-  <text x="{text_x}" y="{text_y}" class="hdr-text">{col_label}</text>"#
+                r#"    <rect x="{cell_x}" y="0" width="{cell_width}" height="{col_hdr_height}" class="hdr-rect" />
+    <text x="{text_x}" y="{text_y}" class="hdr-text">{col_label}</text>"#
             );
         }
 
@@ -959,20 +1055,101 @@ impl Sheet {
             let text_y = cell_y + cell_height / 2 + 4;
             let _ = writeln!(
                 svg,
-                r#"  <rect x="0" y="{cell_y}" width="{row_hdr_width}" height="{cell_height}" class="hdr-rect" />
-  <text x="{text_x}" y="{text_y}" class="hdr-text">{label}</text>"#
+                r#"    <rect x="0" y="{cell_y}" width="{row_hdr_width}" height="{cell_height}" class="hdr-rect" />
+    <text x="{text_x}" y="{text_y}" class="hdr-text">{label}</text>"#
             );
         }
 
         let _ = writeln!(
             svg,
-            r#"  <rect x="0" y="0" width="{row_hdr_width}" height="{col_hdr_height}" class="hdr-rect" />"#
+            r#"    <rect x="0" y="0" width="{row_hdr_width}" height="{col_hdr_height}" class="hdr-rect" />"#
         );
+
+        svg.push_str("  </g>\n");
 
         svg.push_str("</svg>\n");
 
         std::fs::write(path, svg)?;
         Ok(())
+    }
+}
+
+fn lcg(seed: &mut u64) -> u64 {
+    *seed = seed
+        .wrapping_mul(6_364_136_223_846_793_005)
+        .wrapping_add(1_442_695_040_888_963_407);
+    *seed
+}
+
+#[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
+fn anonymise_cell_value(
+    val: &CellValue,
+    cell_seed: &mut u64,
+    string_placeholders: &mut HashMap<String, String>,
+) -> CellValue {
+    match val {
+        CellValue::Int(i) => {
+            let r_val = lcg(cell_seed);
+            let r_val_32 = (r_val & 0xFFFF_FFFF) as u32;
+            let factor = 0.1 + (f64::from(r_val_32) / f64::from(u32::MAX)) * 9.9;
+            CellValue::Int(((*i as f64) * factor).round() as i64)
+        }
+        CellValue::Float(f) => {
+            let r_val = lcg(cell_seed);
+            let r_val_32 = (r_val & 0xFFFF_FFFF) as u32;
+            let factor = 0.1 + (f64::from(r_val_32) / f64::from(u32::MAX)) * 9.9;
+            let scaled = f * factor;
+
+            let s = f.to_string();
+            let decimal_places = if let Some(dot_idx) = s.find('.') {
+                (s.len() - dot_idx - 1).min(6)
+            } else {
+                0
+            };
+
+            let rounded = if decimal_places > 0 {
+                let multiplier = 10f64.powi(i32::try_from(decimal_places).unwrap_or(0));
+                (scaled * multiplier).round() / multiplier
+            } else {
+                scaled.round()
+            };
+
+            CellValue::Float(rounded)
+        }
+        CellValue::String(s) => {
+            let placeholder = if let Some(existing) = string_placeholders.get(s) {
+                existing.clone()
+            } else {
+                let next_idx = string_placeholders.len() + 1;
+                let placeholder = format!("Text_{next_idx}");
+                string_placeholders.insert(s.clone(), placeholder.clone());
+                placeholder
+            };
+            CellValue::String(placeholder)
+        }
+        CellValue::Date(d) => {
+            let r_val = lcg(cell_seed);
+            let days_offset = -365 + i64::try_from(r_val % 731).unwrap_or(0);
+            let shifted = d
+                .checked_add_signed(chrono::Duration::days(days_offset))
+                .unwrap_or(*d);
+            CellValue::Date(shifted)
+        }
+        CellValue::DateTime(dt) => {
+            let r_val = lcg(cell_seed);
+            let days_offset = -365 + i64::try_from(r_val % 731).unwrap_or(0);
+            let shifted = dt
+                .checked_add_signed(chrono::Duration::days(days_offset))
+                .unwrap_or(*dt);
+            CellValue::DateTime(shifted)
+        }
+        CellValue::Formula(f_str, inner) => {
+            let anon_inner = anonymise_cell_value(inner, cell_seed, string_placeholders);
+            CellValue::Formula(f_str.clone(), Box::new(anon_inner))
+        }
+        CellValue::Bool(b) => CellValue::Bool(*b),
+        CellValue::Error(e) => CellValue::Error(e.clone()),
+        CellValue::Empty => CellValue::Empty,
     }
 }
 
@@ -1009,6 +1186,30 @@ impl Workbook {
             Err(pyo3::exceptions::PyKeyError::new_err(format!(
                 "Sheet '{name}' not found"
             )))
+        }
+    }
+}
+
+fn populate_formulas(data: &mut [Vec<CellValue>], f_range: &calamine::Range<String>) {
+    let Some((f_start_row, f_start_col)) = f_range.start() else {
+        return;
+    };
+    let (f_end_row, f_end_col) = f_range.end().unwrap_or((0, 0));
+
+    for (r_idx, row) in data.iter_mut().enumerate() {
+        if r_idx >= f_start_row as usize && r_idx <= f_end_row as usize {
+            for (c_idx, cell) in row.iter_mut().enumerate() {
+                if c_idx >= f_start_col as usize && c_idx <= f_end_col as usize {
+                    if let (Ok(r_u32), Ok(c_u32)) = (u32::try_from(r_idx), u32::try_from(c_idx)) {
+                        if let Some(f_str) = f_range.get_value((r_u32, c_u32)) {
+                            if !f_str.is_empty() {
+                                let current_val = std::mem::replace(cell, CellValue::Empty);
+                                *cell = CellValue::Formula(f_str.clone(), Box::new(current_val));
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -1054,6 +1255,8 @@ pub fn load_workbook_impl(path: &str) -> PyResult<Workbook> {
             let (start_row, start_col) = range.start().unwrap_or((0, 0));
             let (end_row, end_col) = range.end().unwrap_or((0, 0));
 
+            let formulas = excel.worksheet_formula(&name).ok();
+
             let mut height = if range.start().is_none() {
                 0
             } else {
@@ -1064,6 +1267,18 @@ pub fn load_workbook_impl(path: &str) -> PyResult<Workbook> {
             } else {
                 end_col as usize + 1
             };
+
+            if let Some(ref f_range) = formulas {
+                if f_range.start().is_some() {
+                    let (f_end_row, f_end_col) = f_range.end().unwrap_or((0, 0));
+                    if f_end_row as usize + 1 > height {
+                        height = f_end_row as usize + 1;
+                    }
+                    if f_end_col as usize + 1 > width {
+                        width = f_end_col as usize + 1;
+                    }
+                }
+            }
 
             let sheet_merges: Vec<((usize, usize), (usize, usize))> = all_merged_regions
                 .iter()
@@ -1088,6 +1303,10 @@ pub fn load_workbook_impl(path: &str) -> PyResult<Workbook> {
                     let abs_col = col_idx + start_col as usize;
                     data[abs_row][abs_col] = CellValue::from(cell.clone());
                 }
+            }
+
+            if let Some(ref f_range) = formulas {
+                populate_formulas(&mut data, f_range);
             }
 
             sheets.insert(

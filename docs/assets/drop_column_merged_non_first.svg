@@ -51,38 +51,50 @@
   .rect-error {
     fill: #fee2e2;
   }
+  .rect-formula {
+    fill: #f3f4f6;
+  }
+  .val-formula {
+    text-anchor: middle;
+    fill: #9ca3af;
+    font-style: italic;
+  }
 </style>
-  <rect x="40" y="25" width="120" height="30" class="cell-rect" />
-  <text x="48" y="44" class="val-string">Header #1</text>
-  <rect x="160" y="25" width="120" height="30" class="cell-rect" />
-  <text x="168" y="44" class="val-string">Header #3</text>
-  <rect x="40" y="55" width="120" height="30" class="cell-rect" />
-  <text x="48" y="74" class="val-string">ABC</text>
-  <rect x="160" y="55" width="120" height="30" class="cell-rect" />
-  <text x="168" y="74" class="val-string">Alice</text>
-  <rect x="40" y="85" width="120" height="30" class="cell-rect" />
-  <text x="48" y="104" class="val-string">DEF</text>
-  <rect x="160" y="85" width="120" height="30" class="cell-rect" />
-  <text x="168" y="104" class="val-string">Bob</text>
-  <rect x="40" y="115" width="120" height="60" class="cell-rect cell-merged" />
-  <text x="48" y="149" class="val-string">Merged value</text>
-  <rect x="160" y="115" width="120" height="30" class="cell-rect" />
-  <text x="168" y="134" class="val-string">Charlie</text>
-  <rect x="160" y="145" width="120" height="30" class="cell-rect" />
-  <text x="168" y="164" class="val-string">David</text>
-  <rect x="40" y="0" width="120" height="25" class="hdr-rect" />
-  <text x="100" y="16" class="hdr-text">A (0)</text>
-  <rect x="160" y="0" width="120" height="25" class="hdr-rect" />
-  <text x="220" y="16" class="hdr-text">B (1)</text>
-  <rect x="0" y="25" width="40" height="30" class="hdr-rect" />
-  <text x="20" y="44" class="hdr-text">0</text>
-  <rect x="0" y="55" width="40" height="30" class="hdr-rect" />
-  <text x="20" y="74" class="hdr-text">1</text>
-  <rect x="0" y="85" width="40" height="30" class="hdr-rect" />
-  <text x="20" y="104" class="hdr-text">2</text>
-  <rect x="0" y="115" width="40" height="30" class="hdr-rect" />
-  <text x="20" y="134" class="hdr-text">3</text>
-  <rect x="0" y="145" width="40" height="30" class="hdr-rect" />
-  <text x="20" y="164" class="hdr-text">4</text>
-  <rect x="0" y="0" width="40" height="25" class="hdr-rect" />
+  <g class="data-cells">
+    <rect x="40" y="25" width="120" height="30" class="cell-rect" data-original-range="A1" />
+    <text x="48" y="44" class="val-string">Header #1</text>
+    <rect x="160" y="25" width="120" height="30" class="cell-rect" data-original-range="B1" />
+    <text x="168" y="44" class="val-string">Header #3</text>
+    <rect x="40" y="55" width="120" height="30" class="cell-rect" data-original-range="A2" />
+    <text x="48" y="74" class="val-string">ABC</text>
+    <rect x="160" y="55" width="120" height="30" class="cell-rect" data-original-range="B2" />
+    <text x="168" y="74" class="val-string">Alice</text>
+    <rect x="40" y="85" width="120" height="30" class="cell-rect" data-original-range="A3" />
+    <text x="48" y="104" class="val-string">DEF</text>
+    <rect x="160" y="85" width="120" height="30" class="cell-rect" data-original-range="B3" />
+    <text x="168" y="104" class="val-string">Bob</text>
+    <rect x="40" y="115" width="120" height="60" class="cell-rect cell-merged" data-original-range="A4:A5" />
+    <text x="48" y="149" class="val-string">Merged value</text>
+    <rect x="160" y="115" width="120" height="30" class="cell-rect" data-original-range="B4" />
+    <text x="168" y="134" class="val-string">Charlie</text>
+    <rect x="160" y="145" width="120" height="30" class="cell-rect" data-original-range="B5" />
+    <text x="168" y="164" class="val-string">David</text>
+  </g>
+  <g class="headers">
+    <rect x="40" y="0" width="120" height="25" class="hdr-rect" />
+    <text x="100" y="16" class="hdr-text">A (0)</text>
+    <rect x="160" y="0" width="120" height="25" class="hdr-rect" />
+    <text x="220" y="16" class="hdr-text">B (1)</text>
+    <rect x="0" y="25" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="44" class="hdr-text">0</text>
+    <rect x="0" y="55" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="74" class="hdr-text">1</text>
+    <rect x="0" y="85" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="104" class="hdr-text">2</text>
+    <rect x="0" y="115" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="134" class="hdr-text">3</text>
+    <rect x="0" y="145" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="164" class="hdr-text">4</text>
+    <rect x="0" y="0" width="40" height="25" class="hdr-rect" />
+  </g>
 </svg>

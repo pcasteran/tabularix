@@ -52,3 +52,50 @@ Export Sheet To SVG With Multi-Byte UTF-8 String
     File Should Exist    results/sample_unicode.svg
     ${content}=    Get File    results/sample_unicode.svg
     Should Contain    ${content}    ...
+
+Export Sheet With Formulas To SVG
+    [Documentation]    Verify formula placeholders in exported SVG.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("complex")
+    Evaluate    $sheet.to_svg("results/complex_formulas.svg")
+    File Should Exist    results/complex_formulas.svg
+    ${content}=    Get File    results/complex_formulas.svg
+    Should Contain    ${content}    &lt;formula&gt;
+    Should Contain    ${content}    rect-formula
+    Should Contain    ${content}    val-formula
+
+Export Sheet With Groups And Ranges To SVG
+    [Documentation]    Verify semantic grouping and data-original-range properties.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("complex")
+    Evaluate    $sheet.to_svg("results/complex_groups.svg")
+    ${content}=    Get File    results/complex_groups.svg
+    Should Contain    ${content}    data-original-range="A8"
+    Should Contain    ${content}    data-original-range="B8"
+    Should Contain    ${content}    <g class="data-cells">
+    Should Contain    ${content}    <g class="headers">
+
+Export Sheet With Anonymisation To SVG Checks Preserved
+    [Documentation]    Verify range anonymisation preserves untargeted cells.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("complex")
+    Evaluate    $sheet.to_svg("results/complex_anonymised.svg", anonymise_ranges=["B4:E7"])
+    File Should Exist    results/complex_anonymised.svg
+    ${content}=    Get File    results/complex_anonymised.svg
+    Should Contain    ${content}    Region
+    Should Contain    ${content}    Q1
+    Should Contain    ${content}    North
+    Should Contain    ${content}    South
+
+Export Sheet With Anonymisation To SVG Checks Obfuscated
+    [Documentation]    Verify range anonymisation obfuscates targeted cells.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.get_sheet("complex")
+    Evaluate    $sheet.to_svg("results/complex_anonymised_obfuscated.svg", anonymise_ranges=["B4:E7"])
+    ${content}=    Get File    results/complex_anonymised_obfuscated.svg
+    Should Not Contain    ${content}    12000.5
+    Should Not Contain    ${content}    15000.75
+    Should Not Contain    ${content}    11000
+    Should Contain    ${content}    data-original-range="B4"
+    Should Contain    ${content}    data-original-range="C4"
+    Should Contain    ${content}    data-original-range="C5"
