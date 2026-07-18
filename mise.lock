@@ -82,6 +82,10 @@ provenance = "github-attestations"
 version = "0.22.2"
 backend = "cargo:cargo-audit"
 
+[[tools."cargo:cargo-cooldown"]]
+version = "0.3.4"
+backend = "cargo:cargo-cooldown"
+
 [[tools."cargo:maturin"]]
 version = "1.14.1"
 backend = "cargo:maturin"
@@ -151,68 +155,68 @@ checksum = "sha256:8e0ee174f88edb14f207a68430c7a53c2883ed509cdbde9a3a26fffa140fa
 url = "https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-windows-x86_64.exe"
 
 [[tools.just]]
-version = "1.55.1"
+version = "1.56.0"
 backend = "aqua:casey/just"
 
 [tools.just."platforms.linux-arm64"]
-checksum = "sha256:b0ee814c9656427408e339893541e30d9027828686839499b2a2a34dd61ad173"
-url = "https://github.com/casey/just/releases/download/1.55.1/just-1.55.1-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:c8c1d656e9f47569ec1ae2bf8779af2621cdeea6bbbba3b0cacd64f951d25e2b"
+url = "https://github.com/casey/just/releases/download/1.56.0/just-1.56.0-aarch64-unknown-linux-musl.tar.gz"
 
 [tools.just."platforms.linux-arm64-musl"]
-checksum = "sha256:b0ee814c9656427408e339893541e30d9027828686839499b2a2a34dd61ad173"
-url = "https://github.com/casey/just/releases/download/1.55.1/just-1.55.1-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:c8c1d656e9f47569ec1ae2bf8779af2621cdeea6bbbba3b0cacd64f951d25e2b"
+url = "https://github.com/casey/just/releases/download/1.56.0/just-1.56.0-aarch64-unknown-linux-musl.tar.gz"
 
 [tools.just."platforms.linux-x64"]
-checksum = "sha256:b0ef600f0df20d5ae91ae931627c499fc52b477ffe5f5ea7b7b3ec616b16c778"
-url = "https://github.com/casey/just/releases/download/1.55.1/just-1.55.1-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:fa2a8ec1015d9df5330941ade12437488fc40d33f9c9f8cd4eb70a26de11b639"
+url = "https://github.com/casey/just/releases/download/1.56.0/just-1.56.0-x86_64-unknown-linux-musl.tar.gz"
 
 [tools.just."platforms.linux-x64-musl"]
-checksum = "sha256:b0ef600f0df20d5ae91ae931627c499fc52b477ffe5f5ea7b7b3ec616b16c778"
-url = "https://github.com/casey/just/releases/download/1.55.1/just-1.55.1-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:fa2a8ec1015d9df5330941ade12437488fc40d33f9c9f8cd4eb70a26de11b639"
+url = "https://github.com/casey/just/releases/download/1.56.0/just-1.56.0-x86_64-unknown-linux-musl.tar.gz"
 
 [tools.just."platforms.macos-arm64"]
-checksum = "sha256:0225e3899b1b555bc3f4122d0402ba931a6ee697d188c68e4d971468064c78f4"
-url = "https://github.com/casey/just/releases/download/1.55.1/just-1.55.1-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:f35798d4bcdc4db020eef7d2853ad98bbfb97a4d29ee695ba042f18e7fedcc11"
+url = "https://github.com/casey/just/releases/download/1.56.0/just-1.56.0-aarch64-apple-darwin.tar.gz"
 
 [tools.just."platforms.macos-x64"]
-checksum = "sha256:74d7d0afc195df14d8e34636fb9b6a9c7d3d443622478dbe86140ffe41ad9192"
-url = "https://github.com/casey/just/releases/download/1.55.1/just-1.55.1-x86_64-apple-darwin.tar.gz"
+checksum = "sha256:09b35ff6d17023ffae37ce408d1a78a976d9e001cae54b88e238f7f40db9b783"
+url = "https://github.com/casey/just/releases/download/1.56.0/just-1.56.0-x86_64-apple-darwin.tar.gz"
 
 [tools.just."platforms.windows-x64"]
-checksum = "sha256:8106e6c036aea52dd1d5109bdf9357c37ba87a0e0ef1013d7327103942550c79"
-url = "https://github.com/casey/just/releases/download/1.55.1/just-1.55.1-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:804f5b2fe94291d0df38fd8dfc5620afbf3496f8f11c1915b42a87323234f0ba"
+url = "https://github.com/casey/just/releases/download/1.56.0/just-1.56.0-x86_64-pc-windows-msvc.zip"
 
 [[tools.node]]
-version = "26.4.0"
+version = "26.5.0"
 backend = "core:node"
 
 [tools.node."platforms.linux-arm64"]
-checksum = "sha256:773d9ec67266838270ddc105c2548ae8aaff28bc8fe6f34c55d1094043c4165e"
-url = "https://nodejs.org/dist/v26.4.0/node-v26.4.0-linux-arm64.tar.gz"
+checksum = "sha256:308e5fe89a82461ba5a6cf15ff5221b2cdbd7ae87600aa72bb3c3fbdc66412d1"
+url = "https://nodejs.org/dist/v26.5.0/node-v26.5.0-linux-arm64.tar.gz"
 
 [tools.node."platforms.linux-arm64-musl"]
-checksum = "sha256:d2ad8c6e9fa955edf0337078c1d1acda345d36a84986b218cce3cfd1d2d26920"
-url = "https://unofficial-builds.nodejs.org/download/release/v26.4.0/node-v26.4.0-linux-arm64-musl.tar.gz"
+checksum = "sha256:1ab31aef6561191693f366cacd75bbcefa0301e49a18bc05554c21893bbdb490"
+url = "https://unofficial-builds.nodejs.org/download/release/v26.5.0/node-v26.5.0-linux-arm64-musl.tar.gz"
 
 [tools.node."platforms.linux-x64"]
-checksum = "sha256:f221dab30d0e9d544332f06fbee2c62186c97d864d5cac8482dba34f1e38b8dc"
-url = "https://nodejs.org/dist/v26.4.0/node-v26.4.0-linux-x64.tar.gz"
+checksum = "sha256:22b5f47ad6ae78837e4c2b846019965ce1a06ba143de176102294a1bf44fc677"
+url = "https://nodejs.org/dist/v26.5.0/node-v26.5.0-linux-x64.tar.gz"
 
 [tools.node."platforms.linux-x64-musl"]
-checksum = "sha256:554e960f6570bd3d1987f5170d8f2a373a21818581a8d307b697e7839988314a"
-url = "https://unofficial-builds.nodejs.org/download/release/v26.4.0/node-v26.4.0-linux-x64-musl.tar.gz"
+checksum = "sha256:00f1398411a4216c5a6ecaad3b825a0da5ec00e79ee8c173ab65a094d97b9ad8"
+url = "https://unofficial-builds.nodejs.org/download/release/v26.5.0/node-v26.5.0-linux-x64-musl.tar.gz"
 
 [tools.node."platforms.macos-arm64"]
-checksum = "sha256:4f4fbcacf6b1ff1a95deedba7bd7b2d79efecaa53a8ecb0530546dc9063fefbc"
-url = "https://nodejs.org/dist/v26.4.0/node-v26.4.0-darwin-arm64.tar.gz"
+checksum = "sha256:ee920559aaa2391569cff4d737e3b83963430e3a14dedd91bfe0ff53171b5af9"
+url = "https://nodejs.org/dist/v26.5.0/node-v26.5.0-darwin-arm64.tar.gz"
 
 [tools.node."platforms.macos-x64"]
-checksum = "sha256:eb3bdd8dec3ff2558ee10e284da7d2a3865af0cbda21f06d397b0265837c641e"
-url = "https://nodejs.org/dist/v26.4.0/node-v26.4.0-darwin-x64.tar.gz"
+checksum = "sha256:98293394c945a24e64e00b4177bf075ec963ea70b34d1d2e24bd4a71716d334f"
+url = "https://nodejs.org/dist/v26.5.0/node-v26.5.0-darwin-x64.tar.gz"
 
 [tools.node."platforms.windows-x64"]
-checksum = "sha256:5f87d038c6ec442aa46b9126f8ca170acbd2f3b9b9152ca798cf54596a31e214"
-url = "https://nodejs.org/dist/v26.4.0/node-v26.4.0-win-x64.zip"
+checksum = "sha256:d3b2277dbcccfdf24ef6302928f64f484cff1d77a6d3caa3a28f4d20ce9158f6"
+url = "https://nodejs.org/dist/v26.5.0/node-v26.5.0-win-x64.zip"
 
 [[tools.pinact]]
 version = "4.1.0-2"
@@ -254,42 +258,42 @@ url = "https://github.com/suzuki-shunsuke/pinact/releases/download/v4.1.0-2/pina
 provenance = "github-attestations"
 
 [[tools.prek]]
-version = "0.4.6"
+version = "0.4.8"
 backend = "aqua:j178/prek"
 
 [tools.prek."platforms.linux-arm64"]
-checksum = "sha256:f871abfb4f2782722dfd685360b100989c9323195dde641fadf2346a66f8ae51"
-url = "https://github.com/j178/prek/releases/download/v0.4.6/prek-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:379108e6b2db7d49277ad2986446097f442b252ef27ff07bd0cbf716de982eb1"
+url = "https://github.com/j178/prek/releases/download/v0.4.8/prek-aarch64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.prek."platforms.linux-arm64-musl"]
-checksum = "sha256:f871abfb4f2782722dfd685360b100989c9323195dde641fadf2346a66f8ae51"
-url = "https://github.com/j178/prek/releases/download/v0.4.6/prek-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:379108e6b2db7d49277ad2986446097f442b252ef27ff07bd0cbf716de982eb1"
+url = "https://github.com/j178/prek/releases/download/v0.4.8/prek-aarch64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.prek."platforms.linux-x64"]
-checksum = "sha256:820de4920c112e273aedff646ab47439d3320dfd9f2c468d35992a1055ff8afb"
-url = "https://github.com/j178/prek/releases/download/v0.4.6/prek-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:21df9ac0c3d3c047e424be612cc55f5b243546f9ef5cde12ed134752312bdf7b"
+url = "https://github.com/j178/prek/releases/download/v0.4.8/prek-x86_64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.prek."platforms.linux-x64-musl"]
-checksum = "sha256:820de4920c112e273aedff646ab47439d3320dfd9f2c468d35992a1055ff8afb"
-url = "https://github.com/j178/prek/releases/download/v0.4.6/prek-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:21df9ac0c3d3c047e424be612cc55f5b243546f9ef5cde12ed134752312bdf7b"
+url = "https://github.com/j178/prek/releases/download/v0.4.8/prek-x86_64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.prek."platforms.macos-arm64"]
-checksum = "sha256:20495b109cef41f6d7188041e40c9382a830ff04706f7c02f30374a9035210ef"
-url = "https://github.com/j178/prek/releases/download/v0.4.6/prek-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:f0084a9b5ce467c00306b2b329cc929744e2723ed1e7c369929a60ab10196fcc"
+url = "https://github.com/j178/prek/releases/download/v0.4.8/prek-aarch64-apple-darwin.tar.gz"
 provenance = "github-attestations"
 
 [tools.prek."platforms.macos-x64"]
-checksum = "sha256:b65f6a9497762e3dd55bf8ce1ee3b9d4e2014d47dd0cb2e2da9fe46d2bb81a73"
-url = "https://github.com/j178/prek/releases/download/v0.4.6/prek-x86_64-apple-darwin.tar.gz"
+checksum = "sha256:dc402357bc5074791f4f1bcf5ce8622da38272e210ff84a551d3044e8da6f05d"
+url = "https://github.com/j178/prek/releases/download/v0.4.8/prek-x86_64-apple-darwin.tar.gz"
 provenance = "github-attestations"
 
 [tools.prek."platforms.windows-x64"]
-checksum = "sha256:775a6294333821d7af614201f1976b184a66c1036e529586c82e3c2dbf401f88"
-url = "https://github.com/j178/prek/releases/download/v0.4.6/prek-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:7c17dba682812ab24e04a4982dccc228dbf74b695444bd9fa8cbb8c1dc78664c"
+url = "https://github.com/j178/prek/releases/download/v0.4.8/prek-x86_64-pc-windows-msvc.zip"
 provenance = "github-attestations"
 
 [[tools.ripgrep]]
@@ -321,72 +325,72 @@ checksum = "sha256:124510b94b6baa3380d051fdf4650eaa80a302c876d611e9dba0b2e18d874
 url = "https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-pc-windows-msvc.zip"
 
 [[tools.usage]]
-version = "3.5.3"
+version = "3.5.4"
 backend = "aqua:jdx/usage"
 
 [tools.usage."platforms.linux-arm64"]
-checksum = "sha256:c5ee535f65cadca0a0883ce0073095e1a12fc749224a79a13d57e38cbcc88dd4"
-url = "https://github.com/jdx/usage/releases/download/v3.5.3/usage-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:6f826638194da61fc5f631a9ed25930ddc3746e8f9de97f218b36a3a899c196c"
+url = "https://github.com/jdx/usage/releases/download/v3.5.4/usage-aarch64-unknown-linux-musl.tar.gz"
 
 [tools.usage."platforms.linux-arm64-musl"]
-checksum = "sha256:c5ee535f65cadca0a0883ce0073095e1a12fc749224a79a13d57e38cbcc88dd4"
-url = "https://github.com/jdx/usage/releases/download/v3.5.3/usage-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:6f826638194da61fc5f631a9ed25930ddc3746e8f9de97f218b36a3a899c196c"
+url = "https://github.com/jdx/usage/releases/download/v3.5.4/usage-aarch64-unknown-linux-musl.tar.gz"
 
 [tools.usage."platforms.linux-x64"]
-checksum = "sha256:678114d182273bc8a1316f3528f1f8ded047ed56b41b822656de7046e16a6deb"
-url = "https://github.com/jdx/usage/releases/download/v3.5.3/usage-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:642e6eb31e58db1f3cda206d0484685950a224825f5ed22eb9cc9a6d6ddbbb46"
+url = "https://github.com/jdx/usage/releases/download/v3.5.4/usage-x86_64-unknown-linux-musl.tar.gz"
 
 [tools.usage."platforms.linux-x64-musl"]
-checksum = "sha256:678114d182273bc8a1316f3528f1f8ded047ed56b41b822656de7046e16a6deb"
-url = "https://github.com/jdx/usage/releases/download/v3.5.3/usage-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:642e6eb31e58db1f3cda206d0484685950a224825f5ed22eb9cc9a6d6ddbbb46"
+url = "https://github.com/jdx/usage/releases/download/v3.5.4/usage-x86_64-unknown-linux-musl.tar.gz"
 
 [tools.usage."platforms.macos-arm64"]
-checksum = "sha256:dc6628015c420f0e0384c95999266ca74dc19de8279b4d54667844286cf8fa13"
-url = "https://github.com/jdx/usage/releases/download/v3.5.3/usage-universal-apple-darwin.tar.gz"
+checksum = "sha256:25b0fff15f030f3c08caa960174b3fb9f85be601824744424a7409dcdf1ee37a"
+url = "https://github.com/jdx/usage/releases/download/v3.5.4/usage-universal-apple-darwin.tar.gz"
 
 [tools.usage."platforms.macos-x64"]
-checksum = "sha256:dc6628015c420f0e0384c95999266ca74dc19de8279b4d54667844286cf8fa13"
-url = "https://github.com/jdx/usage/releases/download/v3.5.3/usage-universal-apple-darwin.tar.gz"
+checksum = "sha256:25b0fff15f030f3c08caa960174b3fb9f85be601824744424a7409dcdf1ee37a"
+url = "https://github.com/jdx/usage/releases/download/v3.5.4/usage-universal-apple-darwin.tar.gz"
 
 [tools.usage."platforms.windows-x64"]
-checksum = "sha256:3cd7995171854518873f84bf60be17c8e331cad1ca180e03911fac414a7a6372"
-url = "https://github.com/jdx/usage/releases/download/v3.5.3/usage-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:61dbc0aedc54696c6201d1e8f107348b30706a47e23a44c08280c3c7f63b6804"
+url = "https://github.com/jdx/usage/releases/download/v3.5.4/usage-x86_64-pc-windows-msvc.zip"
 
 [[tools.uv]]
-version = "0.11.26"
+version = "0.11.28"
 backend = "aqua:astral-sh/uv"
 
 [tools.uv."platforms.linux-arm64"]
-checksum = "sha256:47418cfdb34b1ca42e503da72631ac8c475602e2411ac6c39aa84c2373fe6324"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:da10cdfa7d92212b7acb62021a0fd61bcf8580c58c3632ec915d10c3a1a7906b"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.28/uv-aarch64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-arm64-musl"]
-checksum = "sha256:47418cfdb34b1ca42e503da72631ac8c475602e2411ac6c39aa84c2373fe6324"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:da10cdfa7d92212b7acb62021a0fd61bcf8580c58c3632ec915d10c3a1a7906b"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.28/uv-aarch64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-x64"]
-checksum = "sha256:62bf1a53501adf4083224b69b33737450ac516935f5a5e483e9dfaf2665084de"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:f02146b371c35c287d860f003ece7345c86e358a3fd70a9b63700cd141ee7fb4"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.28/uv-x86_64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-x64-musl"]
-checksum = "sha256:62bf1a53501adf4083224b69b33737450ac516935f5a5e483e9dfaf2665084de"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:f02146b371c35c287d860f003ece7345c86e358a3fd70a9b63700cd141ee7fb4"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.28/uv-x86_64-unknown-linux-musl.tar.gz"
 provenance = "github-attestations"
 
 [tools.uv."platforms.macos-arm64"]
-checksum = "sha256:8f7fbf1708399b921857bce71e1d60f0d3ccf52a30caebc1c1a2f175dce13ab6"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:33540eb7c883ab857eff79bd5ac2aa31fe27b595abecb4a9c003a2c998447232"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.28/uv-aarch64-apple-darwin.tar.gz"
 provenance = "github-attestations"
 
 [tools.uv."platforms.macos-x64"]
-checksum = "sha256:922b460202707dd5f4ccacbadbe7f6a546cc46e82a99bf50ca99a7977a78eddd"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-x86_64-apple-darwin.tar.gz"
+checksum = "sha256:2ad79983127ffca7d77b77ce6a24278d7e4f7b817a1acf72fea5f8124b4aac5e"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.28/uv-x86_64-apple-darwin.tar.gz"
 provenance = "github-attestations"
 
 [tools.uv."platforms.windows-x64"]
-checksum = "sha256:4e1278ede866be6c0bf32d2f466cc6de7a9fb399ecf20c9ce2d186e52424be47"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:0a23463216d09c6a72ff80ef5dc5a795f07dc1575cb84d24596c2f124a441b7b"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.28/uv-x86_64-pc-windows-msvc.zip"
 provenance = "github-attestations"
