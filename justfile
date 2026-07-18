@@ -16,7 +16,7 @@ help:
 
 # Upgrade all project dependencies
 [group("misc")]
-upgrade-all: upgrade-toolchain prek-hooks-update gha_update
+upgrade-all: upgrade-toolchain upgrade-python-dependencies upgrade-rust-dependencies prek-hooks-update gha_update
 
 # Prepare a new release (calculate version, create branch, update changelog and manifests)
 [group("misc")]
@@ -74,6 +74,16 @@ upgrade-toolchain:
 [group("dev")]
 build:
     uv run maturin develop
+
+# Upgrade Python dependencies
+[group("dev")]
+upgrade-python-dependencies:
+    uv lock --upgrade
+
+# Upgrade Rust dependencies
+[group("dev")]
+upgrade-rust-dependencies:
+    cargo cooldown update
 
 #
 # Static analysis recipes
