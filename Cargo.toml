@@ -9,6 +9,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 arrow = { version = "59.0.0", features = ["ffi"] }
-calamine = { version = "0.35.0", features = ["chrono"] }
+calamine = { version = "0.36.0", features = ["chrono"] }
 pyo3 = { version = "0.29.0", features = ["abi3-py312"] }
 chrono = "0.4.45"
