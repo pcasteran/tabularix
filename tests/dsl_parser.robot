@@ -124,6 +124,13 @@ Verify Parsing Strings With Semicolons And Single Quotes
     ${pat_single_quote}=    Evaluate    tabularix.parse_pattern_1d("[v: 'item']")    modules=tabularix
     Should Be Equal As Strings    ${pat_single_quote.elements[0].value}    item
 
+Verify Parsing Strings With Escaped Quotes
+    [Documentation]    Test string literals containing escaped double quotes.
+    ${pat_escaped}=    Evaluate    tabularix.parse_pattern_1d('[v: "hello \\\\\"world\\\\\""]')    modules=tabularix
+    Should Be Equal As Strings    ${pat_escaped.elements[0].value}    hello "world"
+    ${str_escaped}=    Evaluate    str($pat_escaped)
+    Should Be Equal As Strings    ${str_escaped}    [v: "hello \\"world\\""]
+
 Verify Syntax Error Diagnostics
     [Documentation]    Test syntax errors like missing brackets, missing row parentheses, and extra trailing tokens.
     Run Keyword And Expect Error    *Parse error at line 1, column 4: Expected token of type STRING, got RBRACKET*

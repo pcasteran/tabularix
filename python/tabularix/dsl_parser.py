@@ -5,7 +5,7 @@ from typing import Any
 
 TOKEN_SPEC = [
     ("QUANTIFIER", r"\+\??|\*\??|\?\??|\{\d+,\d+\}\??|\{\d+,\}\??|\{\d+\}\??"),
-    ("STRING", r'"[^"]*"|\'[^\']*\''),
+    ("STRING", r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\''),
     ("LBRACKET", r"\["),
     ("RBRACKET", r"\]"),
     ("COLON", r":"),
@@ -17,6 +17,8 @@ TOKEN_SPEC = [
     ("WS", r"\s+"),
     ("MISMATCH", r"."),
 ]
+
+TOKEN_REGEX = re.compile("|".join(f"(?P<{name}>{pattern})" for name, pattern in TOKEN_SPEC))
 
 
 class Token:
@@ -67,8 +69,7 @@ class ParseError(ValueError):
 def lex(text: str) -> list[Token]:
     """Tokenizes a Layex DSL pattern string into a sequence of tokens."""
     tokens = []
-    tok_regex = "|".join(f"(?P<{name}>{pattern})" for name, pattern in TOKEN_SPEC)
-    for mo in re.finditer(tok_regex, text):
+    for mo in TOKEN_REGEX.finditer(text):
         kind = mo.lastgroup
         if kind is None:
             continue
@@ -238,7 +239,13 @@ class Parser:
         if next_tok and next_tok.type == "COLON":
             self.consume("COLON")
             val_tok = self.consume("STRING")
-            val_str = val_tok.value[1:-1]  # Strip quotes
+            raw_val = val_tok.value
+            quote_char = raw_val[0]
+            inner_val = raw_val[1:-1]
+            if quote_char == '"':
+                val_str = inner_val.replace(r"\"", '"').replace(r"\\", "\\")
+            else:
+                val_str = inner_val.replace(r"\'", "'").replace(r"\\", "\\")
 
             if ident in ("value", "v"):
                 rule = CellRule_cls("exact", val_str)
