@@ -61,6 +61,9 @@
 
   "containerEnv": {
     // Trust the mise config in the repository root.
-    "MISE_TRUSTED_CONFIG_PATHS": "/workspaces"
+    "MISE_TRUSTED_CONFIG_PATHS": "/workspaces",
+    
+    // Direct Robot Framework output to the results directory by default.
+    "ROBOT_OPTIONS": "-d results"
   }
 }

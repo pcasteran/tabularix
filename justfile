@@ -125,7 +125,7 @@ unit-test:
 # Run the Robot Framework acceptance tests
 [group("test")]
 acceptance-test: build
-    uv run robot -d results tests/
+    uv run robot tests/
 
 #
 # Documentation recipes
