@@ -5,6 +5,9 @@ default: help
 
 set dotenv-load
 
+# Set default options for Robot Framework if not already set by environment
+export ROBOT_OPTIONS := env("ROBOT_OPTIONS", "-d results")
+
 #
 # Miscellaneous recipes
 #
