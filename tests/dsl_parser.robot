@@ -88,9 +88,9 @@ Verify Parsing Repetition Range Quantifiers
     Should Be Equal    ${rule_unbounded.elements[0].max}    ${None}
 
 Verify Parsing 1D Pattern Grouping and Nesting
-    [Documentation]    Test parsing comma-separated elements and nested sub-groups.
+    [Documentation]    Test parsing whitespace-separated elements and nested sub-groups.
     ${pat}=    Evaluate
-    ...    tabularix.parse_pattern_1d('[v: "Category"], ([r: "^Q[1-4]$"], [e]?){4}')
+    ...    tabularix.parse_pattern_1d('[v: "Category"] ([r: "^Q[1-4]$"] [e]?){4}')
     ...    modules=tabularix
     Should Be Equal As Integers    ${pat.elements.__len__()}    2
     Should Be Equal As Strings    ${pat.elements[0].rule_type}    exact
@@ -100,9 +100,9 @@ Verify Parsing 1D Pattern Grouping and Nesting
     Should Be Equal As Integers    ${nested.elements.__len__()}    2
 
 Verify Parsing 2D Patterns
-    [Documentation]    Test parsing 2D semicolon-separated grid patterns.
+    [Documentation]    Test parsing 2D grid patterns separated by whitespace.
     ${grid}=    Evaluate
-    ...    tabularix.parse_pattern_2d('([v: "Region"], [r: "^Q[1-4]$"]{4}) ; ([r: "^(?!Total).*$"], [ne]{4})+')
+    ...    tabularix.parse_pattern_2d('([v: "Region"] [r: "^Q[1-4]$"]{4}) ([r: "^(?!Total).*$"] [ne]{4})+')
     ...    modules=tabularix
     Should Be Equal As Integers    ${grid.patterns.__len__()}    2
     Should Be Equal As Strings    ${grid.patterns[0].elements[0].value}    Region
@@ -111,12 +111,12 @@ Verify Parsing 2D Patterns
 
 Verify Parsing Multiline 2D Patterns
     [Documentation]    Test parsing multiline 2D patterns containing newlines.
-    VAR    ${multiline}=    ([v: "Region"], [r: "^Q[1-4]$"]{4})\n;\n([r: "^(?!Total).*$"], [ne]{4})+
+    VAR    ${multiline}=    ([v: "Region"] [r: "^Q[1-4]$"]{4})\n([r: "^(?!Total).*$"] [ne]{4})+
     ${grid}=    Evaluate    tabularix.parse_pattern_2d('''${multiline}''')    modules=tabularix
     Should Be Equal As Integers    ${grid.patterns.__len__()}    2
     Should Be Equal As Strings    ${grid.patterns[0].elements[0].value}    Region
 
-Verify Parsing Strings With Semicolons And Single Quotes
+Verify Parsing Strings With Semicolons and Single Quotes
     [Documentation]    Test string literals containing semicolons or single quotes.
     ${pat_semicolon}=    Evaluate    tabularix.parse_pattern_1d('[v: "a;b"]')    modules=tabularix
     Should Be Equal As Strings    ${pat_semicolon.elements[0].value}    a;b
@@ -131,6 +131,16 @@ Verify Parsing Strings With Escaped Quotes
     ${str_escaped}=    Evaluate    str($pat_escaped)
     Should Be Equal As Strings    ${str_escaped}    [v: "hello \\"world\\""]
 
+Verify Parsing With Tab and CR Whitespace
+    [Documentation]    Verify parsing strings separated by tabs and carriage returns.
+    ${pat_tab}=    Evaluate    tabularix.parse_pattern_1d('[v:\t"Hello"]\t[e]')    modules=tabularix
+    Should Be Equal As Strings    ${pat_tab.elements[0].value}    Hello
+    Should Be Equal As Strings    ${pat_tab.elements[1].rule_type}    empty
+
+    ${pat_cr}=    Evaluate    tabularix.parse_pattern_1d('''[v:\r\n'A']\r\n[ne]''')    modules=tabularix
+    Should Be Equal As Strings    ${pat_cr.elements[0].value}    A
+    Should Be Equal As Strings    ${pat_cr.elements[1].rule_type}    non_empty
+
 Verify Syntax Error Diagnostics
     [Documentation]    Test syntax errors like missing brackets, missing row parentheses, and extra trailing tokens.
     Run Keyword And Expect Error    *Parse error at line 1, column 4: Expected token of type STRING, got RBRACKET*
@@ -138,7 +148,7 @@ Verify Syntax Error Diagnostics
 
     # 2D pattern missing parenthesis around row
     Run Keyword And Expect Error    *Each row in a 2D pattern must be wrapped in parentheses*
-    ...    Evaluate    tabularix.parse_pattern_2d('[v: "A"] ; ([v: "B"])')    modules=tabularix
+    ...    Evaluate    tabularix.parse_pattern_2d('[v: "A"] ([v: "B"])')    modules=tabularix
 
     # Lazy exact quantifier rejected
     Run Keyword And Expect Error    *Exact count repetition '{3}?' cannot be lazy*
@@ -156,27 +166,35 @@ Verify Rule Identifier Error Diagnostics
 
     # Unexpected token after 2D pattern
     Run Keyword And Expect Error    *Unexpected token 'extra'*
-    ...    Evaluate    tabularix.parse_pattern_2d('([v: "A"]) ; ([v: "B"]) extra')    modules=tabularix
+    ...    Evaluate    tabularix.parse_pattern_2d('([v: "A"]) ([v: "B"]) extra')    modules=tabularix
+
+    # Old comma syntax raises mismatch unexpected character
+    Run Keyword And Expect Error    *Parse error*Unexpected character ','*
+    ...    Evaluate    tabularix.parse_pattern_1d('[v: "A"], [v: "B"]')    modules=tabularix
+
+    # Old semicolon syntax raises mismatch unexpected character
+    Run Keyword And Expect Error    *Parse error*Unexpected character ';'*
+    ...    Evaluate    tabularix.parse_pattern_2d('([v: "A"]) ; ([v: "B"])')    modules=tabularix
 
 Verify Stringification Round-Trip
     [Documentation]    Verify str(parsed) outputs the correct shorthand DSL representation.
-    VAR    ${dsl_1d}=    [v: "Category"], ([r: "^Q[1-4]$"], [e]?){4}
+    VAR    ${dsl_1d}=    [v: "Category"] ([r: "^Q[1-4]$"] [e]?){4}
     ${pat_1d}=    Evaluate    tabularix.parse_pattern_1d('''${dsl_1d}''')    modules=tabularix
     ${str_1d}=    Evaluate    str($pat_1d)
     Should Be Equal As Strings    ${str_1d}    ${dsl_1d}
 
-    VAR    ${dsl_2d}=    ([v: "Region"], [r: "^Q[1-4]$"]{4}) ; ([r: "^(?!Total).*$"], [ne]{4})+
+    VAR    ${dsl_2d}=    ([v: "Region"] [r: "^Q[1-4]$"]{4}) ([r: "^(?!Total).*$"] [ne]{4})+
     ${pat_2d}=    Evaluate    tabularix.parse_pattern_2d('''${dsl_2d}''')    modules=tabularix
     ${str_2d}=    Evaluate    str($pat_2d)
     Should Be Equal As Strings    ${str_2d}    ${dsl_2d}
 
 Verify Debug Repr Expression
     [Documentation]    Verify repr(parsed) outputs valid python constructor expressions.
-    ${pat_1d}=    Evaluate    tabularix.parse_pattern_1d('[v: "Category"], [e]?')    modules=tabularix
+    ${pat_1d}=    Evaluate    tabularix.parse_pattern_1d('[v: "Category"] [e]?')    modules=tabularix
     ${repr_1d}=    Evaluate    repr($pat_1d)
     Should Be Equal As Strings    ${repr_1d}    RangePattern1D(value('Category'), empty().optional(greedy=True))
 
-    ${pat_2d}=    Evaluate    tabularix.parse_pattern_2d('([v: "A"]) ; ([v: "B"])+')    modules=tabularix
+    ${pat_2d}=    Evaluate    tabularix.parse_pattern_2d('([v: "A"]) ([v: "B"])+')    modules=tabularix
     ${repr_2d}=    Evaluate    repr($pat_2d)
     Should Be Equal As Strings
     ...    ${repr_2d}
@@ -186,9 +204,9 @@ Verify High Level Table Extraction With Parsed DSL Patterns
     [Documentation]    Verify extract_table_with_header_and_data using DSL parsed 1D and 2D patterns.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.get_sheet("complex")
-    ${header}=    Evaluate    tabularix.parse_pattern_1d('[v: "Region"], [r: "^Q[1-4]$"]{4}')    modules=tabularix
+    ${header}=    Evaluate    tabularix.parse_pattern_1d('[v: "Region"] [r: "^Q[1-4]$"]{4}')    modules=tabularix
     ${data}=    Evaluate
-    ...    tabularix.parse_pattern_2d('([r: "^(?!Total).*$"], [ne]{4})+')
+    ...    tabularix.parse_pattern_2d('([r: "^(?!Total).*$"] [ne]{4})+')
     ...    modules=tabularix
     ${table}=    Evaluate    tabularix.extract_table_with_header_and_data($sheet, $header, $data)    modules=tabularix
     ${cols}=    Evaluate    $table.columns

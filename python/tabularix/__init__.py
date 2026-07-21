@@ -205,7 +205,7 @@ class RangePattern1D:
         return RangeMatcher([rust_p], outer_direction, direction)
 
     def _to_dsl(self, wrap: bool = False) -> str:
-        joined = ", ".join(
+        joined = " ".join(
             elem._to_dsl(wrap=False) if isinstance(elem, RangePattern1D) else str(elem) for elem in self.elements
         )
         has_card = self.min != 1 or (self.max is not None and self.max != 1)
@@ -239,7 +239,7 @@ class RangePattern2D:
 
     def __str__(self) -> str:
         """Returns the shorthand DSL string representation of this 2D pattern."""
-        return " ; ".join(pat._to_dsl(wrap=True) for pat in self.patterns)
+        return " ".join(pat._to_dsl(wrap=True) for pat in self.patterns)
 
     def __repr__(self) -> str:
         """Returns a valid Python expression representing this 2D pattern."""

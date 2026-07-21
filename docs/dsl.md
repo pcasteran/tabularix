@@ -54,24 +54,24 @@ You can control how many times a cell rule or group repeats by appending standar
 
 For complex recurring sequences of cells, you can group multiple rules together using parentheses `(...)` and apply quantifiers to the entire group:
 
-- **Syntax**: `rule1, (rule2, rule3){min,max}`
-- **Example**: `[v: "Category"], ([r: "^Q[1-4]$"], [e]?){4}`
+- **Syntax**: `rule1 (rule2 rule3){min,max}`
+- **Example**: `[v: "Category"] ([r: "^Q[1-4]$"] [e]?){4}`
     - This matches an exact cell `"Category"` followed by 4 sequences of a quarter regex cell and an optional empty cell.
 
 ---
 
 ## 🏁 2D Grid Patterns
 
-A 2D layout pattern (`RangePattern2D`) is defined in a single string by separating individual row patterns with a **semicolon (`;`)**.
+A 2D layout pattern (`RangePattern2D`) is defined in a single string as a sequence of parenthesized row patterns.
 
 !!! important "Parenthesized Row Requirement"
 
     To ensure clarity and avoid syntax ambiguity (such as whether a quantifier belongs to the last cell rule or the entire row), **every row in a 2D pattern must be wrapped in parentheses**.
 
-- **Syntax**: `(row_pattern1) quantifier? ; (row_pattern2) quantifier?`
+- **Syntax**: `(row_pattern1) quantifier? (row_pattern2) quantifier?`
 - **Example**:
     ```text
-    ([v: "Region"], [r: "^Q[1-4]$"]{4}) ; ([r: "^(?!Total).*$"], [ne]{4})+
+    ([v: "Region"] [r: "^Q[1-4]$"]{4}) ([r: "^(?!Total).*$"] [ne]{4})+
     ```
     - **Row 1**: A header row containing the exact string `"Region"` followed by 4 quarters.
     - **Row 2**: One or more data rows where the first cell does not start with `"Total"` followed by 4 non-empty cells.
@@ -80,8 +80,8 @@ Newlines (`\n`, `\r`) outside of quoted strings are treated as whitespace and ig
 
 ```yaml
 pattern: |
-    ([v: "Region"], [r: "^Q[1-4]$"]{4}) ;
-    ([r: "^(?!Total).*$"], [ne]{4})+
+    ([v: "Region"] [r: "^Q[1-4]$"]{4})
+    ([r: "^(?!Total).*$"] [ne]{4})+
 ```
 
 ---
@@ -94,10 +94,10 @@ Tabularix exports two simple parser functions to compile shorthand strings into 
 from tabularix import parse_pattern_1d, parse_pattern_2d
 
 # Compile a 1D row pattern
-header_pattern = parse_pattern_1d('[v: "Category"], [e]?')
+header_pattern = parse_pattern_1d('[v: "Category"] [e]?')
 
 # Compile a 2D grid pattern
-data_pattern = parse_pattern_2d('([v: "Region"]) ; ([ne])+')
+data_pattern = parse_pattern_2d('([v: "Region"]) ([ne])+')
 ```
 
 These parsed patterns work natively with the high-level table extraction functions:
@@ -108,8 +108,8 @@ from tabularix import extract_table_with_header_and_data, load_workbook
 wb = load_workbook("data.xlsx")
 sheet = wb.get_sheet("Sheet1")
 
-header_pattern = parse_pattern_1d('[v: "Region"], [r: "^Q[1-4]$"]{4}')
-data_pattern = parse_pattern_2d('([r: "^(?!Total).*$"], [ne]{4})+')
+header_pattern = parse_pattern_1d('[v: "Region"] [r: "^Q[1-4]$"]{4}')
+data_pattern = parse_pattern_2d('([r: "^(?!Total).*$"] [ne]{4})+')
 
 table = extract_table_with_header_and_data(
     sheet,
@@ -131,7 +131,7 @@ Calling `str(pattern)` produces the compact short-form DSL string, which is perf
 ```python
 pattern = group(value("Category"), empty().optional())
 print(str(pattern))
-# Output: [v: "Category"], [e]?
+# Output: [v: "Category"] [e]?
 ```
 
 ### `repr()` (Python Constructor Code)
@@ -139,7 +139,7 @@ print(str(pattern))
 Calling `repr(pattern)` returns a valid, copy-pasteable Python constructor expression for debugging:
 
 ```python
-pattern = parse_pattern_1d('[v: "Category"], [e]?')
+pattern = parse_pattern_1d('[v: "Category"] [e]?')
 print(repr(pattern))
 # Output: RangePattern1D(value('Category'), empty().optional(greedy=True))
 ```

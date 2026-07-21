@@ -11,8 +11,6 @@ TOKEN_SPEC = [
     ("COLON", r":"),
     ("LPAREN", r"\("),
     ("RPAREN", r"\)"),
-    ("COMMA", r","),
-    ("SEMICOLON", r";"),
     ("IDENTIFIER", r"[a-zA-Z_][a-zA-Z0-9_]*"),
     ("WS", r"\s+"),
     ("MISMATCH", r"."),
@@ -149,14 +147,11 @@ class Parser:
         return tok
 
     def parse_pattern_2d(self) -> Any:
-        """Parses a 2D pattern sequence of parenthesized rows separated by semicolons."""
+        """Parses a 2D pattern sequence of parenthesized rows."""
         _, _, RangePattern2D_cls = _get_types()
         rows = []
         rows.append(self.parse_parenthesized_row())
-        while (tok := self.peek()) and tok.type == "SEMICOLON":
-            self.consume("SEMICOLON")
-            if self.peek() is None:  # Optional trailing semicolon
-                break
+        while (tok := self.peek()) and tok.type == "LPAREN":
             rows.append(self.parse_parenthesized_row())
 
         last_tok = self.peek()
@@ -187,12 +182,11 @@ class Parser:
         return pattern_1d
 
     def parse_pattern_1d(self) -> Any:
-        """Parses a 1D sequence of elements separated by commas."""
+        """Parses a 1D sequence of elements."""
         _, RangePattern1D_cls, _ = _get_types()
         elements = []
         elements.append(self.parse_element())
-        while (tok := self.peek()) and tok.type == "COMMA":
-            self.consume("COMMA")
+        while (tok := self.peek()) and tok.type in ("LBRACKET", "LPAREN"):
             elements.append(self.parse_element())
         return RangePattern1D_cls(*elements)
 

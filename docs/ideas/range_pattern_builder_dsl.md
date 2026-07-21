@@ -49,7 +49,7 @@ We have chosen to implement the DSL parsing layer entirely in the **Python layer
         - Cell states: `[empty]` / `[e]`, `[non_empty]` / `[ne]`, `[any]` / `[a]`
     - Suffix quantifiers: `+`, `+?`, `*`, `*?`, `?`, `??`, `{n}`, `{min,max}`, `{min,max}?`.
     - Parenthesized groups `(...)` for nested structures.
-    - Semicolon-delimited rows for 2D patterns, requiring each row to be parenthesized: `(row1) ; (row2)+`.
+    - Contiguous rows for 2D patterns, requiring each row to be parenthesized: `(row1) (row2)+`.
 2. **Public Helper Entrypoints**:
     - `parse_pattern_1d(pattern_str: str) -> RangePattern1D`
     - `parse_pattern_2d(pattern_str: str) -> RangePattern2D`
