@@ -585,3 +585,31 @@ def extract_table_between_header_and_footer(
         ValueError: If the header pattern or footer pattern cannot be found.
     """
     ...
+
+def parse_pattern_1d(pattern_str: str) -> RangePattern1D:
+    """Parses a 1D pattern shorthand DSL string into a RangePattern1D instance.
+
+    Args:
+        pattern_str: The shorthand Layex DSL string (e.g. '[v: "Category"], [e]?').
+
+    Returns:
+        A compiled RangePattern1D instance.
+
+    Raises:
+        ParseError: If syntax or token errors are encountered during parsing.
+    """
+    ...
+
+def parse_pattern_2d(pattern_str: str) -> RangePattern2D:
+    """Parses a 2D pattern shorthand DSL string into a RangePattern2D instance.
+
+    Args:
+        pattern_str: The shorthand Layex DSL string (e.g. '([v: "Header"]) ; ([ne])+').
+
+    Returns:
+        A compiled RangePattern2D instance.
+
+    Raises:
+        ParseError: If syntax or token errors are encountered during parsing.
+    """
+    ...

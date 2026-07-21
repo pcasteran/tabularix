@@ -41,13 +41,13 @@ We have chosen to implement the DSL parsing layer entirely in the **Python layer
 
 ### In Scope
 
-1. **Parser & Lexer (`python/tabularix/parser.py`)**:
+1. **Parser & Lexer (`python/tabularix/dsl_parser.py`)**:
     - Zero-dependency recursive-descent lexer and parser.
     - Grammars for cell rules inside `[...]`:
         - Literal matches: `[value: "Text"]` or `[v: "Text"]`
         - Regex matches: `[regex: "^Q[1-4]$"]` or `[r: "^Q[1-4]$"]`
         - Cell states: `[empty]` / `[e]`, `[non_empty]` / `[ne]`, `[any]` / `[a]`
-    - Suffix quantifiers: `+`, `+?`, `*`, `*?`, `?`, `??`, `{n}`, `{n}?`, `{min,max}`, `{min,max}?`.
+    - Suffix quantifiers: `+`, `+?`, `*`, `*?`, `?`, `??`, `{n}`, `{min,max}`, `{min,max}?`.
     - Parenthesized groups `(...)` for nested structures.
     - Semicolon-delimited rows for 2D patterns, requiring each row to be parenthesized: `(row1) ; (row2)+`.
 2. **Public Helper Entrypoints**:
@@ -69,7 +69,7 @@ We have chosen to implement the DSL parsing layer entirely in the **Python layer
 
 ## Proposed Technical Changes
 
-### 1. `python/tabularix/parser.py` [NEW]
+### 1. `python/tabularix/dsl_parser.py` [NEW]
 
 Implement the custom lexer and parser.
 

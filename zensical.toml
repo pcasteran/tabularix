@@ -48,6 +48,7 @@ nav = [
   { "Home" = "index.md" },
   { "Quickstart" = "quickstart.md" },
   { "Range Matching" = "matching_ranges.md" },
+  { "Layout Expressions (DSL)" = "dsl.md" },
   { "Table Extraction" = "table_extraction.md" },
   { "API Reference" = "api.md" },
   { "Tutorials" = [

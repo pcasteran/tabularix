@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal
 
+from .dsl_parser import parse_pattern_1d, parse_pattern_2d
+
 if TYPE_CHECKING:
     import pyarrow
 
@@ -20,6 +22,40 @@ from ._tabularix import (  # ty: ignore[unresolved-import]
 
 Direction = Literal["LR", "RL", "TB", "BT"]
 RuleType = Literal["exact", "regex", "empty", "non_empty", "any"]
+
+
+def _format_cardinality_dsl(min_val: int, max_val: int | None, greedy: bool) -> str:
+    norm_max = min_val if max_val == -1 else max_val
+    if min_val == 1 and norm_max == 1:
+        return ""
+    if min_val == 1 and norm_max is None:
+        return "+" if greedy else "+?"
+    if min_val == 0 and norm_max is None:
+        return "*" if greedy else "*?"
+    if min_val == 0 and norm_max == 1:
+        return "?" if greedy else "??"
+    suffix = "?" if not greedy else ""
+    if min_val == norm_max:
+        return f"{{{min_val}}}{suffix}"
+    if norm_max is None:
+        return f"{{{min_val},}}{suffix}"
+    return f"{{{min_val},{norm_max}}}{suffix}"
+
+
+def _format_cardinality_repr(min_val: int, max_val: int | None, greedy: bool) -> str:
+    norm_max = min_val if max_val == -1 else max_val
+    if min_val == 1 and norm_max == 1:
+        return ""
+    if min_val == 1 and norm_max is None:
+        return f".one_or_more(greedy={greedy})"
+    if min_val == 0 and norm_max is None:
+        return f".zero_or_more(greedy={greedy})"
+    if min_val == 0 and norm_max == 1:
+        return f".optional(greedy={greedy})"
+    if norm_max == min_val:
+        return f".repeat({min_val}, greedy={greedy})"
+    max_arg = "None" if norm_max is None else norm_max
+    return f".repeat({min_val}, {max_arg}, greedy={greedy})"
 
 
 def _apply_cardinality(
@@ -62,6 +98,38 @@ class CellRule:
 
     def optional(self, greedy: bool = True) -> CellRule:
         return self.repeat(0, 1, greedy)
+
+    def __str__(self) -> str:
+        """Returns the shorthand DSL string representation of this rule."""
+        card = _format_cardinality_dsl(self.min, self.max, self.greedy)
+        if self.rule_type == "exact":
+            escaped_val = str(self.value).replace('"', '\\"')
+            return f'[v: "{escaped_val}"]{card}'
+        elif self.rule_type == "regex":
+            escaped_val = str(self.value).replace('"', '\\"')
+            return f'[r: "{escaped_val}"]{card}'
+        elif self.rule_type == "empty":
+            return f"[e]{card}"
+        elif self.rule_type == "non_empty":
+            return f"[ne]{card}"
+        elif self.rule_type == "any":
+            return f"[a]{card}"
+        return f"[{self.rule_type}]{card}"
+
+    def __repr__(self) -> str:
+        """Returns a valid Python expression representing this rule."""
+        card = _format_cardinality_repr(self.min, self.max, self.greedy)
+        if self.rule_type == "exact":
+            return f"value({self.value!r}){card}"
+        elif self.rule_type == "regex":
+            return f"regex({self.value!r}){card}"
+        elif self.rule_type == "empty":
+            return f"empty(){card}"
+        elif self.rule_type == "non_empty":
+            return f"non_empty(){card}"
+        elif self.rule_type == "any":
+            return f"any(){card}"
+        return f"CellRule({self.rule_type!r}, {self.value!r}){card}"
 
 
 class RangePattern1D:
@@ -136,6 +204,26 @@ class RangePattern1D:
         rust_p = self._compile_rust_pattern()
         return RangeMatcher([rust_p], outer_direction, direction)
 
+    def _to_dsl(self, wrap: bool = False) -> str:
+        joined = ", ".join(
+            elem._to_dsl(wrap=False) if isinstance(elem, RangePattern1D) else str(elem) for elem in self.elements
+        )
+        has_card = self.min != 1 or (self.max is not None and self.max != 1)
+        if wrap or has_card:
+            card = _format_cardinality_dsl(self.min, self.max, self.greedy)
+            return f"({joined}){card}"
+        return joined
+
+    def __str__(self) -> str:
+        """Returns the shorthand DSL string representation of this 1D pattern."""
+        return self._to_dsl(wrap=False)
+
+    def __repr__(self) -> str:
+        """Returns a valid Python expression representing this 1D pattern."""
+        elements_repr = ", ".join(repr(elem) for elem in self.elements)
+        card = _format_cardinality_repr(self.min, self.max, self.greedy)
+        return f"RangePattern1D({elements_repr}){card}"
+
 
 class RangePattern2D:
     """A direction-agnostic two-dimensional pattern consisting of a sequence of one-dimensional patterns."""
@@ -148,6 +236,15 @@ class RangePattern2D:
         """Converts this 2D pattern to a RangeMatcher bound to the specified scanning directions."""
         rust_patterns = [pat._compile_rust_pattern() for pat in self.patterns]
         return RangeMatcher(rust_patterns, outer_direction, inner_direction)
+
+    def __str__(self) -> str:
+        """Returns the shorthand DSL string representation of this 2D pattern."""
+        return " ; ".join(pat._to_dsl(wrap=True) for pat in self.patterns)
+
+    def __repr__(self) -> str:
+        """Returns a valid Python expression representing this 2D pattern."""
+        patterns_repr = ", ".join(repr(pat) for pat in self.patterns)
+        return f"RangePattern2D({patterns_repr})"
 
 
 def value(val: str) -> CellRule:
@@ -486,4 +583,6 @@ __all__ = [
     "grid",
     "extract_table_with_header_and_data",
     "extract_table_between_header_and_footer",
+    "parse_pattern_1d",
+    "parse_pattern_2d",
 ]

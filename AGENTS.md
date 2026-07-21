@@ -8,3 +8,4 @@
     1. running `just prek` to perform static analysis of the codebase
     2. running `just unit-test` to run the unit tests
     3. running `just acceptance-test` to run the acceptance tests
+- Always use Zensical admonitions (e.g., `!!! important "Title"` or `!!! note "Title"`) instead of GitHub-style blockquote alerts (`> [!IMPORTANT]`) when writing or updating documentation files under `docs/`.

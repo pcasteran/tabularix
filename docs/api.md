@@ -28,6 +28,16 @@ This page describes the public API exposed by the Tabularix library.
       heading_level: 3
 
 <!-- prettier-ignore -->
+::: tabularix.parse_pattern_1d
+    options:
+      heading_level: 3
+
+<!-- prettier-ignore -->
+::: tabularix.parse_pattern_2d
+    options:
+      heading_level: 3
+
+<!-- prettier-ignore -->
 ::: tabularix.group
     options:
       heading_level: 3
