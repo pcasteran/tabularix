@@ -1225,8 +1225,6 @@ pub fn load_workbook_impl(path: &str) -> PyResult<Workbook> {
     let mut excel: Xlsx<_> = open_workbook(path_buf)
         .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("Calamine error: {e}")))?;
 
-    let _ = excel.load_merged_regions();
-
     let calamine_sheet_names = excel.sheet_names();
     let mut sheets = HashMap::new();
     let mut loaded_sheet_names = Vec::new();
@@ -1235,20 +1233,6 @@ pub fn load_workbook_impl(path: &str) -> PyResult<Workbook> {
     if !calamine_sheet_names.is_empty() {
         active_sheet_name.clone_from(&calamine_sheet_names[0]);
     }
-
-    let all_merged_regions: Vec<_> = excel
-        .merged_regions()
-        .iter()
-        .map(|(s_name, _path, dim)| {
-            (
-                s_name.clone(),
-                (
-                    (dim.start.0 as usize, dim.start.1 as usize),
-                    (dim.end.0 as usize, dim.end.1 as usize),
-                ),
-            )
-        })
-        .collect();
 
     for name in calamine_sheet_names {
         if let Ok(range) = excel.worksheet_range(&name) {
@@ -1280,10 +1264,16 @@ pub fn load_workbook_impl(path: &str) -> PyResult<Workbook> {
                 }
             }
 
-            let sheet_merges: Vec<((usize, usize), (usize, usize))> = all_merged_regions
+            let sheet_merges: Vec<((usize, usize), (usize, usize))> = excel
+                .merge_cells_by_sheet_name(&name)
+                .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("Calamine error: {e}")))?
                 .iter()
-                .filter(|(s_name, _)| s_name == &name)
-                .map(|(_, region)| *region)
+                .map(|dim| {
+                    (
+                        (dim.start.0 as usize, dim.start.1 as usize),
+                        (dim.end.0 as usize, dim.end.1 as usize),
+                    )
+                })
                 .collect();
 
             for &(_start_coord, end_coord) in &sheet_merges {
