@@ -10,7 +10,7 @@ Verify Workbook Sheet Names
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${names}=    Evaluate    $wb.sheet_names()
     Sort List    ${names}
-    VAR    @{expected_names}=    complex    multi-tables    simple
+    VAR    @{expected_names}=    complex    multi-tables    simple    sub-sections
     Lists Should Be Equal    ${names}    ${expected_names}
 
 Verify Active Sheet Metadata

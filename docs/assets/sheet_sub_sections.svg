@@ -1,0 +1,234 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="565">
+<style>
+  text {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 11px;
+    fill: #1f2937;
+  }
+  .hdr-text {
+    font-weight: 600;
+    fill: #4b5563;
+    text-anchor: middle;
+  }
+  .grid-line {
+    stroke: #e5e7eb;
+    stroke-width: 1;
+  }
+  .cell-rect {
+    fill: #ffffff;
+    stroke: #e5e7eb;
+    stroke-width: 1;
+  }
+  .hdr-rect {
+    fill: #f3f4f6;
+    stroke: #d1d5db;
+    stroke-width: 1;
+  }
+  .cell-merged {
+    fill: #fbfbfb;
+  }
+  .val-string {
+    text-anchor: start;
+    fill: #2563eb;
+  }
+  .val-number {
+    text-anchor: end;
+    fill: #059669;
+  }
+  .val-bool {
+    text-anchor: middle;
+    fill: #7c3aed;
+    font-weight: 500;
+  }
+  .rect-bool {
+    fill: #f5f3ff;
+  }
+  .val-error {
+    text-anchor: middle;
+    fill: #dc2626;
+    font-weight: 500;
+  }
+  .rect-error {
+    fill: #fee2e2;
+  }
+  .rect-formula {
+    fill: #f3f4f6;
+  }
+  .val-formula {
+    text-anchor: middle;
+    fill: #9ca3af;
+    font-style: italic;
+  }
+</style>
+  <g class="data-cells">
+    <rect x="40" y="25" width="120" height="30" class="cell-rect" data-original-range="A1" />
+    <rect x="160" y="25" width="120" height="30" class="cell-rect" data-original-range="B1" />
+    <rect x="280" y="25" width="120" height="30" class="cell-rect" data-original-range="C1" />
+    <rect x="400" y="25" width="120" height="30" class="cell-rect" data-original-range="D1" />
+    <rect x="40" y="55" width="120" height="30" class="cell-rect" data-original-range="A2" />
+    <text x="48" y="74" class="val-string">Project</text>
+    <rect x="160" y="55" width="120" height="30" class="cell-rect" data-original-range="B2" />
+    <text x="168" y="74" class="val-string">Budget</text>
+    <rect x="280" y="55" width="120" height="30" class="cell-rect" data-original-range="C2" />
+    <text x="288" y="74" class="val-string">Spent</text>
+    <rect x="400" y="55" width="120" height="30" class="cell-rect" data-original-range="D2" />
+    <text x="408" y="74" class="val-string">Remaining</text>
+    <rect x="40" y="85" width="480" height="30" class="cell-rect cell-merged" data-original-range="A3:D3" />
+    <text x="48" y="104" class="val-string">Development Department</text>
+    <rect x="40" y="115" width="120" height="30" class="cell-rect" data-original-range="A4" />
+    <text x="48" y="134" class="val-string">Project Alpha</text>
+    <rect x="160" y="115" width="120" height="30" class="cell-rect" data-original-range="B4" />
+    <text x="272" y="134" class="val-number">50000</text>
+    <rect x="280" y="115" width="120" height="30" class="cell-rect" data-original-range="C4" />
+    <text x="392" y="134" class="val-number">45000</text>
+    <rect x="400" y="115" width="120" height="30" class="cell-rect rect-formula" data-original-range="D4" />
+    <text x="460" y="134" class="val-formula">&lt;formula&gt;</text>
+    <rect x="40" y="145" width="120" height="30" class="cell-rect" data-original-range="A5" />
+    <text x="48" y="164" class="val-string">Project Beta</text>
+    <rect x="160" y="145" width="120" height="30" class="cell-rect" data-original-range="B5" />
+    <text x="272" y="164" class="val-number">75000</text>
+    <rect x="280" y="145" width="120" height="30" class="cell-rect" data-original-range="C5" />
+    <text x="392" y="164" class="val-number">80000</text>
+    <rect x="400" y="145" width="120" height="30" class="cell-rect rect-formula" data-original-range="D5" />
+    <text x="460" y="164" class="val-formula">&lt;formula&gt;</text>
+    <rect x="40" y="175" width="120" height="30" class="cell-rect" data-original-range="A6" />
+    <text x="48" y="194" class="val-string">Project Gamma</text>
+    <rect x="160" y="175" width="120" height="30" class="cell-rect" data-original-range="B6" />
+    <text x="272" y="194" class="val-number">30000</text>
+    <rect x="280" y="175" width="120" height="30" class="cell-rect" data-original-range="C6" />
+    <text x="392" y="194" class="val-number">25000</text>
+    <rect x="400" y="175" width="120" height="30" class="cell-rect rect-formula" data-original-range="D6" />
+    <text x="460" y="194" class="val-formula">&lt;formula&gt;</text>
+    <rect x="40" y="205" width="120" height="30" class="cell-rect" data-original-range="A7" />
+    <text x="48" y="224" class="val-string">Total</text>
+    <rect x="160" y="205" width="120" height="30" class="cell-rect rect-formula" data-original-range="B7" />
+    <text x="220" y="224" class="val-formula">&lt;formula&gt;</text>
+    <rect x="280" y="205" width="120" height="30" class="cell-rect rect-formula" data-original-range="C7" />
+    <text x="340" y="224" class="val-formula">&lt;formula&gt;</text>
+    <rect x="400" y="205" width="120" height="30" class="cell-rect rect-formula" data-original-range="D7" />
+    <text x="460" y="224" class="val-formula">&lt;formula&gt;</text>
+    <rect x="40" y="235" width="480" height="30" class="cell-rect cell-merged" data-original-range="A8:D8" />
+    <text x="48" y="254" class="val-string">Marketing Department</text>
+    <rect x="40" y="265" width="120" height="30" class="cell-rect" data-original-range="A9" />
+    <text x="48" y="284" class="val-string">Campaign X</text>
+    <rect x="160" y="265" width="120" height="30" class="cell-rect" data-original-range="B9" />
+    <text x="272" y="284" class="val-number">20000</text>
+    <rect x="280" y="265" width="120" height="30" class="cell-rect" data-original-range="C9" />
+    <text x="392" y="284" class="val-number">18000</text>
+    <rect x="400" y="265" width="120" height="30" class="cell-rect rect-formula" data-original-range="D9" />
+    <text x="460" y="284" class="val-formula">&lt;formula&gt;</text>
+    <rect x="40" y="295" width="120" height="30" class="cell-rect" data-original-range="A10" />
+    <text x="48" y="314" class="val-string">Campaign Y</text>
+    <rect x="160" y="295" width="120" height="30" class="cell-rect" data-original-range="B10" />
+    <text x="272" y="314" class="val-number">15000</text>
+    <rect x="280" y="295" width="120" height="30" class="cell-rect" data-original-range="C10" />
+    <text x="392" y="314" class="val-number">16000</text>
+    <rect x="400" y="295" width="120" height="30" class="cell-rect rect-formula" data-original-range="D10" />
+    <text x="460" y="314" class="val-formula">&lt;formula&gt;</text>
+    <rect x="40" y="325" width="120" height="30" class="cell-rect" data-original-range="A11" />
+    <text x="48" y="344" class="val-string">Total</text>
+    <rect x="160" y="325" width="120" height="30" class="cell-rect rect-formula" data-original-range="B11" />
+    <text x="220" y="344" class="val-formula">&lt;formula&gt;</text>
+    <rect x="280" y="325" width="120" height="30" class="cell-rect rect-formula" data-original-range="C11" />
+    <text x="340" y="344" class="val-formula">&lt;formula&gt;</text>
+    <rect x="400" y="325" width="120" height="30" class="cell-rect rect-formula" data-original-range="D11" />
+    <text x="460" y="344" class="val-formula">&lt;formula&gt;</text>
+    <rect x="40" y="355" width="480" height="30" class="cell-rect cell-merged" data-original-range="A12:D12" />
+    <text x="48" y="374" class="val-string">Sales Department</text>
+    <rect x="40" y="385" width="120" height="30" class="cell-rect" data-original-range="A13" />
+    <text x="48" y="404" class="val-string">Direct Sales</text>
+    <rect x="160" y="385" width="120" height="30" class="cell-rect" data-original-range="B13" />
+    <text x="272" y="404" class="val-number">100000</text>
+    <rect x="280" y="385" width="120" height="30" class="cell-rect" data-original-range="C13" />
+    <text x="392" y="404" class="val-number">95000</text>
+    <rect x="400" y="385" width="120" height="30" class="cell-rect rect-formula" data-original-range="D13" />
+    <text x="460" y="404" class="val-formula">&lt;formula&gt;</text>
+    <rect x="40" y="415" width="120" height="30" class="cell-rect" data-original-range="A14" />
+    <text x="48" y="434" class="val-string">Online Sales</text>
+    <rect x="160" y="415" width="120" height="30" class="cell-rect" data-original-range="B14" />
+    <text x="272" y="434" class="val-number">120000</text>
+    <rect x="280" y="415" width="120" height="30" class="cell-rect" data-original-range="C14" />
+    <text x="392" y="434" class="val-number">110000</text>
+    <rect x="400" y="415" width="120" height="30" class="cell-rect rect-formula" data-original-range="D14" />
+    <text x="460" y="434" class="val-formula">&lt;formula&gt;</text>
+    <rect x="40" y="445" width="120" height="30" class="cell-rect" data-original-range="A15" />
+    <text x="48" y="464" class="val-string">Partner Channels</text>
+    <rect x="160" y="445" width="120" height="30" class="cell-rect" data-original-range="B15" />
+    <text x="272" y="464" class="val-number">60000</text>
+    <rect x="280" y="445" width="120" height="30" class="cell-rect" data-original-range="C15" />
+    <text x="392" y="464" class="val-number">62000</text>
+    <rect x="400" y="445" width="120" height="30" class="cell-rect rect-formula" data-original-range="D15" />
+    <text x="460" y="464" class="val-formula">&lt;formula&gt;</text>
+    <rect x="40" y="475" width="120" height="30" class="cell-rect" data-original-range="A16" />
+    <text x="48" y="494" class="val-string">Retail Outlets</text>
+    <rect x="160" y="475" width="120" height="30" class="cell-rect" data-original-range="B16" />
+    <text x="272" y="494" class="val-number">40000</text>
+    <rect x="280" y="475" width="120" height="30" class="cell-rect" data-original-range="C16" />
+    <text x="392" y="494" class="val-number">38000</text>
+    <rect x="400" y="475" width="120" height="30" class="cell-rect rect-formula" data-original-range="D16" />
+    <text x="460" y="494" class="val-formula">&lt;formula&gt;</text>
+    <rect x="40" y="505" width="120" height="30" class="cell-rect" data-original-range="A17" />
+    <text x="48" y="524" class="val-string">Total</text>
+    <rect x="160" y="505" width="120" height="30" class="cell-rect rect-formula" data-original-range="B17" />
+    <text x="220" y="524" class="val-formula">&lt;formula&gt;</text>
+    <rect x="280" y="505" width="120" height="30" class="cell-rect rect-formula" data-original-range="C17" />
+    <text x="340" y="524" class="val-formula">&lt;formula&gt;</text>
+    <rect x="400" y="505" width="120" height="30" class="cell-rect rect-formula" data-original-range="D17" />
+    <text x="460" y="524" class="val-formula">&lt;formula&gt;</text>
+    <rect x="40" y="535" width="120" height="30" class="cell-rect" data-original-range="A18" />
+    <text x="48" y="554" class="val-string">Grand Total</text>
+    <rect x="160" y="535" width="120" height="30" class="cell-rect rect-formula" data-original-range="B18" />
+    <text x="220" y="554" class="val-formula">&lt;formula&gt;</text>
+    <rect x="280" y="535" width="120" height="30" class="cell-rect rect-formula" data-original-range="C18" />
+    <text x="340" y="554" class="val-formula">&lt;formula&gt;</text>
+    <rect x="400" y="535" width="120" height="30" class="cell-rect rect-formula" data-original-range="D18" />
+    <text x="460" y="554" class="val-formula">&lt;formula&gt;</text>
+  </g>
+  <g class="headers">
+    <rect x="40" y="0" width="120" height="25" class="hdr-rect" />
+    <text x="100" y="16" class="hdr-text">A (0)</text>
+    <rect x="160" y="0" width="120" height="25" class="hdr-rect" />
+    <text x="220" y="16" class="hdr-text">B (1)</text>
+    <rect x="280" y="0" width="120" height="25" class="hdr-rect" />
+    <text x="340" y="16" class="hdr-text">C (2)</text>
+    <rect x="400" y="0" width="120" height="25" class="hdr-rect" />
+    <text x="460" y="16" class="hdr-text">D (3)</text>
+    <rect x="0" y="25" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="44" class="hdr-text">0</text>
+    <rect x="0" y="55" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="74" class="hdr-text">1</text>
+    <rect x="0" y="85" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="104" class="hdr-text">2</text>
+    <rect x="0" y="115" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="134" class="hdr-text">3</text>
+    <rect x="0" y="145" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="164" class="hdr-text">4</text>
+    <rect x="0" y="175" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="194" class="hdr-text">5</text>
+    <rect x="0" y="205" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="224" class="hdr-text">6</text>
+    <rect x="0" y="235" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="254" class="hdr-text">7</text>
+    <rect x="0" y="265" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="284" class="hdr-text">8</text>
+    <rect x="0" y="295" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="314" class="hdr-text">9</text>
+    <rect x="0" y="325" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="344" class="hdr-text">10</text>
+    <rect x="0" y="355" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="374" class="hdr-text">11</text>
+    <rect x="0" y="385" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="404" class="hdr-text">12</text>
+    <rect x="0" y="415" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="434" class="hdr-text">13</text>
+    <rect x="0" y="445" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="464" class="hdr-text">14</text>
+    <rect x="0" y="475" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="494" class="hdr-text">15</text>
+    <rect x="0" y="505" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="524" class="hdr-text">16</text>
+    <rect x="0" y="535" width="40" height="30" class="hdr-rect" />
+    <text x="20" y="554" class="hdr-text">17</text>
+    <rect x="0" y="0" width="40" height="25" class="hdr-rect" />
+  </g>
+</svg>

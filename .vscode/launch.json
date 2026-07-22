@@ -35,6 +35,14 @@
       "program": "examples/extract_multiple_tables.py",
       "console": "integratedTerminal",
       "justMyCode": false
+    },
+    {
+      "name": "Extract table with sub-sections",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "examples/extract_sub_sections.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
     }
   ]
 }
