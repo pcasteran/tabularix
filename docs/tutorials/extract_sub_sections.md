@@ -149,7 +149,7 @@ To execute it:
 uv run examples/extract_sub_sections.py
 ```
 
-### Script Output
+### 🖥️ Script Output
 
 ```text
 Extracted Sub-sections DataFrame:

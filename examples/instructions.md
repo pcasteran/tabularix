@@ -102,6 +102,28 @@ When multiple tables are stacked vertically in a single sheet:
 
 ---
 
+## 📂 Sub-sections with Sub-headers & Sub-footers Strategy
+
+When a table contains multiple sub-sections (e.g. departments or categories) separated by sub-header row(s) and sub-total footer row(s):
+
+1. **Anchor Main Header Column Boundaries:** Search for the main header row once at the start of scanning to lock the table's column boundaries (`start_col` to `end_col` for vertical tables or `start_row` to `end_row` for horizontal tables).
+2. **Greedy Sub-header & Sub-footer Patterns:** Append `any().zero_or_more()` to both the sub-header and sub-footer patterns:
+    ```python
+    sub_header_pattern = group(regex(r"^.+\s+Department$"), any().zero_or_more())
+    sub_footer_pattern = group(value("Total"), any().zero_or_more())
+    ```
+    This expands both `sub_header_range` and `sub_footer_range` across the full width or height of the table.
+3. **Direct Data Range Calculation:** Because both bounding ranges share the exact same column width (vertical tables) or height (horizontal tables), `sheet.get_range_between(sub_header_range, sub_footer_range)` directly returns the full sub-section data range without requiring manual column span math:
+    ```python
+    data_range = sheet.get_range_between(sub_header_range, sub_footer_range)
+    ```
+4. **Context Column Injection:** Retrieve the category title from the sub-header top-left cell and prepend it as a contextual column before concatenating sub-sections into a single DataFrame:
+    ```python
+    df = df.select([pl.lit(department).alias("department"), pl.all()])
+    ```
+
+---
+
 ## 📏 Column Span & Width Alignment
 
 - **Alignment Requirement:** Operations like `get_range_between` and `extract_table` require start and end ranges to align perfectly on the same columns.
