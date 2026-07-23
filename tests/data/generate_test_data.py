@@ -218,6 +218,132 @@ def create_sheet_multi_tables(wb):
         current_row = footer_row + 2
 
 
+def create_sheet_sub_sections(wb):
+    """Add a sheet named 'sub-sections' with a table containing headers, sections (sub-headers, data, sub-footers), and a grand total footer."""
+    ws = wb.create_sheet(title="sub-sections")
+
+    # Alignments
+    center_align = Alignment(horizontal="center", vertical="center")
+    left_align = Alignment(horizontal="left", vertical="center")
+    right_align = Alignment(horizontal="right", vertical="center")
+
+    # Fonts
+    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+    sub_header_font = Font(name="Calibri", size=11, bold=True, color="1F497D")
+    data_font = Font(name="Calibri", size=11, color="000000")
+    sub_footer_font = Font(name="Calibri", size=11, bold=True, color="000000")
+    footer_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+
+    # Fills
+    header_fill = PatternFill(start_color="1F497D", end_color="1F497D", fill_type="solid")
+    sub_header_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    sub_footer_fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
+    footer_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+
+    # Set column widths to look nice
+    ws.column_dimensions["A"].width = 25
+    ws.column_dimensions["B"].width = 15
+    ws.column_dimensions["C"].width = 15
+    ws.column_dimensions["D"].width = 15
+
+    # 1. Header (Row 2)
+    headers = ["Project", "Budget", "Spent", "Remaining"]
+    for col_idx, h in enumerate(headers, start=1):
+        cell = ws.cell(row=2, column=col_idx, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_align
+    ws.row_dimensions[2].height = 24.0
+
+    # 2. Sections data structure
+    sections_data = [
+        {
+            "name": "Development Department",
+            "rows": [
+                ["Project Alpha", 50000, 45000],
+                ["Project Beta", 75000, 80000],
+                ["Project Gamma", 30000, 25000],
+            ],
+        },
+        {
+            "name": "Marketing Department",
+            "rows": [
+                ["Campaign X", 20000, 18000],
+                ["Campaign Y", 15000, 16000],
+            ],
+        },
+        {
+            "name": "Sales Department",
+            "rows": [
+                ["Direct Sales", 100000, 95000],
+                ["Online Sales", 120000, 110000],
+                ["Partner Channels", 60000, 62000],
+                ["Retail Outlets", 40000, 38000],
+            ],
+        },
+    ]
+
+    current_row = 3
+    sub_footer_rows = []
+
+    for section in sections_data:
+        # Sub-header: Merge A{current_row}:D{current_row}
+        ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=4)
+        ws.cell(row=current_row, column=1, value=section["name"])
+        for col_idx in range(1, 5):
+            cell = ws.cell(row=current_row, column=col_idx)
+            cell.font = sub_header_font
+            cell.fill = sub_header_fill
+            cell.alignment = center_align
+        ws.row_dimensions[current_row].height = 20.0
+        current_row += 1
+
+        data_start = current_row
+        for row_data in section["rows"]:
+            ws.cell(row=current_row, column=1, value=row_data[0]).alignment = left_align
+            ws.cell(row=current_row, column=2, value=row_data[1]).alignment = right_align
+            ws.cell(row=current_row, column=3, value=row_data[2]).alignment = right_align
+            ws.cell(row=current_row, column=4, value=f"=B{current_row}-C{current_row}").alignment = right_align
+
+            for col_idx in range(1, 5):
+                cell = ws.cell(row=current_row, column=col_idx)
+                cell.font = data_font
+            ws.row_dimensions[current_row].height = 18.0
+            current_row += 1
+        data_end = current_row - 1
+
+        # Sub-footer
+        ws.cell(row=current_row, column=1, value="Total").alignment = left_align
+        ws.cell(row=current_row, column=2, value=f"=SUM(B{data_start}:B{data_end})").alignment = right_align
+        ws.cell(row=current_row, column=3, value=f"=SUM(C{data_start}:C{data_end})").alignment = right_align
+        ws.cell(row=current_row, column=4, value=f"=SUM(D{data_start}:D{data_end})").alignment = right_align
+
+        for col_idx in range(1, 5):
+            cell = ws.cell(row=current_row, column=col_idx)
+            cell.font = sub_footer_font
+            cell.fill = sub_footer_fill
+        ws.row_dimensions[current_row].height = 20.0
+        sub_footer_rows.append(current_row)
+        current_row += 1
+
+    # 3. Grand Total Footer
+    ws.cell(row=current_row, column=1, value="Grand Total").alignment = left_align
+    # Sum of the sub-footers
+    budget_sum_formula = "=" + "+".join(f"B{r}" for r in sub_footer_rows)
+    spent_sum_formula = "=" + "+".join(f"C{r}" for r in sub_footer_rows)
+    remaining_sum_formula = "=" + "+".join(f"D{r}" for r in sub_footer_rows)
+
+    ws.cell(row=current_row, column=2, value=budget_sum_formula).alignment = right_align
+    ws.cell(row=current_row, column=3, value=spent_sum_formula).alignment = right_align
+    ws.cell(row=current_row, column=4, value=remaining_sum_formula).alignment = right_align
+
+    for col_idx in range(1, 5):
+        cell = ws.cell(row=current_row, column=col_idx)
+        cell.font = footer_font
+        cell.fill = footer_fill
+    ws.row_dimensions[current_row].height = 22.0
+
+
 def generate():
     """Generate sample Excel test data for acceptance testing."""
     dir_path = os.path.dirname(os.path.abspath(__file__))
@@ -226,6 +352,7 @@ def generate():
     create_sheet_simple(wb)
     create_sheet_complex(wb)
     create_sheet_multi_tables(wb)
+    create_sheet_sub_sections(wb)
 
     output_path = os.path.join(dir_path, "sample.xlsx")
     wb.save(output_path)

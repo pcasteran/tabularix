@@ -1349,7 +1349,10 @@ mod tests {
     fn test_load_workbook() {
         let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
         let names = wb.sheet_names();
-        assert_eq!(names, vec!["simple", "complex", "multi-tables"]);
+        assert_eq!(
+            names,
+            vec!["simple", "complex", "multi-tables", "sub-sections"]
+        );
 
         let sheet = wb.get_sheet("simple").unwrap();
         assert_eq!(sheet.name, "simple");

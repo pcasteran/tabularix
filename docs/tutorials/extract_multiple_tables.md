@@ -44,7 +44,7 @@ Our goal is to extract all four territory tables and normalize them into a singl
 
 Metadata is often stored horizontally: keys in one column and values in the adjacent column. Because this metadata block exists as a single self-contained horizontal table, we can use Tabularix's **High-Level API** (`extract_table_with_header_and_data`) to parse and extract it in a single step.
 
-### Define the Metadata Patterns
+### 📐 Define the Metadata Patterns
 
 We define vertical patterns for the header column matching "Date" or "Fiscal Year", and the data column to the right:
 
@@ -58,7 +58,7 @@ header_pattern = group(regex(r"^(Date|Fiscal Year)$").repeat(2, 2))
 data_pattern = group(non_empty().repeat(2, 2))
 ```
 
-### Extracting the Horizontal Table
+### 📊 Extracting the Horizontal Table
 
 We pass the patterns to the High-Level API helper, specifying that the table flows primarily from left to right (`main_direction="LR"`) and then from top to bottom (`inner_direction="TB"`):
 
@@ -210,7 +210,7 @@ To execute it:
 uv run examples/extract_multiple_tables.py
 ```
 
-### Script Output
+### 🖥️ Script Output
 
 The script outputs three separate stages of the extraction process, culminating in the projected, unified DataFrame:
 

@@ -68,6 +68,9 @@ def main():
     sheet_multi_tables = wb.get_sheet("multi-tables")
     sheet_multi_tables.to_svg(f"{ASSETS_DIR}/sheet_multi_tables.svg")
 
+    sheet_sub_sections = wb.get_sheet("sub-sections")
+    sheet_sub_sections.to_svg(f"{ASSETS_DIR}/sheet_sub_sections.svg")
+
     # Generate the renders for the APIs.
     generate_drop_row_renders(sheet_simple)
     generate_drop_column_renders(sheet_simple)
