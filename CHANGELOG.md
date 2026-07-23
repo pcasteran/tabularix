@@ -1,3 +1,18 @@
+## [0.4.0] - 2026-07-23
+
+### 🚀 Features
+
+- Svg export anonymisation (#38)
+- Introduced range pattern builder DSL (#43)
+
+### 📚 Documentation
+
+- Add tutorial for sub headers and footers (#44)
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump all dependencies (#39)
+
 ## [0.3.4] - 2026-07-10
 
 ### 📚 Documentation

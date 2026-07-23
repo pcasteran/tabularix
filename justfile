@@ -52,6 +52,8 @@ prepare-release:
     # 7. Display complete status and post-merge publishing instructions
     echo "Release preparation complete. Review changes, commit, and push the branch."
     echo ""
+    echo "Commit message suggestion: chore: release v${VERSION}"
+    echo ""
     echo "Once the PR is merged, run the following commands to tag and trigger the release pipeline:"
     echo "  git checkout main"
     echo "  git pull"
