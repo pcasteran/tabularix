@@ -69,16 +69,13 @@ def lex(text: str) -> list[Token]:
     tokens = []
     for mo in TOKEN_REGEX.finditer(text):
         kind = mo.lastgroup
-        if kind is None:
+        if kind is None or kind == "WS":
             continue
         value = mo.group(kind)
         pos = mo.start()
-        if kind == "WS":
-            continue
-        elif kind == "MISMATCH":
+        if kind == "MISMATCH":
             raise ParseError(f"Unexpected character {value!r}", text, pos)
-        else:
-            tokens.append(Token(kind, value, pos))
+        tokens.append(Token(kind, value, pos))
     return tokens
 
 
@@ -91,28 +88,30 @@ def parse_quantifier_value(q_str: str, text: str = "", pos: int = 0) -> tuple[in
             greedy = False
             q_str = q_str[:-1]
 
-    if q_str == "+":
-        return 1, None, greedy
-    elif q_str == "*":
-        return 0, None, greedy
-    elif q_str == "?":
-        return 0, 1, greedy
-    elif q_str.startswith("{") and q_str.endswith("}"):
-        inner = q_str[1:-1]
-        if "," in inner:
-            parts = inner.split(",")
-            min_val = int(parts[0].strip())
-            max_val_str = parts[1].strip()
-            max_val = int(max_val_str) if max_val_str else None
-            if not greedy and min_val == max_val:
-                raise ParseError(f"Exact count repetition '{raw_q_str}' cannot be lazy (?)", text, pos)
-            return min_val, max_val, greedy
-        else:
-            if not greedy:
-                raise ParseError(f"Exact count repetition '{raw_q_str}' cannot be lazy (?)", text, pos)
-            val = int(inner.strip())
-            return val, val, greedy
-    raise ValueError(f"Invalid quantifier string: {q_str}")
+    match q_str:
+        case "+":
+            return 1, None, greedy
+        case "*":
+            return 0, None, greedy
+        case "?":
+            return 0, 1, greedy
+        case _ if q_str.startswith("{") and q_str.endswith("}"):
+            inner = q_str[1:-1]
+            if "," in inner:
+                parts = inner.split(",")
+                min_val = int(parts[0].strip())
+                max_val_str = parts[1].strip()
+                max_val = int(max_val_str) if max_val_str else None
+                if not greedy and min_val == max_val:
+                    raise ParseError(f"Exact count repetition '{raw_q_str}' cannot be lazy (?)", text, pos)
+                return min_val, max_val, greedy
+            else:
+                if not greedy:
+                    raise ParseError(f"Exact count repetition '{raw_q_str}' cannot be lazy (?)", text, pos)
+                val = int(inner.strip())
+                return val, val, greedy
+        case _:
+            raise ValueError(f"Invalid quantifier string: {q_str}")
 
 
 def _get_types() -> tuple[Any, Any, Any]:

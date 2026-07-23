@@ -20,12 +20,8 @@ impl Clone for CellMatchRule {
             CellMatchRule::NonEmpty => CellMatchRule::NonEmpty,
             CellMatchRule::Exact(s) => CellMatchRule::Exact(s.clone()),
             CellMatchRule::Regex(r) => {
-                let mut cloned = None;
-                pyo3::Python::initialize();
-                pyo3::Python::attach(|py| {
-                    cloned = Some(r.clone_ref(py));
-                });
-                CellMatchRule::Regex(cloned.unwrap())
+                let cloned = pyo3::Python::try_attach(|py| r.clone_ref(py)).unwrap();
+                CellMatchRule::Regex(cloned)
             }
             CellMatchRule::Group(g) => CellMatchRule::Group(g.clone()),
         }
@@ -456,7 +452,7 @@ impl RangeMatcher {
             0
         };
         let matched_end = match_range(py, &self.row_patterns, &grid, 0, col_end, 0, 0)?;
-        Ok(matched_end.is_some() && matched_end.unwrap() == grid.rows_count())
+        Ok(matched_end == Some(grid.rows_count()))
     }
 }
 
@@ -667,62 +663,47 @@ fn match_group_reps(
     let pattern = &outer_patterns[outer_pattern_idx];
     let min_reps = pattern.min;
     let max_reps = pattern.max;
+    let can_match_more = max_reps.is_none_or(|max| current_reps < max);
 
-    if pattern.greedy {
-        let can_match_more = match max_reps {
-            Some(max) => current_reps < max,
-            None => true,
-        };
-
-        if can_match_more {
-            let mut valid_ends = Vec::new();
-            find_group_match_ends(ctx, sub_patterns, cell_idx, 0, &mut valid_ends)?;
-            for next_cell_idx in valid_ends {
-                if match_group_reps(
-                    ctx,
-                    sub_patterns,
-                    outer_patterns,
-                    outer_pattern_idx,
-                    next_cell_idx,
-                    current_reps + 1,
-                )? {
-                    return Ok(true);
-                }
+    let try_match_more = |cell_idx: usize| -> PyResult<bool> {
+        let mut valid_ends = Vec::new();
+        find_group_match_ends(ctx, sub_patterns, cell_idx, 0, &mut valid_ends)?;
+        for next_cell_idx in valid_ends {
+            if match_group_reps(
+                ctx,
+                sub_patterns,
+                outer_patterns,
+                outer_pattern_idx,
+                next_cell_idx,
+                current_reps + 1,
+            )? {
+                return Ok(true);
             }
         }
+        Ok(false)
+    };
 
-        if current_reps >= min_reps
-            && match_cells(ctx, outer_patterns, outer_pattern_idx + 1, cell_idx)?
-        {
+    let try_match_rest = || -> PyResult<bool> {
+        if current_reps >= min_reps {
+            match_cells(ctx, outer_patterns, outer_pattern_idx + 1, cell_idx)
+        } else {
+            Ok(false)
+        }
+    };
+
+    if pattern.greedy {
+        if can_match_more && try_match_more(cell_idx)? {
+            return Ok(true);
+        }
+        if try_match_rest()? {
             return Ok(true);
         }
     } else {
-        if current_reps >= min_reps
-            && match_cells(ctx, outer_patterns, outer_pattern_idx + 1, cell_idx)?
-        {
+        if try_match_rest()? {
             return Ok(true);
         }
-
-        let can_match_more = match max_reps {
-            Some(max) => current_reps < max,
-            None => true,
-        };
-
-        if can_match_more {
-            let mut valid_ends = Vec::new();
-            find_group_match_ends(ctx, sub_patterns, cell_idx, 0, &mut valid_ends)?;
-            for next_cell_idx in valid_ends {
-                if match_group_reps(
-                    ctx,
-                    sub_patterns,
-                    outer_patterns,
-                    outer_pattern_idx,
-                    next_cell_idx,
-                    current_reps + 1,
-                )? {
-                    return Ok(true);
-                }
-            }
+        if can_match_more && try_match_more(cell_idx)? {
+            return Ok(true);
         }
     }
 
