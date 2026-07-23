@@ -1,7 +1,6 @@
 from typing import cast
 
 import polars as pl
-import tabularix as tx
 from tabularix import (
     Sheet,
     any,
@@ -38,7 +37,8 @@ def extract_sub_sections(sheet: Sheet) -> pl.DataFrame:
         raise ValueError("Main table header not found.")
 
     # 2. Sub-header pattern matching department names (e.g. "Development Department")
-    sub_header_pattern = group(regex(r"^.+\s+Department$"))
+    # We include any().zero_or_more() so the matched sub-header range expands to the full table width.
+    sub_header_pattern = group(regex(r"^.+\s+Department$"), any().zero_or_more())
     sub_header_matcher = sub_header_pattern.to_matcher(direction="LR")
 
     # 3. Sub-footer pattern matching section totals (starts with "Total")
@@ -63,16 +63,8 @@ def extract_sub_sections(sheet: Sheet) -> pl.DataFrame:
         if sub_footer_range is None:
             raise ValueError(f"Sub-footer not found for department '{department}'.")
 
-        # Dynamically calculate the row bounds situated between sub-header and sub-footer
-        raw_data_range = sheet.get_range_between(sub_header_range, sub_footer_range)
-
-        # Align column span of the data range with the main header column boundaries
-        data_range = tx.Range(
-            raw_data_range.start_row,
-            raw_data_range.end_row,
-            main_header_range.start_col,
-            main_header_range.end_col,
-        )
+        # Dynamically calculate data range situated between sub-header and sub-footer
+        data_range = sheet.get_range_between(sub_header_range, sub_footer_range)
 
         # Extract structured table using the main_header_range for column headers
         table = sheet.extract_table(

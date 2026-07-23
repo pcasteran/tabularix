@@ -52,7 +52,8 @@ nav = [
   { "Table Extraction" = "table_extraction.md" },
   { "API Reference" = "api.md" },
   { "Tutorials" = [
-      { "Extract and Combine Multiple Tables" = "tutorials/extract_multiple_tables.md" }
+      { "Extract and Combine Multiple Tables" = "tutorials/extract_multiple_tables.md" },
+      { "Extract Tables with Sub-sections" = "tutorials/extract_sub_sections.md" }
   ]},
   { "Contributing" = "contributing.md" }
 ]
