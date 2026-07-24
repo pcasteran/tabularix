@@ -85,6 +85,10 @@ class CellRule:
         self.greedy = True
 
     def repeat(self, min: int, max: int | None = -1, greedy: bool = True) -> CellRule:
+        if max is not None and max < 0 and max != -1:
+            raise ValueError(f"max count cannot be negative (got {max}, use -1 for exact repeat)")
+        if max is not None and max >= 0 and max < min:
+            raise ValueError(f"max count ({max}) cannot be less than min count ({min})")
         self.min = min
         self.max = max
         self.greedy = greedy
@@ -141,6 +145,10 @@ class RangePattern1D:
 
     def repeat(self, min: int, max: int | None = -1, greedy: bool = True) -> RangePattern1D:
         """Sets the cardinality of the 1D pattern to repeat a custom number of times or range."""
+        if max is not None and max < 0 and max != -1:
+            raise ValueError(f"max count cannot be negative (got {max}, use -1 for exact repeat)")
+        if max is not None and max >= 0 and max < min:
+            raise ValueError(f"max count ({max}) cannot be less than min count ({min})")
         self.min = min
         self.max = max
         self.greedy = greedy

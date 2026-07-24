@@ -1,5 +1,6 @@
 mod matcher;
 mod sheet;
+mod svg;
 mod table;
 
 use pyo3::prelude::*;

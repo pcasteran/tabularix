@@ -462,8 +462,14 @@ class Range:
 class RangeMatcher:
     """Represents a compiled pattern matcher bound to specific matching directions."""
 
+    max_depth: int
+
     def __init__(
-        self, row_patterns: list[RangePattern1D], outer_direction: Direction, inner_direction: Direction
+        self,
+        row_patterns: list[RangePattern1D],
+        outer_direction: Direction,
+        inner_direction: Direction,
+        max_depth: int = 1000,
     ) -> None:
         """Initializes a RangeMatcher with a list of 1D patterns and the orthogonal outer and inner directions."""
         ...

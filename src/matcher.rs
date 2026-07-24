@@ -214,9 +214,22 @@ impl RangePattern1D {
     ) -> PyResult<PyRefMut<'_, Self>> {
         enforce_cell_exclusivity(&mut slf.cell_patterns)?;
         let parsed_max = match max {
+            None => None,
             Some(-1) => Some(min),
-            Some(m) if m >= 0 => Some(m.unsigned_abs()),
-            _ => None,
+            Some(m) if m >= 0 => {
+                let u_max = m.unsigned_abs();
+                if u_max < min {
+                    return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                        "max count ({u_max}) cannot be less than min count ({min})"
+                    )));
+                }
+                Some(u_max)
+            }
+            Some(m) => {
+                return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "max count cannot be negative (got {m}, use -1 for exact repeat)"
+                )));
+            }
         };
         if let Some(last) = slf.cell_patterns.last_mut() {
             last.min = min;
@@ -369,6 +382,8 @@ impl Range {
     }
 }
 
+pub const DEFAULT_MAX_MATCH_DEPTH: usize = 1000;
+
 #[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct RangeMatcher {
@@ -378,15 +393,19 @@ pub struct RangeMatcher {
     pub outer_direction: String,
     #[pyo3(get)]
     pub inner_direction: String,
+    #[pyo3(get, set)]
+    pub max_depth: usize,
 }
 
 #[pymethods]
 impl RangeMatcher {
     #[new]
+    #[pyo3(signature = (row_patterns, outer_direction, inner_direction, max_depth = None))]
     pub fn new(
         row_patterns: Vec<RangePattern1D>,
         outer_direction: String,
         inner_direction: String,
+        max_depth: Option<usize>,
     ) -> PyResult<Self> {
         let outer_is_vert = matches!(outer_direction.as_str(), "TB" | "BT");
         let inner_is_horiz = matches!(inner_direction.as_str(), "LR" | "RL");
@@ -403,6 +422,7 @@ impl RangeMatcher {
             row_patterns,
             outer_direction,
             inner_direction,
+            max_depth: max_depth.unwrap_or(DEFAULT_MAX_MATCH_DEPTH),
         })
     }
 
@@ -451,7 +471,17 @@ impl RangeMatcher {
         } else {
             0
         };
-        let matched_end = match_range(py, &self.row_patterns, &grid, 0, col_end, 0, 0)?;
+        let matched_end = match_range(
+            py,
+            &self.row_patterns,
+            &grid,
+            0,
+            col_end,
+            0,
+            0,
+            0,
+            self.max_depth,
+        )?;
         Ok(matched_end == Some(grid.rows_count()))
     }
 }
@@ -650,6 +680,37 @@ impl VirtualRow<'_> {
 struct GroupMatchCtx<'a, 'py> {
     py: Python<'py>,
     cells: VirtualRow<'a>,
+    max_depth: usize,
+    depth: std::cell::Cell<usize>,
+}
+
+impl GroupMatchCtx<'_, '_> {
+    fn check_and_inc_depth(&self) -> PyResult<usize> {
+        let cur = self.depth.get();
+        if cur >= self.max_depth {
+            return Err(pyo3::exceptions::PyRecursionError::new_err(format!(
+                "Maximum pattern matching recursion depth of {} exceeded",
+                self.max_depth
+            )));
+        }
+        self.depth.set(cur + 1);
+        Ok(cur)
+    }
+
+    fn reset_depth(&self, prev: usize) {
+        self.depth.set(prev);
+    }
+}
+
+struct DepthGuard<'a, 'b, 'c> {
+    ctx: &'a GroupMatchCtx<'b, 'c>,
+    prev: usize,
+}
+
+impl Drop for DepthGuard<'_, '_, '_> {
+    fn drop(&mut self) {
+        self.ctx.reset_depth(self.prev);
+    }
 }
 
 fn match_group_reps(
@@ -660,6 +721,12 @@ fn match_group_reps(
     cell_idx: usize,
     current_reps: usize,
 ) -> PyResult<bool> {
+    let prev_depth = ctx.check_and_inc_depth()?;
+    let _guard = DepthGuard {
+        ctx,
+        prev: prev_depth,
+    };
+
     let pattern = &outer_patterns[outer_pattern_idx];
     let min_reps = pattern.min;
     let max_reps = pattern.max;
@@ -717,6 +784,12 @@ fn find_group_match_ends(
     pattern_idx: usize,
     results: &mut Vec<usize>,
 ) -> PyResult<()> {
+    let prev_depth = ctx.check_and_inc_depth()?;
+    let _guard = DepthGuard {
+        ctx,
+        prev: prev_depth,
+    };
+
     if pattern_idx == patterns.len() {
         results.push(current_cell_idx);
         return Ok(());
@@ -798,6 +871,12 @@ fn find_group_reps_ends(
     current_reps: usize,
     results: &mut Vec<usize>,
 ) -> PyResult<()> {
+    let prev_depth = ctx.check_and_inc_depth()?;
+    let _guard = DepthGuard {
+        ctx,
+        prev: prev_depth,
+    };
+
     let min_reps = outer_pattern.min;
     let max_reps = outer_pattern.max;
 
@@ -860,6 +939,12 @@ fn match_cells(
     pattern_idx: usize,
     cell_idx: usize,
 ) -> PyResult<bool> {
+    let prev_depth = ctx.check_and_inc_depth()?;
+    let _guard = DepthGuard {
+        ctx,
+        prev: prev_depth,
+    };
+
     if pattern_idx == patterns.len() {
         return Ok(cell_idx == ctx.cells.len());
     }
@@ -916,6 +1001,7 @@ fn match_cells(
     Ok(false)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn matches_row_pattern(
     py: Python<'_>,
     pattern: &RangePattern1D,
@@ -923,6 +1009,8 @@ fn matches_row_pattern(
     row_idx: usize,
     col_start: usize,
     col_end: usize,
+    depth: usize,
+    max_depth: usize,
 ) -> PyResult<bool> {
     if col_start > col_end || col_end >= grid.cols_count() {
         return Ok(false);
@@ -935,10 +1023,13 @@ fn matches_row_pattern(
             col_start,
             col_end,
         },
+        max_depth,
+        depth: std::cell::Cell::new(depth),
     };
     match_cells(&ctx, &pattern.cell_patterns, 0, 0)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn match_range(
     py: Python<'_>,
     patterns: &[RangePattern1D],
@@ -947,7 +1038,15 @@ pub fn match_range(
     col_end: usize,
     pattern_idx: usize,
     sheet_row_idx: usize,
+    depth: usize,
+    max_depth: usize,
 ) -> PyResult<Option<usize>> {
+    if depth >= max_depth {
+        return Err(pyo3::exceptions::PyRecursionError::new_err(format!(
+            "Maximum pattern matching recursion depth of {max_depth} exceeded"
+        )));
+    }
+
     if pattern_idx == patterns.len() {
         return Ok(Some(sheet_row_idx));
     }
@@ -978,6 +1077,8 @@ pub fn match_range(
             sheet_row_idx + matchable,
             col_start,
             col_end,
+            depth + 1,
+            max_depth,
         )? {
             matchable += 1;
         } else {
@@ -999,6 +1100,8 @@ pub fn match_range(
                 col_end,
                 pattern_idx + 1,
                 sheet_row_idx + k,
+                depth + 1,
+                max_depth,
             )? {
                 return Ok(Some(end_idx));
             }
@@ -1013,6 +1116,8 @@ pub fn match_range(
                 col_end,
                 pattern_idx + 1,
                 sheet_row_idx + k,
+                depth + 1,
+                max_depth,
             )? {
                 return Ok(Some(end_idx));
             }
@@ -1058,7 +1163,17 @@ mod tests {
                 reverse_rows: false,
                 reverse_cols: false,
             };
-            assert!(matches_row_pattern(py, &pattern_ref, &grid1, 0, 0, row1.len() - 1).unwrap());
+            assert!(matches_row_pattern(
+                py,
+                &pattern_ref,
+                &grid1,
+                0,
+                0,
+                row1.len() - 1,
+                0,
+                DEFAULT_MAX_MATCH_DEPTH
+            )
+            .unwrap());
 
             let row2 = vec![
                 CellValue::String("Date".to_string()),
@@ -1075,7 +1190,17 @@ mod tests {
                 reverse_rows: false,
                 reverse_cols: false,
             };
-            assert!(!matches_row_pattern(py, &pattern_ref, &grid2, 0, 0, row2.len() - 1).unwrap());
+            assert!(!matches_row_pattern(
+                py,
+                &pattern_ref,
+                &grid2,
+                0,
+                0,
+                row2.len() - 1,
+                0,
+                DEFAULT_MAX_MATCH_DEPTH
+            )
+            .unwrap());
 
             let row3 = vec![
                 CellValue::String("Date".to_string()),
@@ -1093,7 +1218,17 @@ mod tests {
                 reverse_rows: false,
                 reverse_cols: false,
             };
-            assert!(!matches_row_pattern(py, &pattern_ref, &grid3, 0, 0, row3.len() - 1).unwrap());
+            assert!(!matches_row_pattern(
+                py,
+                &pattern_ref,
+                &grid3,
+                0,
+                0,
+                row3.len() - 1,
+                0,
+                DEFAULT_MAX_MATCH_DEPTH
+            )
+            .unwrap());
         });
     }
 
@@ -1130,7 +1265,17 @@ mod tests {
                 reverse_rows: false,
                 reverse_cols: false,
             };
-            assert!(matches_row_pattern(py, &pattern_ref, &grid1, 0, 0, row1.len() - 1).unwrap());
+            assert!(matches_row_pattern(
+                py,
+                &pattern_ref,
+                &grid1,
+                0,
+                0,
+                row1.len() - 1,
+                0,
+                DEFAULT_MAX_MATCH_DEPTH
+            )
+            .unwrap());
 
             let row2 = vec![
                 CellValue::String("Q1".to_string()),
@@ -1149,7 +1294,17 @@ mod tests {
                 reverse_rows: false,
                 reverse_cols: false,
             };
-            assert!(matches_row_pattern(py, &pattern_ref, &grid2, 0, 0, row2.len() - 1).unwrap());
+            assert!(matches_row_pattern(
+                py,
+                &pattern_ref,
+                &grid2,
+                0,
+                0,
+                row2.len() - 1,
+                0,
+                DEFAULT_MAX_MATCH_DEPTH
+            )
+            .unwrap());
 
             let row3 = vec![CellValue::String("Q1".to_string()), CellValue::Empty];
             let grid_data3 = vec![row3.clone()];
@@ -1163,7 +1318,17 @@ mod tests {
                 reverse_rows: false,
                 reverse_cols: false,
             };
-            assert!(!matches_row_pattern(py, &pattern_ref, &grid3, 0, 0, row3.len() - 1).unwrap());
+            assert!(!matches_row_pattern(
+                py,
+                &pattern_ref,
+                &grid3,
+                0,
+                0,
+                row3.len() - 1,
+                0,
+                DEFAULT_MAX_MATCH_DEPTH
+            )
+            .unwrap());
         });
     }
 
@@ -1302,7 +1467,17 @@ mod tests {
                 reverse_rows: false,
                 reverse_cols: false,
             };
-            assert!(matches_row_pattern(py, &pattern_ref, &grid1, 0, 0, row1.len() - 1).unwrap());
+            assert!(matches_row_pattern(
+                py,
+                &pattern_ref,
+                &grid1,
+                0,
+                0,
+                row1.len() - 1,
+                0,
+                DEFAULT_MAX_MATCH_DEPTH
+            )
+            .unwrap());
 
             let row2 = vec![
                 CellValue::String("Product".to_string()),
@@ -1320,7 +1495,17 @@ mod tests {
                 reverse_rows: false,
                 reverse_cols: false,
             };
-            assert!(!matches_row_pattern(py, &pattern_ref, &grid2, 0, 0, row2.len() - 1).unwrap());
+            assert!(!matches_row_pattern(
+                py,
+                &pattern_ref,
+                &grid2,
+                0,
+                0,
+                row2.len() - 1,
+                0,
+                DEFAULT_MAX_MATCH_DEPTH
+            )
+            .unwrap());
 
             let row3 = vec![CellValue::String("Product".to_string())];
             let grid_data3 = vec![row3.clone()];
@@ -1334,7 +1519,17 @@ mod tests {
                 reverse_rows: false,
                 reverse_cols: false,
             };
-            assert!(!matches_row_pattern(py, &pattern_ref, &grid3, 0, 0, row3.len() - 1).unwrap());
+            assert!(!matches_row_pattern(
+                py,
+                &pattern_ref,
+                &grid3,
+                0,
+                0,
+                row3.len() - 1,
+                0,
+                DEFAULT_MAX_MATCH_DEPTH
+            )
+            .unwrap());
         });
     }
 }
