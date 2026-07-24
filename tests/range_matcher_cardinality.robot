@@ -160,3 +160,11 @@ Verify Cell Cardinality Repeat Unbounded
     # Does not match with 1 cell
     ${res3}=    Evaluate    $matcher.matches_range([["A"]])
     Should Be Equal    ${res3}    ${False}
+
+Verify Invalid Repeat Max Parameter Handling
+    [Documentation]    Verify setting invalid negative max or max < min raises ValueError.
+    Run Keyword And Expect Error    *max count cannot be negative*
+    ...    Evaluate    tabularix.non_empty().repeat(1, -5)    modules=tabularix
+
+    Run Keyword And Expect Error    *max count*cannot be less than min*
+    ...    Evaluate    tabularix.non_empty().repeat(5, 2)    modules=tabularix

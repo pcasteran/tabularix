@@ -85,6 +85,10 @@ class CellRule:
         self.greedy = True
 
     def repeat(self, min: int, max: int | None = -1, greedy: bool = True) -> CellRule:
+        if max is not None and max < 0 and max != -1:
+            raise ValueError(f"max count cannot be negative (got {max}, use -1 for exact repeat)")
+        if max is not None and max >= 0 and max < min:
+            raise ValueError(f"max count ({max}) cannot be less than min count ({min})")
         self.min = min
         self.max = max
         self.greedy = greedy
@@ -102,34 +106,31 @@ class CellRule:
     def __str__(self) -> str:
         """Returns the shorthand DSL string representation of this rule."""
         card = _format_cardinality_dsl(self.min, self.max, self.greedy)
-        if self.rule_type == "exact":
-            escaped_val = str(self.value).replace('"', '\\"')
-            return f'[v: "{escaped_val}"]{card}'
-        elif self.rule_type == "regex":
-            escaped_val = str(self.value).replace('"', '\\"')
-            return f'[r: "{escaped_val}"]{card}'
-        elif self.rule_type == "empty":
-            return f"[e]{card}"
-        elif self.rule_type == "non_empty":
-            return f"[ne]{card}"
-        elif self.rule_type == "any":
-            return f"[a]{card}"
-        return f"[{self.rule_type}]{card}"
+        match self.rule_type:
+            case "exact" | "regex":
+                tag = "v" if self.rule_type == "exact" else "r"
+                escaped_val = str(self.value).replace('"', '\\"')
+                return f'[{tag}: "{escaped_val}"]{card}'
+            case "empty":
+                return f"[e]{card}"
+            case "non_empty":
+                return f"[ne]{card}"
+            case "any":
+                return f"[a]{card}"
+            case _:
+                return f"[{self.rule_type}]{card}"
 
     def __repr__(self) -> str:
         """Returns a valid Python expression representing this rule."""
         card = _format_cardinality_repr(self.min, self.max, self.greedy)
-        if self.rule_type == "exact":
-            return f"value({self.value!r}){card}"
-        elif self.rule_type == "regex":
-            return f"regex({self.value!r}){card}"
-        elif self.rule_type == "empty":
-            return f"empty(){card}"
-        elif self.rule_type == "non_empty":
-            return f"non_empty(){card}"
-        elif self.rule_type == "any":
-            return f"any(){card}"
-        return f"CellRule({self.rule_type!r}, {self.value!r}){card}"
+        match self.rule_type:
+            case "exact" | "regex":
+                func = "value" if self.rule_type == "exact" else "regex"
+                return f"{func}({self.value!r}){card}"
+            case "empty" | "non_empty" | "any":
+                return f"{self.rule_type}(){card}"
+            case _:
+                return f"CellRule({self.rule_type!r}, {self.value!r}){card}"
 
 
 class RangePattern1D:
@@ -144,6 +145,10 @@ class RangePattern1D:
 
     def repeat(self, min: int, max: int | None = -1, greedy: bool = True) -> RangePattern1D:
         """Sets the cardinality of the 1D pattern to repeat a custom number of times or range."""
+        if max is not None and max < 0 and max != -1:
+            raise ValueError(f"max count cannot be negative (got {max}, use -1 for exact repeat)")
+        if max is not None and max >= 0 and max < min:
+            raise ValueError(f"max count ({max}) cannot be less than min count ({min})")
         self.min = min
         self.max = max
         self.greedy = greedy
@@ -171,16 +176,17 @@ class RangePattern1D:
                 if element.min != 1 or element.max != 1:
                     rust_p = _apply_cardinality(rust_p, element.min, element.max, element.greedy)
             elif isinstance(element, CellRule):
-                if element.rule_type == "exact":
-                    rust_p = rust_p.value(element.value)
-                elif element.rule_type == "regex":
-                    rust_p = rust_p.regex(element.value)
-                elif element.rule_type == "empty":
-                    rust_p = rust_p.empty()
-                elif element.rule_type == "non_empty":
-                    rust_p = rust_p.non_empty()
-                elif element.rule_type == "any":
-                    rust_p = rust_p.any()
+                match element.rule_type:
+                    case "exact":
+                        rust_p = rust_p.value(element.value)
+                    case "regex":
+                        rust_p = rust_p.regex(element.value)
+                    case "empty":
+                        rust_p = rust_p.empty()
+                    case "non_empty":
+                        rust_p = rust_p.non_empty()
+                    case "any":
+                        rust_p = rust_p.any()
 
                 if element.min != 1 or element.max != 1:
                     rust_p = _apply_cardinality(rust_p, element.min, element.max, element.greedy)

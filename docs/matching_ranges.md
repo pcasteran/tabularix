@@ -46,7 +46,7 @@ Both `cell` rules inside `group` and `group` patterns inside `grid` support the 
 
 <!-- prettier-ignore -->
 !!! important "Cardinality Exclusivity"
-    You can only configure a cardinality method once per `cell` rule or `group` pattern. Chaining multiple cardinalities (e.g. `.optional().one_or_more()`) will raise a `ValueError`.
+    You can only configure a cardinality method once per `cell` rule or `group` pattern. Chaining multiple cardinalities (e.g. `.optional().one_or_more()`) will raise a `ValueError`. Repeating with `.repeat(min, max)` requires `max >= min` or `max == -1` (exact repeat), otherwise a `ValueError` is raised.
 
 ### 🪵 Greedy vs. Lazy Matching
 
