@@ -1,4 +1,5 @@
-use crate::matcher::{match_range, Range, RangeMatcher, VirtualGrid};
+use crate::matcher::{match_range, RangeMatcher, VirtualGrid};
+use crate::range::{parse_range_spec, Range};
 use calamine::{open_workbook, Data, DataType, Reader, Xlsx};
 use chrono::{Datelike, Timelike};
 use pyo3::prelude::*;
@@ -323,14 +324,14 @@ impl Sheet {
     }
 
     #[pyo3(signature = (path, zero_based_indices = true, anonymise_ranges = None))]
-    #[allow(clippy::needless_pass_by_value)]
     pub fn to_svg(
         &self,
         path: &str,
         zero_based_indices: bool,
-        anonymise_ranges: Option<Vec<Range>>,
+        anonymise_ranges: Option<Bound<'_, PyAny>>,
     ) -> PyResult<()> {
-        crate::svg::export_sheet_to_svg(self, path, zero_based_indices, anonymise_ranges.as_deref())
+        let parsed_anonymise = parse_range_spec(anonymise_ranges)?;
+        crate::svg::export_sheet_to_svg(self, path, zero_based_indices, Some(&parsed_anonymise))
             .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("Failed to write SVG: {e}")))
     }
 
@@ -431,6 +432,77 @@ impl Sheet {
             new_merged.push(((s_row, next_s_col), (e_row, next_e_col)));
         }
         self.merged_regions = new_merged;
+
+        Ok(())
+    }
+
+    #[pyo3(signature = (target_ranges = None, fill_direction = "bottom_right"))]
+    pub fn unmerge_cells(
+        &mut self,
+        target_ranges: Option<Bound<'_, PyAny>>,
+        fill_direction: &str,
+    ) -> PyResult<()> {
+        if fill_direction != "bottom_right"
+            && fill_direction != "bottom"
+            && fill_direction != "right"
+        {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "Invalid fill_direction: '{fill_direction}'. Must be one of 'bottom_right', 'bottom', 'right'"
+            )));
+        }
+
+        let target_vec = parse_range_spec(target_ranges)?;
+
+        let mut remaining_merges = Vec::new();
+        for ((s_row, s_col), (e_row, e_col)) in self.merged_regions.drain(..) {
+            let current_region = Range::new(s_row, e_row, s_col, e_col);
+            let should_unmerge = if target_vec.is_empty() {
+                true
+            } else {
+                target_vec
+                    .iter()
+                    .any(|t_range| t_range.intersects(&current_region))
+            };
+
+            if should_unmerge {
+                if s_row < self.data.len() && s_col < self.data[s_row].len() {
+                    let parent_val = self.data[s_row][s_col].clone();
+                    match fill_direction {
+                        "bottom_right" => {
+                            for r in s_row..=e_row {
+                                if r < self.data.len() {
+                                    for c in s_col..=e_col {
+                                        if c < self.data[r].len() {
+                                            self.data[r][c] = parent_val.clone();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        "bottom" => {
+                            for r in s_row..=e_row {
+                                if r < self.data.len() && s_col < self.data[r].len() {
+                                    self.data[r][s_col] = parent_val.clone();
+                                }
+                            }
+                        }
+                        "right" => {
+                            if s_row < self.data.len() {
+                                for c in s_col..=e_col {
+                                    if c < self.data[s_row].len() {
+                                        self.data[s_row][c] = parent_val.clone();
+                                    }
+                                }
+                            }
+                        }
+                        _ => unreachable!(),
+                    }
+                }
+            } else {
+                remaining_merges.push(((s_row, s_col), (e_row, e_col)));
+            }
+        }
+        self.merged_regions = remaining_merges;
 
         Ok(())
     }
@@ -1318,7 +1390,7 @@ mod tests {
 
     #[test]
     fn test_get_range_between() {
-        use crate::matcher::Range;
+        use crate::range::Range;
 
         let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
         let sheet = wb.get_sheet("simple").unwrap();
@@ -1414,5 +1486,100 @@ mod tests {
             }
             _ => panic!("Expected Date, got {val:?}"),
         }
+    }
+
+    #[test]
+    fn test_unmerge_cells() {
+        let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
+        let sheet = wb.get_sheet("simple").unwrap();
+
+        // 1. Test default unmerge_cells
+        let mut test_sheet = sheet.clone();
+        assert_eq!(test_sheet.merged_regions.len(), 1);
+        assert_eq!(
+            test_sheet.data[3][0],
+            CellValue::String("Merged value".to_string())
+        );
+        assert_eq!(test_sheet.data[3][1], CellValue::Empty);
+        assert_eq!(test_sheet.data[4][0], CellValue::Empty);
+        assert_eq!(test_sheet.data[4][1], CellValue::Empty);
+
+        test_sheet.unmerge_cells(None, "bottom_right").unwrap();
+        assert_eq!(test_sheet.merged_regions.len(), 0);
+        assert_eq!(
+            test_sheet.data[3][0],
+            CellValue::String("Merged value".to_string())
+        );
+        assert_eq!(
+            test_sheet.data[3][1],
+            CellValue::String("Merged value".to_string())
+        );
+        assert_eq!(
+            test_sheet.data[4][0],
+            CellValue::String("Merged value".to_string())
+        );
+        assert_eq!(
+            test_sheet.data[4][1],
+            CellValue::String("Merged value".to_string())
+        );
+
+        // 2. Test target_range filtering (non-matching vs matching)
+        let mut test_sheet2 = sheet.clone();
+        // A1:C2 does not intersect A4:B5
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
+            let target_a1 = pyo3::types::PyString::new(py, "A1:C2");
+            let bound_target = target_a1.into_bound().into_any();
+            test_sheet2
+                .unmerge_cells(Some(bound_target), "bottom_right")
+                .unwrap();
+            assert_eq!(test_sheet2.merged_regions.len(), 1);
+
+            // A4:A5 intersects A4:B5 (partial overlap -> unmerges entire region)
+            let target_intersect = pyo3::types::PyString::new(py, "A4:A5");
+            let bound_intersect = target_intersect.into_bound().into_any();
+            test_sheet2
+                .unmerge_cells(Some(bound_intersect), "bottom_right")
+                .unwrap();
+            assert_eq!(test_sheet2.merged_regions.len(), 0);
+        });
+
+        // 3. Test fill_direction="bottom" and fill_direction="right"
+        let mut test_bottom = sheet.clone();
+        test_bottom.unmerge_cells(None, "bottom").unwrap();
+        assert_eq!(
+            test_bottom.data[3][0],
+            CellValue::String("Merged value".to_string())
+        );
+        assert_eq!(
+            test_bottom.data[4][0],
+            CellValue::String("Merged value".to_string())
+        );
+        assert_eq!(test_bottom.data[3][1], CellValue::Empty);
+        assert_eq!(test_bottom.data[4][1], CellValue::Empty);
+
+        let mut test_right = sheet.clone();
+        test_right.unmerge_cells(None, "right").unwrap();
+        assert_eq!(
+            test_right.data[3][0],
+            CellValue::String("Merged value".to_string())
+        );
+        assert_eq!(
+            test_right.data[3][1],
+            CellValue::String("Merged value".to_string())
+        );
+        assert_eq!(test_right.data[4][0], CellValue::Empty);
+        assert_eq!(test_right.data[4][1], CellValue::Empty);
+
+        // 4. Test error handling
+        let mut test_err = sheet.clone();
+        assert!(test_err.unmerge_cells(None, "invalid_dir").is_err());
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
+            let invalid_a1 = pyo3::types::PyString::new(py, "INVALID");
+            assert!(test_err
+                .unmerge_cells(Some(invalid_a1.into_bound().into_any()), "bottom_right")
+                .is_err());
+        });
     }
 }

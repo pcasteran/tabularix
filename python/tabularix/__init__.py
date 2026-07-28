@@ -537,40 +537,6 @@ def extract_table_between_header_and_footer(
     )
 
 
-_original_to_svg = Sheet.to_svg
-
-
-def to_svg(
-    self: Sheet,
-    path: str,
-    zero_based_indices: bool = True,
-    anonymise_ranges: list[Range | str] | None = None,
-) -> None:
-    """Exports the sheet to an SVG file, with optional range anonymisation.
-
-    Args:
-        self: The worksheet instance.
-        path: Destination file path for the SVG.
-        zero_based_indices: If True, uses 0-based column indices in headers.
-        anonymise_ranges: Optional list of Range objects or A1 notation strings
-            defining regions to anonymise.
-    """
-    parsed_ranges = []
-    if anonymise_ranges is not None:
-        for r in anonymise_ranges:
-            if isinstance(r, str):
-                parsed_ranges.append(Range.from_a1(r))
-            elif isinstance(r, Range):
-                parsed_ranges.append(r)
-            else:
-                raise TypeError(f"Invalid range type: {type(r)}. Must be str or Range.")
-
-    _original_to_svg(self, path, zero_based_indices, parsed_ranges)
-
-
-Sheet.to_svg = to_svg
-
-
 __all__ = [
     "load_workbook",
     "Sheet",

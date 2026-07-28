@@ -1,7 +1,10 @@
 mod matcher;
+mod range;
 mod sheet;
 mod svg;
 mod table;
+
+pub use range::{parse_range_spec, Range};
 
 use pyo3::prelude::*;
 
@@ -17,7 +20,7 @@ fn _tabularix(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<sheet::Workbook>()?;
     m.add_class::<matcher::RangePattern1D>()?;
     m.add_class::<matcher::RangeMatcher>()?;
-    m.add_class::<matcher::Range>()?;
+    m.add_class::<range::Range>()?;
     m.add_class::<table::Table>()?;
     Ok(())
 }

@@ -9,7 +9,7 @@ use arrow::array::{
 use arrow::datatypes::{DataType, Field, Fields, Schema, SchemaRef};
 use arrow::record_batch::RecordBatch;
 
-use crate::matcher::Range;
+use crate::range::Range;
 use crate::sheet::{CellValue, Sheet};
 
 #[pyclass(from_py_object)]
