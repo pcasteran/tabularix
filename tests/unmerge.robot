@@ -22,54 +22,53 @@ Verify Default Unmerge Execution
     Evaluate    $sheet.unmerge_cells()
     Verify All Region Cells Equal    ${sheet}    Merged value
 
-Verify Unmerge Cells With A1 Target Range Or List
-    [Documentation]    Verify target_ranges string/list filtering, including non-overlapping and partial overlap behavior.
+Verify Unmerge Non Overlapping Target Range
+    [Documentation]    Verify non-overlapping target_ranges string leaves region untouched.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.active_sheet()
-
-    # Non-overlapping target range (A1:C2 does not touch A4:B5)
     Evaluate    $sheet.unmerge_cells(target_ranges="A1:C2")
-    ${val_unaffected}=    Evaluate    $sheet.get_cell_value(3, 1)
-    Should Be Equal    ${val_unaffected}    ${None}
+    Verify Cell Is None    ${sheet}    3    1
 
-    # Target range list containing an intersecting range (["X1:Y2", "A4:A5"])
+Verify Unmerge Target Ranges List
+    [Documentation]    Verify target_ranges list unmerges intersecting region.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.active_sheet()
     Evaluate    $sheet.unmerge_cells(target_ranges=["X1:Y2", "A4:A5"])
-    ${val_unmerged}=    Evaluate    $sheet.get_cell_value(3, 1)
-    Should Be Equal As Strings    ${val_unmerged}    Merged value
+    Verify All Region Cells Equal    ${sheet}    Merged value
 
-Verify Unmerge Cells With Range Objects List
+Verify Unmerge Range Objects List
     [Documentation]    Verify target_ranges using Range instances.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.active_sheet()
     ${r1}=    Evaluate    tabularix.Range(0, 1, 0, 1)    modules=tabularix
     ${r2}=    Evaluate    tabularix.Range(3, 4, 0, 1)    modules=tabularix
     Evaluate    $sheet.unmerge_cells(target_ranges=[$r1, $r2])
-    ${val}=    Evaluate    $sheet.get_cell_value(4, 1)
-    Should Be Equal As Strings    ${val}    Merged value
+    ${val_4_1}=    Evaluate    $sheet.get_cell_value(4, 1)
+    Should Be Equal As Strings    ${val_4_1}    Merged value
 
-Verify Unmerge Cells Fill Directions
-    [Documentation]    Verify bottom and right fill_direction behavior.
-    # Test "bottom" direction
-    ${wb1}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
-    ${sheet1}=    Evaluate    $wb1.active_sheet()
-    Evaluate    $sheet1.unmerge_cells(fill_direction="bottom")
-    ${v30}=    Evaluate    $sheet1.get_cell_value(3, 0)
-    Should Be Equal As Strings    ${v30}    Merged value
-    ${v40}=    Evaluate    $sheet1.get_cell_value(4, 0)
-    Should Be Equal As Strings    ${v40}    Merged value
-    ${v31}=    Evaluate    $sheet1.get_cell_value(3, 1)
-    Should Be Equal    ${v31}    ${None}
+Verify Unmerge Fill Direction Bottom
+    [Documentation]    Verify fill_direction="bottom" behavior.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.active_sheet()
+    Evaluate    $sheet.unmerge_cells(fill_direction="bottom")
+    ${val_3_0}=    Evaluate    $sheet.get_cell_value(3, 0)
+    Should Be Equal As Strings    ${val_3_0}    Merged value
+    ${val_4_0}=    Evaluate    $sheet.get_cell_value(4, 0)
+    Should Be Equal As Strings    ${val_4_0}    Merged value
+    Verify Cell Is None    ${sheet}    3    1
+    Verify Cell Is None    ${sheet}    4    1
 
-    # Test "right" direction
-    ${wb2}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
-    ${sheet2}=    Evaluate    $wb2.active_sheet()
-    Evaluate    $sheet2.unmerge_cells(fill_direction="right")
-    ${v30_r}=    Evaluate    $sheet2.get_cell_value(3, 0)
-    Should Be Equal As Strings    ${v30_r}    Merged value
-    ${v31_r}=    Evaluate    $sheet2.get_cell_value(3, 1)
-    Should Be Equal As Strings    ${v31_r}    Merged value
-    ${v40_r}=    Evaluate    $sheet2.get_cell_value(4, 0)
-    Should Be Equal    ${v40_r}    ${None}
+Verify Unmerge Fill Direction Right
+    [Documentation]    Verify fill_direction="right" behavior.
+    ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
+    ${sheet}=    Evaluate    $wb.active_sheet()
+    Evaluate    $sheet.unmerge_cells(fill_direction="right")
+    ${val_3_0}=    Evaluate    $sheet.get_cell_value(3, 0)
+    Should Be Equal As Strings    ${val_3_0}    Merged value
+    ${val_3_1}=    Evaluate    $sheet.get_cell_value(3, 1)
+    Should Be Equal As Strings    ${val_3_1}    Merged value
+    Verify Cell Is None    ${sheet}    4    0
+    Verify Cell Is None    ${sheet}    4    1
 
 Verify Unmerge Cells Error Validation
     [Documentation]    Verify exception handling for invalid parameters.
