@@ -66,18 +66,20 @@ class Sheet:
         self,
         path: str,
         zero_based_indices: bool = True,
-        anonymise_ranges: list[Range | str] | None = None,
+        anonymise_ranges: Range | str | list[Range | str] | None = None,
     ) -> None:
         """Renders the worksheet to a beautifully styled SVG file.
 
         Args:
             path: Target file path where the SVG should be saved.
             zero_based_indices: If True, uses 0-based indexing for headers (default); otherwise 1-based.
-            anonymise_ranges: Optional list of Range objects or A1 notation strings
+            anonymise_ranges: Optional single Range/A1 string or list of Range/A1 strings
                 defining regions to anonymise.
 
         Raises:
             IOError: If writing to the destination path fails.
+            ValueError: If an invalid A1 string notation is provided.
+            TypeError: If an element is not a Range or string.
         """
         ...
 
@@ -100,6 +102,32 @@ class Sheet:
 
         Raises:
             IndexError: If col_idx is out of bounds or negative.
+        """
+        ...
+
+    def unmerge_cells(
+        self,
+        target_ranges: Range | str | list[Range | str] | None = None,
+        fill_direction: Literal["bottom_right", "bottom", "right"] = "bottom_right",
+    ) -> None:
+        """Unmerges merged cell regions in the worksheet.
+
+        Args:
+            target_ranges: Optional Range instance, A1 notation string (e.g. "A1:C5"), or list of Range/A1 strings
+                specifying the region(s) to unmerge. If `None` (default), unmerges all merged regions.
+                If a merged region partially overlaps (intersects) with any target range, the entire
+                merged region is unmerged.
+            fill_direction: The direction along which to repeat the top-left parent cell value.
+                One of `"bottom_right"` (default, fills entire 2D region), `"bottom"` (fills vertically),
+                or `"right"` (fills horizontally).
+
+        Note:
+            **Partial Overlaps**: Any merged region that intersects with `target_ranges` is completely
+            unmerged and removed from the worksheet's merged regions metadata.
+
+        Raises:
+            ValueError: If fill_direction is invalid or if an invalid A1 string is provided.
+            TypeError: If target_ranges is not a Range, string, list, or None.
         """
         ...
 

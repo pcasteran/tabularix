@@ -79,7 +79,8 @@ Export Sheet With Anonymisation To SVG Checks Preserved
     [Documentation]    Verify range anonymisation preserves untargeted cells.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.get_sheet("complex")
-    Evaluate    $sheet.to_svg("results/complex_anonymised.svg", anonymise_ranges=["B4:E7"])
+    # Test single string anonymise_ranges
+    Evaluate    $sheet.to_svg("results/complex_anonymised.svg", anonymise_ranges="B4:E7")
     File Should Exist    results/complex_anonymised.svg
     ${content}=    Get File    results/complex_anonymised.svg
     Should Contain    ${content}    Region
@@ -88,7 +89,7 @@ Export Sheet With Anonymisation To SVG Checks Preserved
     Should Contain    ${content}    South
 
 Export Sheet With Anonymisation To SVG Checks Obfuscated
-    [Documentation]    Verify range anonymisation obfuscates targeted cells.
+    [Documentation]    Verify range anonymisation obfuscates targeted cells using list of A1 strings.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
     ${sheet}=    Evaluate    $wb.get_sheet("complex")
     Evaluate    $sheet.to_svg("results/complex_anonymised_obfuscated.svg", anonymise_ranges=["B4:E7"])
