@@ -214,6 +214,35 @@ This page describes the public API exposed by the Tabularix library.
         | :---: | :---: |
         | [![Original Excel Sheet](assets/sheet_complex.svg)](assets/sheet_complex.svg) | [![Rendered SVG Output](assets/search_and_drop_regex_bottom.svg)](assets/search_and_drop_regex_bottom.svg) |
 
+<!-- unmerge_cells() -->
+
+<!-- prettier-ignore -->
+::: tabularix.Sheet.unmerge_cells
+    options:
+      heading_level: 4
+      show_root_full_path: false
+
+<!-- prettier-ignore -->
+!!! example "Example"
+
+    === "All Merged Regions"
+
+        ```python title="Unmerge all merged regions" linenums="1"
+        sheet.unmerge_cells()
+        ```
+
+    === "Target Range / List"
+
+        ```python title="Unmerge cells in target ranges" linenums="1"
+        sheet.unmerge_cells(target_ranges=["A1:C5", "D10:F15"])
+        ```
+
+    === "Custom Fill Direction"
+
+        ```python title="Unmerge cells filling vertically" linenums="1"
+        sheet.unmerge_cells(fill_direction="bottom")
+        ```
+
 ---
 
 <!-- prettier-ignore -->

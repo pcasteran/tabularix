@@ -114,15 +114,15 @@ class Sheet:
 
         Args:
             target_ranges: Optional Range instance, A1 notation string (e.g. "A1:C5"), or list of Range/A1 strings
-                specifying the region(s) to unmerge. If None (default), unmerges all merged regions.
+                specifying the region(s) to unmerge. If `None` (default), unmerges all merged regions.
                 If a merged region partially overlaps (intersects) with any target range, the entire
                 merged region is unmerged.
             fill_direction: The direction along which to repeat the top-left parent cell value.
-                One of "bottom_right" (default, fills entire 2D region), "bottom" (fills vertically),
-                or "right" (fills horizontally).
+                One of `"bottom_right"` (default, fills entire 2D region), `"bottom"` (fills vertically),
+                or `"right"` (fills horizontally).
 
         Note:
-            **Partial Overlaps**: Any merged region that intersects with target_ranges is completely
+            **Partial Overlaps**: Any merged region that intersects with `target_ranges` is completely
             unmerged and removed from the worksheet's merged regions metadata.
 
         Raises:
