@@ -6,7 +6,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyAny;
 use pyo3::BoundObject;
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum CellValue {
@@ -871,22 +872,19 @@ impl Sheet {
 #[pyclass(from_py_object)]
 #[derive(Debug, Clone)]
 pub struct Workbook {
-    pub sheets: HashMap<String, Sheet>,
+    pub path: PathBuf,
     pub sheet_names: Vec<String>,
     pub active_sheet_name: String,
+    pub loaded_sheets: Arc<Mutex<HashMap<String, Sheet>>>,
 }
 
 #[pymethods]
 impl Workbook {
-    pub fn active_sheet(&self) -> PyResult<Sheet> {
-        if let Some(sheet) = self.sheets.get(&self.active_sheet_name) {
-            Ok(sheet.clone())
-        } else if let Some(sheet) = self.sheets.values().next() {
-            Ok(sheet.clone())
+    pub fn active_sheet_name(&self) -> String {
+        if self.active_sheet_name.is_empty() {
+            self.sheet_names.first().cloned().unwrap_or_default()
         } else {
-            Err(pyo3::exceptions::PyValueError::new_err(
-                "No sheets in workbook",
-            ))
+            self.active_sheet_name.clone()
         }
     }
 
@@ -895,13 +893,60 @@ impl Workbook {
     }
 
     pub fn get_sheet(&self, name: &str) -> PyResult<Sheet> {
-        if let Some(sheet) = self.sheets.get(name) {
-            Ok(sheet.clone())
-        } else {
-            Err(pyo3::exceptions::PyKeyError::new_err(format!(
+        if !self.sheet_names.iter().any(|s| s == name) {
+            return Err(pyo3::exceptions::PyKeyError::new_err(format!(
                 "Sheet '{name}' not found"
-            )))
+            )));
         }
+
+        let mut cache = self
+            .loaded_sheets
+            .lock()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+
+        if let Some(sheet) = cache.get(name) {
+            return Ok(sheet.clone());
+        }
+
+        let sheet = parse_sheet_from_file(&self.path, name)?;
+        cache.insert(name.to_string(), sheet.clone());
+        Ok(sheet)
+    }
+
+    pub fn is_sheet_loaded(&self, name: &str) -> PyResult<bool> {
+        if !self.sheet_names.iter().any(|s| s == name) {
+            return Err(pyo3::exceptions::PyKeyError::new_err(format!(
+                "Sheet '{name}' not found"
+            )));
+        }
+        let cache = self
+            .loaded_sheets
+            .lock()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        Ok(cache.contains_key(name))
+    }
+
+    pub fn unload_sheet(&self, name: &str) -> PyResult<bool> {
+        if !self.sheet_names.iter().any(|s| s == name) {
+            return Err(pyo3::exceptions::PyKeyError::new_err(format!(
+                "Sheet '{name}' not found"
+            )));
+        }
+        let mut cache = self
+            .loaded_sheets
+            .lock()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        Ok(cache.remove(name).is_some())
+    }
+
+    pub fn unload_all_sheets(&self) -> PyResult<usize> {
+        let mut cache = self
+            .loaded_sheets
+            .lock()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        let count = cache.len();
+        cache.clear();
+        Ok(count)
     }
 }
 
@@ -929,107 +974,109 @@ fn populate_formulas(data: &mut [Vec<CellValue>], f_range: &calamine::Range<Stri
     }
 }
 
+fn parse_sheet_from_file(path: &Path, name: &str) -> PyResult<Sheet> {
+    let mut excel: Xlsx<_> = open_workbook(path)
+        .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("Calamine error: {e}")))?;
+
+    if let Ok(range) = excel.worksheet_range(name) {
+        let (start_row, start_col) = range.start().unwrap_or((0, 0));
+        let (end_row, end_col) = range.end().unwrap_or((0, 0));
+
+        let formulas = excel.worksheet_formula(name).ok();
+
+        let mut height = if range.start().is_none() {
+            0
+        } else {
+            end_row as usize + 1
+        };
+        let mut width = if range.start().is_none() {
+            0
+        } else {
+            end_col as usize + 1
+        };
+
+        if let Some(ref f_range) = formulas {
+            if f_range.start().is_some() {
+                let (f_end_row, f_end_col) = f_range.end().unwrap_or((0, 0));
+                if f_end_row as usize + 1 > height {
+                    height = f_end_row as usize + 1;
+                }
+                if f_end_col as usize + 1 > width {
+                    width = f_end_col as usize + 1;
+                }
+            }
+        }
+
+        let sheet_merges: Vec<((usize, usize), (usize, usize))> = excel
+            .merge_cells_by_sheet_name(name)
+            .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("Calamine error: {e}")))?
+            .iter()
+            .map(|dim| {
+                (
+                    (dim.start.0 as usize, dim.start.1 as usize),
+                    (dim.end.0 as usize, dim.end.1 as usize),
+                )
+            })
+            .collect();
+
+        for &(_start_coord, end_coord) in &sheet_merges {
+            if end_coord.0 >= height {
+                height = end_coord.0 + 1;
+            }
+            if end_coord.1 >= width {
+                width = end_coord.1 + 1;
+            }
+        }
+
+        let mut data = vec![vec![CellValue::Empty; width]; height];
+
+        for (row_idx, row) in range.rows().enumerate() {
+            for (col_idx, cell) in row.iter().enumerate() {
+                let abs_row = row_idx + start_row as usize;
+                let abs_col = col_idx + start_col as usize;
+                data[abs_row][abs_col] = CellValue::from(cell.clone());
+            }
+        }
+
+        if let Some(ref f_range) = formulas {
+            populate_formulas(&mut data, f_range);
+        }
+
+        Ok(Sheet {
+            name: name.to_string(),
+            data,
+            merged_regions: sheet_merges,
+        })
+    } else {
+        Err(pyo3::exceptions::PyKeyError::new_err(format!(
+            "Sheet '{name}' not found"
+        )))
+    }
+}
+
 pub fn load_workbook_impl(path: &str) -> PyResult<Workbook> {
-    let path_buf = Path::new(path);
+    let path_buf = PathBuf::from(path);
     if !path_buf.exists() {
         return Err(pyo3::exceptions::PyFileNotFoundError::new_err(format!(
             "File not found: {path}"
         )));
     }
 
-    let mut excel: Xlsx<_> = open_workbook(path_buf)
+    let excel: Xlsx<_> = open_workbook(&path_buf)
         .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("Calamine error: {e}")))?;
 
     let calamine_sheet_names = excel.sheet_names();
-    let mut sheets = HashMap::new();
-    let mut loaded_sheet_names = Vec::new();
-    let mut active_sheet_name = String::new();
-
-    if !calamine_sheet_names.is_empty() {
-        active_sheet_name.clone_from(&calamine_sheet_names[0]);
-    }
-
-    for name in calamine_sheet_names {
-        if let Ok(range) = excel.worksheet_range(&name) {
-            let (start_row, start_col) = range.start().unwrap_or((0, 0));
-            let (end_row, end_col) = range.end().unwrap_or((0, 0));
-
-            let formulas = excel.worksheet_formula(&name).ok();
-
-            let mut height = if range.start().is_none() {
-                0
-            } else {
-                end_row as usize + 1
-            };
-            let mut width = if range.start().is_none() {
-                0
-            } else {
-                end_col as usize + 1
-            };
-
-            if let Some(ref f_range) = formulas {
-                if f_range.start().is_some() {
-                    let (f_end_row, f_end_col) = f_range.end().unwrap_or((0, 0));
-                    if f_end_row as usize + 1 > height {
-                        height = f_end_row as usize + 1;
-                    }
-                    if f_end_col as usize + 1 > width {
-                        width = f_end_col as usize + 1;
-                    }
-                }
-            }
-
-            let sheet_merges: Vec<((usize, usize), (usize, usize))> = excel
-                .merge_cells_by_sheet_name(&name)
-                .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("Calamine error: {e}")))?
-                .iter()
-                .map(|dim| {
-                    (
-                        (dim.start.0 as usize, dim.start.1 as usize),
-                        (dim.end.0 as usize, dim.end.1 as usize),
-                    )
-                })
-                .collect();
-
-            for &(_start_coord, end_coord) in &sheet_merges {
-                if end_coord.0 >= height {
-                    height = end_coord.0 + 1;
-                }
-                if end_coord.1 >= width {
-                    width = end_coord.1 + 1;
-                }
-            }
-
-            let mut data = vec![vec![CellValue::Empty; width]; height];
-
-            for (row_idx, row) in range.rows().enumerate() {
-                for (col_idx, cell) in row.iter().enumerate() {
-                    let abs_row = row_idx + start_row as usize;
-                    let abs_col = col_idx + start_col as usize;
-                    data[abs_row][abs_col] = CellValue::from(cell.clone());
-                }
-            }
-
-            if let Some(ref f_range) = formulas {
-                populate_formulas(&mut data, f_range);
-            }
-
-            sheets.insert(
-                name.clone(),
-                Sheet {
-                    name: name.clone(),
-                    data,
-                    merged_regions: sheet_merges,
-                },
-            );
-            loaded_sheet_names.push(name);
-        }
-    }
+    let active_sheet_name = if calamine_sheet_names.is_empty() {
+        String::new()
+    } else {
+        calamine_sheet_names[0].clone()
+    };
 
     Ok(Workbook {
-        sheets,
-        sheet_names: loaded_sheet_names,
+        path: path_buf,
+        sheet_names: calamine_sheet_names,
         active_sheet_name,
+        loaded_sheets: Arc::new(Mutex::new(HashMap::new())),
     })
 }
 
@@ -1061,8 +1108,17 @@ mod tests {
             vec!["simple", "complex", "multi-tables", "sub-sections"]
         );
 
+        // Initially no sheets are loaded in cache
+        assert!(wb.loaded_sheets.lock().unwrap().is_empty());
+        assert_eq!(wb.active_sheet_name(), "simple");
+
         let sheet = wb.get_sheet("simple").unwrap();
         assert_eq!(sheet.name, "simple");
+        assert!(wb.loaded_sheets.lock().unwrap().contains_key("simple"));
+        assert_eq!(wb.loaded_sheets.lock().unwrap().len(), 1);
+
+        // Fetching nonexistent sheet returns error
+        assert!(wb.get_sheet("nonexistent").is_err());
         assert_eq!(sheet.shape(), (5, 3)); // 5 rows, 3 cols (A1 to C5)
 
         // Check cell values
@@ -1162,6 +1218,36 @@ mod tests {
             test_sheet.drop_row(0).unwrap();
             assert_eq!(test_sheet.shape(), (0, 0));
         }
+    }
+
+    #[test]
+    fn test_sheet_lifecycle() {
+        let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
+        assert_eq!(wb.active_sheet_name(), "simple");
+
+        assert!(!wb.is_sheet_loaded("simple").unwrap());
+        assert!(wb.is_sheet_loaded("nonexistent").is_err());
+
+        let _s = wb.get_sheet("simple").unwrap();
+        assert!(wb.is_sheet_loaded("simple").unwrap());
+
+        // First unload returns true (evicted)
+        assert!(wb.unload_sheet("simple").unwrap());
+        assert!(!wb.is_sheet_loaded("simple").unwrap());
+
+        // Second unload returns false (idempotent, already unloaded)
+        assert!(!wb.unload_sheet("simple").unwrap());
+
+        // Unloading non-existent sheet raises error
+        assert!(wb.unload_sheet("nonexistent").is_err());
+
+        // Load multiple sheets and unload all
+        let _s1 = wb.get_sheet("simple").unwrap();
+        let _s2 = wb.get_sheet("complex").unwrap();
+        assert_eq!(wb.unload_all_sheets().unwrap(), 2);
+        assert!(!wb.is_sheet_loaded("simple").unwrap());
+        assert!(!wb.is_sheet_loaded("complex").unwrap());
+        assert_eq!(wb.unload_all_sheets().unwrap(), 0);
     }
 
     #[test]

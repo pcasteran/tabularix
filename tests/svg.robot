@@ -8,7 +8,7 @@ Library             OperatingSystem
 Export Sheet To SVG Default Zero-Based
     [Documentation]    Verify exporting a sheet to an SVG file using default zero-based indices.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
-    ${sheet}=    Evaluate    $wb.active_sheet()
+    ${sheet}=    Evaluate    $wb.get_sheet("simple")
 
     # Export to SVG (default)
     Call Method    ${sheet}    to_svg    results/sample_default.svg
@@ -24,7 +24,7 @@ Export Sheet To SVG Default Zero-Based
 Export Sheet To SVG One-Based
     [Documentation]    Verify exporting a sheet to an SVG file with one-based indices.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
-    ${sheet}=    Evaluate    $wb.active_sheet()
+    ${sheet}=    Evaluate    $wb.get_sheet("simple")
 
     # Export to SVG with zero_based_indices=False
     Evaluate    $sheet.to_svg("results/sample_one_based.svg", zero_based_indices=False)
@@ -40,7 +40,7 @@ Export Sheet To SVG One-Based
 Export Sheet To SVG With Multi-Byte UTF-8 String
     [Documentation]    Verify multi-byte UTF-8 string SVG export.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
-    ${sheet}=    Evaluate    $wb.active_sheet()
+    ${sheet}=    Evaluate    $wb.get_sheet("simple")
 
     # Set a cell value to a long multi-byte string
     Evaluate    $sheet.set_cell_value(0, 0, "中文测试Emojis🌟🔥🚀" * 5)

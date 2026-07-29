@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Literal
 
 from .dsl_parser import parse_pattern_1d, parse_pattern_2d
@@ -19,6 +20,18 @@ from ._tabularix import (  # ty: ignore[unresolved-import]
 from ._tabularix import (  # ty: ignore[unresolved-import]
     RangePattern1D as _RangePattern1D,
 )
+
+
+@contextmanager
+def _open_sheet(self: Workbook, name: str):
+    sheet = self.get_sheet(name)
+    try:
+        yield sheet
+    finally:
+        self.unload_sheet(name)
+
+
+setattr(Workbook, "open_sheet", _open_sheet)
 
 Direction = Literal["LR", "RL", "TB", "BT"]
 RuleType = Literal["exact", "regex", "empty", "non_empty", "any"]
