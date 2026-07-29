@@ -6,17 +6,19 @@ Direction = Literal["LR", "RL", "TB", "BT"]
 RuleType = Literal["exact", "regex", "empty", "non_empty", "any"]
 
 def load_workbook(path: str) -> Workbook:
-    """Loads an Excel workbook from the specified file path.
+    """Loads metadata for an Excel workbook from the specified file path.
+
+    Sheet contents are lazily loaded on demand when get_sheet() or active_sheet() is called.
 
     Args:
         path: Path to the .xlsx file.
 
     Returns:
-        A Workbook object containing the parsed sheets.
+        A Workbook object with metadata and lazy sheet loading capabilities.
 
     Raises:
         FileNotFoundError: If the file does not exist at the given path.
-        IOError: If there is an error reading or parsing the file.
+        IOError: If there is an error reading or parsing the file metadata.
     """
     ...
 
