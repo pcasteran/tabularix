@@ -880,17 +880,11 @@ pub struct Workbook {
 
 #[pymethods]
 impl Workbook {
-    pub fn active_sheet(&self) -> PyResult<Sheet> {
+    pub fn active_sheet_name(&self) -> String {
         if self.active_sheet_name.is_empty() {
-            if let Some(first_name) = self.sheet_names.first() {
-                self.get_sheet(first_name)
-            } else {
-                Err(pyo3::exceptions::PyValueError::new_err(
-                    "No sheets in workbook",
-                ))
-            }
+            self.sheet_names.first().cloned().unwrap_or_default()
         } else {
-            self.get_sheet(&self.active_sheet_name)
+            self.active_sheet_name.clone()
         }
     }
 
@@ -917,6 +911,42 @@ impl Workbook {
         let sheet = parse_sheet_from_file(&self.path, name)?;
         cache.insert(name.to_string(), sheet.clone());
         Ok(sheet)
+    }
+
+    pub fn is_sheet_loaded(&self, name: &str) -> PyResult<bool> {
+        if !self.sheet_names.iter().any(|s| s == name) {
+            return Err(pyo3::exceptions::PyKeyError::new_err(format!(
+                "Sheet '{name}' not found"
+            )));
+        }
+        let cache = self
+            .loaded_sheets
+            .lock()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        Ok(cache.contains_key(name))
+    }
+
+    pub fn unload_sheet(&self, name: &str) -> PyResult<bool> {
+        if !self.sheet_names.iter().any(|s| s == name) {
+            return Err(pyo3::exceptions::PyKeyError::new_err(format!(
+                "Sheet '{name}' not found"
+            )));
+        }
+        let mut cache = self
+            .loaded_sheets
+            .lock()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        Ok(cache.remove(name).is_some())
+    }
+
+    pub fn unload_all_sheets(&self) -> PyResult<usize> {
+        let mut cache = self
+            .loaded_sheets
+            .lock()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        let count = cache.len();
+        cache.clear();
+        Ok(count)
     }
 }
 
@@ -1080,6 +1110,7 @@ mod tests {
 
         // Initially no sheets are loaded in cache
         assert!(wb.loaded_sheets.lock().unwrap().is_empty());
+        assert_eq!(wb.active_sheet_name(), "simple");
 
         let sheet = wb.get_sheet("simple").unwrap();
         assert_eq!(sheet.name, "simple");
@@ -1187,6 +1218,36 @@ mod tests {
             test_sheet.drop_row(0).unwrap();
             assert_eq!(test_sheet.shape(), (0, 0));
         }
+    }
+
+    #[test]
+    fn test_sheet_lifecycle() {
+        let wb = load_workbook_impl("tests/data/sample.xlsx").unwrap();
+        assert_eq!(wb.active_sheet_name(), "simple");
+
+        assert!(!wb.is_sheet_loaded("simple").unwrap());
+        assert!(wb.is_sheet_loaded("nonexistent").is_err());
+
+        let _s = wb.get_sheet("simple").unwrap();
+        assert!(wb.is_sheet_loaded("simple").unwrap());
+
+        // First unload returns true (evicted)
+        assert!(wb.unload_sheet("simple").unwrap());
+        assert!(!wb.is_sheet_loaded("simple").unwrap());
+
+        // Second unload returns false (idempotent, already unloaded)
+        assert!(!wb.unload_sheet("simple").unwrap());
+
+        // Unloading non-existent sheet raises error
+        assert!(wb.unload_sheet("nonexistent").is_err());
+
+        // Load multiple sheets and unload all
+        let _s1 = wb.get_sheet("simple").unwrap();
+        let _s2 = wb.get_sheet("complex").unwrap();
+        assert_eq!(wb.unload_all_sheets().unwrap(), 2);
+        assert!(!wb.is_sheet_loaded("simple").unwrap());
+        assert!(!wb.is_sheet_loaded("complex").unwrap());
+        assert_eq!(wb.unload_all_sheets().unwrap(), 0);
     }
 
     #[test]

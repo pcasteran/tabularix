@@ -41,7 +41,7 @@ The final output of any extraction pipeline is an **Apache Arrow Table**, allowi
 import tabularix as tx
 
 # 1. Load and Active Mutator Cleaning.
-sheet = tx.load_workbook("report.xlsx").active_sheet()
+sheet = tx.load_workbook("report.xlsx").get_sheet("simple")
 sheet.unmerge_cells(strategy="fill_down")
 sheet.search_and_drop_before(marker="Invoice Date", direction="TOP")
 

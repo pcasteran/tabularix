@@ -1,4 +1,4 @@
-from typing import Any, Literal, Pattern
+from typing import Any, ContextManager, Literal, Pattern
 
 import pyarrow as pa
 
@@ -8,7 +8,7 @@ RuleType = Literal["exact", "regex", "empty", "non_empty", "any"]
 def load_workbook(path: str) -> Workbook:
     """Loads metadata for an Excel workbook from the specified file path.
 
-    Sheet contents are lazily loaded on demand when get_sheet() or active_sheet() is called.
+    Sheet contents are lazily loaded on demand when get_sheet() is called.
 
     Args:
         path: Path to the .xlsx file.
@@ -278,14 +278,11 @@ class Sheet:
 class Workbook:
     """Represents an Excel workbook containing multiple worksheets."""
 
-    def active_sheet(self) -> Sheet:
-        """Retrieves the active worksheet of the workbook.
+    def active_sheet_name(self) -> str:
+        """Returns the name of the active worksheet in the workbook.
 
         Returns:
-            The active Sheet object.
-
-        Raises:
-            ValueError: If the workbook contains no sheets.
+            The active worksheet name string.
         """
         ...
 
@@ -308,6 +305,55 @@ class Workbook:
 
         Raises:
             KeyError: If no worksheet with the given name exists.
+        """
+        ...
+
+    def open_sheet(self, name: str) -> ContextManager[Sheet]:
+        """Context manager for managing a worksheet's lifecycle.
+
+        Loads the worksheet on entry and automatically unloads it from memory on exit.
+
+        Args:
+            name: The name of the sheet to open.
+
+        Returns:
+            A context manager yielding the Sheet object.
+        """
+        ...
+
+    def is_sheet_loaded(self, name: str) -> bool:
+        """Checks if a worksheet is currently loaded in memory.
+
+        Args:
+            name: The name of the sheet.
+
+        Returns:
+            True if loaded in memory cache, False otherwise.
+
+        Raises:
+            KeyError: If no worksheet with the given name exists.
+        """
+        ...
+
+    def unload_sheet(self, name: str) -> bool:
+        """Unloads a worksheet from memory cache.
+
+        Args:
+            name: The name of the sheet to unload.
+
+        Returns:
+            True if the sheet was loaded and evicted, False if already unloaded.
+
+        Raises:
+            KeyError: If no worksheet with the given name exists.
+        """
+        ...
+
+    def unload_all_sheets(self) -> int:
+        """Unloads all cached worksheets from memory.
+
+        Returns:
+            The number of sheets evicted from memory cache.
         """
         ...
 
