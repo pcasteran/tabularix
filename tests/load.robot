@@ -38,7 +38,7 @@ Verify Sheet Cell Values Row 1 to 3
 Verify Sheet Cell Values Row 4 to 5
     [Documentation]    Verify checking cell values in rows four and five.
     ${wb}=    Evaluate    tabularix.load_workbook("tests/data/sample.xlsx")    modules=tabularix
-    ${sheet}=    Evaluate    $wb.active_sheet()
+    ${sheet}=    Evaluate    $wb.get_sheet("simple")
     ${val4}=    Evaluate    $sheet.get_cell_value(3, 2)
     Should Be Equal As Strings    ${val4}    Charlie
     ${val5}=    Evaluate    $sheet.get_cell_value(4, 2)
