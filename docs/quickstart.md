@@ -48,7 +48,7 @@ sheet.to_svg("sheet.svg")
 <!-- prettier-ignore -->
 !!! tip "Lazy Loading & Sheet Lifecycle Management"
     `load_workbook()` loads only workbook metadata (such as worksheet names). Individual worksheets are lazily parsed and cached in memory when `get_sheet(name)` or `open_sheet(name)` is called.
-    
+
     Use `open_sheet(name)` as a context manager (`with wb.open_sheet(...) as sheet:`) or `unload_sheet(name)` to automatically reclaim memory when working with massive Excel files.
 
 The resulting structural layout is shown below:
