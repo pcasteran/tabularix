@@ -2,7 +2,6 @@
 default: help
 
 # Load the environment variables defined in the `.env` file.
-
 set dotenv-load
 
 # Set default options for Robot Framework if not already set by environment
@@ -16,10 +15,6 @@ export ROBOT_OPTIONS := env("ROBOT_OPTIONS", "-d results")
 [group("misc")]
 help:
     @just --justfile {{ justfile() }} --list
-
-# Upgrade all project dependencies
-[group("misc")]
-upgrade-all: upgrade-toolchain upgrade-python-dependencies upgrade-rust-dependencies prek-hooks-update gha_update
 
 # Prepare a new release (calculate version, create branch, update changelog and manifests)
 [group("misc")]
@@ -90,11 +85,15 @@ upgrade-python-dependencies:
 upgrade-rust-dependencies:
     cargo cooldown update
 
+# Upgrade all project dependencies
+[group("dev")]
+upgrade-all: upgrade-toolchain upgrade-python-dependencies upgrade-rust-dependencies prek-hooks-update gha_update
+
 #
 # Static analysis recipes
 #
 
-# Execute the pre-commit hooks using prek
+# Execute static analysis of the codebase using prek
 [group("static analysis")]
 prek:
     prek run --all-files
@@ -102,7 +101,7 @@ prek:
 # Update the pre-commit hooks
 [group("static analysis")]
 prek-hooks-update:
-    prek auto-update
+    prek update
 
 #
 # CI/CD recipes
